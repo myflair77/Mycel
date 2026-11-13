@@ -1,7 +1,7 @@
 import {useState,type FormEvent} from 'react';
 import {supabase} from '../../services/supabase';
-export function AuthPanel(){
- const [signup,setSignup]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
+export function AuthPanel({signup,onSwitch}:{signup:boolean;onSwitch:()=>void}){
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();if(!supabase)return;
   const form=new FormData(event.currentTarget);setBusy(true);setNotice('');
@@ -20,5 +20,5 @@ export function AuthPanel(){
  <label>비밀번호<input name="password" type="password" autoComplete={signup?'new-password':'current-password'} minLength={8} required/></label>
  {signup&&<><label>사용자 ID<input name="username" pattern="[a-zA-Z0-9_]{3,24}" title="영문, 숫자, 밑줄 3~24자" autoComplete="username" required/></label><label>표시 이름<input name="displayName" maxLength={40} required/></label></>}
  <button className="primary-button" disabled={!supabase||busy}>{busy?'처리 중…':signup?'회원가입':'로그인'}</button></form>
- <p role="status" className="notice">{notice}</p><button className="text-button" onClick={()=>{setSignup(!signup);setNotice('')}}>{signup?'이미 계정이 있어요':'계정 만들기'}</button></section>
+ <p role="status" className="notice">{notice}</p><button className="text-button" onClick={onSwitch}>{signup?'이미 계정이 있어요':'계정 만들기'}</button></section>
 }

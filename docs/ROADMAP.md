@@ -13,3 +13,16 @@ Android/iOS 앱 또는 네이티브 브리지 구조를 비교해 채택.
 현재 PWA와 Supabase 데이터/권한 모델 재사용; 화면 모드는 계속 창 크기 기준 자동 및 수동 설정.
 ## AI 업무
 Dot 오케스트레이터, 다중 Codex, Gemini/JEV API 어댑터. AI_ORCHESTRATION.md 준수.
+
+## 2026-11-13 후속 AI 연동 방향
+- 사용자 결정: 지금은 구현하지 않고 후속 개발 방향으로 보존한다.
+- 공통 메시지 API와 실시간 이벤트/웹훅을 먼저 마련하고 MCP 서버를 어댑터로 추가한다.
+- 새 메시지를 받아 AI 실행과 응답 게시를 담당하는 중계 서비스가 필요하다.
+- Dot을 메인 오케스트레이터로 두고 여러 Codex 및 Gemini/Claude 등과 양방향 소통한다. 실제 제품별 지원 여부는 구현 시 확인한다.
+- AI 전용 계정과 대화방별 권한을 적용한다.
+- 사용자가 제공한 두 이메일은 향후 실사용 계정이다. 임시 계정으로 취급하거나 테스트 후 삭제하지 않는다.
+
+## 2026-11-13 원격 DB 적용 기록
+- 무료 프로젝트 xpbfgppttnqmpevpumhd SQL Editor에서 초기 스키마 적용 성공 응답을 확인했다.
+- profiles/chat_rooms/chat_members/messages, RLS, 회원 프로필 트리거, 채팅 RPC, messages Realtime publication을 적용했다.
+- 원격 설정 후속 검증과 두 실사용 계정의 회원가입/실시간 채팅 검증은 아직 완료하지 않았다.
