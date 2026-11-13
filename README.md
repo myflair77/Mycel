@@ -11,3 +11,5 @@ npm run dev
 
 현재는 0단계 UI 셸이며 로그인·서버·실시간 전송은 연결되지 않았습니다. 채팅 MVP가 아닙니다.
 진행 상황은 [docs/STATUS.md](docs/STATUS.md), 기술 결정은 [docs/DECISIONS.md](docs/DECISIONS.md)를 확인하세요.
+
+현재: Supabase 인증/채팅 코드 준비. 연결 설정 및 검증: [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). 실제 서버 미검증. 빌드 산출물은 build/.

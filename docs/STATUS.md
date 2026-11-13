@@ -1,21 +1,27 @@
 # 진행 상황 — 2026-11-13
 ## 이번 완료
-- Apple Style Reference를 docs/DESIGN_REFERENCE.md에 보존, 중립 색상/파란 컨트롤/그림자 없는 표면 적용.
-- 자동/데스크톱/태블릿/휴대폰 화면 모드, 창 크기 반응과 수동 설정 저장.
-- PWA manifest, 192/512 PNG 및 maskable 아이콘, 설치 프롬프트 이벤트/설치 안내.
-- Sites 인증·실시간 문서/도구 검토 및 Supabase/Convex/직접 Workers 대안 비교: SITES_FEASIBILITY.md.
-- 전화번호 친구 발견 검토: CONTACT_DISCOVERY.md. 실제 연락처 접근 없음.
-## 검증
-npm run test: 9/9 통과. npm run build: TypeScript와 Vite 빌드 통과.
-앱 내 브라우저: 390/884/1440 CSS px에서 휴대폰/태블릿/데스크톱 자동 전환, 390에서 데스크톱 강제 선택 후 새로고침 유지, 자동 복귀 확인. 원래 뷰포트 복구.
-오른쪽 로컬 미리보기: http://127.0.0.1:5173/ (사용자 요청으로 서버 유지).
-## 한계
-실제 OS 설치/폴드 실기기/대화 저장/계정/서버는 미검증 또는 미구현. SW 오프라인 기능 없음.
-Sites 외부 인증은 공식 문서에 가능성 안내가 있으나 제공자별 연결 실증 없음. WebSocket/DO 계약 미확인. 배포 실험 미실행.
-초기 UI/PWA 준비를 메신저 MVP 완료로 표시하지 않는다.
-## Git
-이전 커밋 6bb8500. 이번 변경은 로컬 후속 커밋으로 기록. 원격 없음, 업로드/배포/외부 서비스 가입 없음.
-## 다음 단계
-백엔드 선택 후 테스트 계정 A/B로 가입·이메일 검증·DB 저장·실시간·중복·재접속 검증.
-권고 후보: Sites UI + Supabase; Sites 연결 실패 시 UI를 별도 정적 호스팅으로 이전.
-계획서의 배포/원격 업로드 별도 승인 조건을 유지. 외부 백엔드 적용/메일 발송 서비스도 승인 후.
+Sites UI + Supabase 백엔드 채택을 사용자 승인에 따라 반영.
+공식 Supabase SDK, 이메일 signup/signin, Auth 세션, 1:1 채팅 컴포넌트와 실제 API 연결 코드 작성.
+Postgres migration: 참여자 RLS, 정확한 ID 방 생성, 방/발신자 쓰기 직렬화, 저장 후 ack, 중복 방지, 분당 메시지 제한.
+Realtime 구독 이벤트로 DB 조회, 재구독/주기/온라인 복구 및 ID 중복 병합.
+두 계정 실제 서버 통합 스크립트 작성.
+전화번호 친구 찾기와 Android/iOS 네이티브 앱을 ROADMAP.md의 후속 계획에 반영.
+## 실행한 검증
+Vitest 11개 통과 (화면 모드 9, 메시지 병합 1, PostgreSQL 권한/RPC 통합 1).
+PGlite: A/B 동일 방, DB 메시지 저장, 재시도 단일 행, 충돌 거절, 비참여자 C 읽기/전송 거절, anonymous 읽기 거절, 직접 발신자 위조 insert 거절.
+TypeScript 및 Vite build 통과. build/ 산출물 사용.
+브라우저: 로그인→가입 전환, 연결 미설정 안내/가입 버튼 비활성 확인.
+실제 test:integration 실행은 필요한 설정 없음으로 BLOCKED(exit 2). 성공으로 간주하지 않음.
+## 문제와 해결
+dist/assets 파일 접근 오류가 반복되어 기존 산출물은 보존하고 build/로 출력 변경.
+SQL 테스트 Node 타입 누락은 @types/node 추가로 해결.
+## 미완료/필요 정보
+Supabase 플러그인 연결/개발 프로젝트 선택, DB migration 적용, 공개 URL/key 설정, 인증 메일 수신 가능한 테스트 주소 두 개 및 인증.
+실제 signup/메일/서버 WebSocket/브라우저 간 전송/배포 URL 검증 아직 미수행.
+친구/차단/그룹/파일 미구현. 현재는 기술 베타 코드이며 공개 서비스/MVP 완료 아님.
+## Git/배포
+변경은 로컬 커밋 예정. 기존 커밋 e77ac57. 원격 업로드/배포/가입/요금 변경 없음.
+오른쪽 http://127.0.0.1:5173/ 미리보기 유지.
+## 다음
+Supabase 연결 후 SUPABASE_SETUP.md 절차대로 실제 두 계정 검증 재개.
+Sites 게시 테스트는 원 계획의 별도 배포 승인 조건에 따라 처리.

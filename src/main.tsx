@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { appConfig } from './config';
+import React,{useEffect,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import type {Session} from '@supabase/supabase-js';
+import {appConfig} from './config';
+import {useLayout} from './hooks/useLayout';
+import {InstallButton} from './components/InstallButton';
+import {AuthPanel} from './features/auth/AuthPanel';
+import {ChatWorkspace} from './features/messages/ChatWorkspace';
+import {supabase} from './services/supabase';
 import './styles/app.css';
-import { useLayout } from './hooks/useLayout';
-import { InstallButton } from './components/InstallButton';
 function App(){
  const {preference,setPreference,layout}=useLayout();
- const [tab,setTab]=useState('채팅'); const [dark,setDark]=useState(false); const [detail,setDetail]=useState(false);
+ const [dark,setDark]=useState(false),[detail,setDetail]=useState(false),[session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(Boolean(supabase));
+ useEffect(()=>{if(!supabase)return;let active=true;
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,current)=>{if(active){setSession(current);setLoading(false)}});
+  void supabase.auth.getSession().then(({data})=>{if(active){setSession(data.session);setLoading(false)}});
+  return()=>{active=false;subscription.unsubscribe()};
+ },[]);
  return <div data-layout={layout} className={`app ${dark?'dark':''} ${detail?'detail-open':''}`}>
- <div className="display-controls"><label htmlFor="layout-mode">화면 모드</label><select id="layout-mode" value={preference} onChange={e=>setPreference(e.target.value as typeof preference)}><option value="auto">자동</option><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select><span className="active-layout" aria-live="polite">{layout==="desktop"?"데스크톱":layout==="tablet"?"태블릿":"휴대폰"} 화면</span><InstallButton/></div><nav className="rail" aria-label="주 탐색"><div className="mark" aria-label="메신저">w<span>·</span></div><div className="nav-items">{['채팅','친구','알림','설정'].map((item,i)=><button key={item} aria-current={tab===item?'page':undefined} onClick={()=>{setTab(item);setDetail(false)}}><span aria-hidden="true">{['◫','♧','◉','⚙'][i]}</span>{item}</button>)}</div><button className="theme" onClick={()=>setDark(!dark)} aria-label={dark?'라이트 모드':'다크 모드'}>{dark?'☀':'☾'}</button><div className="avatar">나</div></nav>
- <aside className="list"><header><p className="eyebrow">A LITTLE CLOSER</p><h1>{appConfig.displayName}</h1><span className="muted">{appConfig.nameStatus}</span></header><div className="list-heading"><h2>{tab}</h2><span className="count">0</span></div><div className="search"><span aria-hidden="true">⌕</span><input aria-label={`${tab} 검색`} placeholder={`${tab} 검색`} disabled/></div><div className="empty-list"><div className="outline-icon">＋</div><h3>{tab==='채팅'?'아직 시작된 대화가 없어요':tab==='친구'?'친구와 연결될 준비 중이에요':tab==='알림'?'새로운 알림이 없어요':'나에게 맞는 대화 공간'}</h3><p>{tab==='설정'?'왼쪽 달 버튼으로 화면 테마를 바꿔 보세요.':'계정 연결을 마치면 이곳에서 만날 수 있어요.'}</p><button className="text-button" onClick={()=>setDetail(true)}>개발 상태 살펴보기 →</button></div><footer><span className="status-dot"/> 로컬 미리보기 <span>0단계</span></footer></aside>
- <main><header className="topbar"><button className="back" onClick={()=>setDetail(false)}>← 목록</button><span>우리의 대화가 시작되는 곳</span><span className="badge">개발 미리보기</span></header><section className="welcome"><div className="illustration" aria-hidden="true"><div className="bubble one">안녕<span>•••</span></div><div className="bubble two">반가워요 <span>✦</span></div><i className="spark">✳</i></div><p className="eyebrow">STAY CLOSE, WHEREVER YOU ARE</p><h2>가까운 사람들과,<br/>더 편안한 대화.</h2><p className="intro">하루의 작은 이야기부터 함께하는 계획까지.<br/>오래 이어질 대화를 위한 공간을 만들고 있어요.</p><div className="progress-card"><span className="step">01</span><div><strong>대화의 기초를 준비하고 있어요</strong><p>현재 화면은 UI 미리보기입니다.<br/>가입·친구 추가·메시지 전송은 아직 연결되지 않았어요.</p></div><span className="small-dot"/></div><div className="features"><span>◈ 기기 어디서나</span><span>♧ 함께하는 대화</span><span>▤ 이어지는 기록</span></div></section><footer className="main-footer">이름은 고민 중, 좋은 대화는 준비 중.<span>실제 대화 데이터 없음</span></footer></main></div>
+  <div className="display-controls"><label htmlFor="layout-mode">화면 모드</label><select id="layout-mode" value={preference} onChange={e=>setPreference(e.target.value as typeof preference)}><option value="auto">자동</option><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select><span className="active-layout" aria-live="polite">{layout==='desktop'?'데스크톱':layout==='tablet'?'태블릿':'휴대폰'} 화면</span><InstallButton/></div>
+  <nav className="rail" aria-label="주 탐색"><div className="mark" aria-label="메신저">w·</div><div className="nav-items"><button aria-current="page" onClick={()=>setDetail(false)}><span aria-hidden="true">◫</span>채팅</button></div><button className="theme" onClick={()=>setDark(!dark)} aria-label={dark?'라이트 모드':'다크 모드'}>{dark?'☀':'☾'}</button></nav>
+  {session?<ChatWorkspace key={session.user.id} session={session} onOpen={()=>setDetail(true)} onBack={()=>setDetail(false)}/>:<>
+   <aside className="list"><header><p className="eyebrow">A LITTLE CLOSER</p><h1>{appConfig.displayName}</h1><p className="muted">{appConfig.nameStatus}</p></header><section className="empty-list"><div className="outline-icon">＋</div><h2>대화의 시작.</h2><p>나만의 계정으로 소중한 대화를 이어가세요.</p><button className="primary-button" onClick={()=>setDetail(true)}>로그인 · 회원가입</button></section><footer>{supabase?'Supabase 연결 설정됨':'백엔드 연결 준비 중'}</footer></aside>
+   <main><header className="topbar"><button className="back" onClick={()=>setDetail(false)}>← 목록</button><span>우리의 대화가 시작되는 곳</span><span className="badge">개발 베타</span></header>{loading?<p role="status">로그인 상태 확인 중…</p>:<AuthPanel/>}<footer className="main-footer">이름은 고민 중, 좋은 대화는 준비 중.</footer></main>
+  </>}
+ </div>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

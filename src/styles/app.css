@@ -99,3 +99,13 @@ main{display:flex;flex-direction:column;min-width:0}
 .app[data-layout="phone"] .features{font-size:11px;flex-wrap:wrap;gap:12px}
 .app[data-layout="phone"] .list footer{flex-wrap:wrap}
 @media(max-width:480px){.display-controls{padding:8px;gap:8px}.active-layout{display:none}.display-controls select{padding-left:12px;padding-right:16px}.install-button{padding:0 14px}}
+
+.primary-button{border:0;background:var(--color-pricing-blue);color:#fff;border-radius:999px;padding:10px 20px;font:inherit;font-size:14px}.primary-button:disabled{background:var(--soft);color:var(--muted);cursor:default}
+.auth-panel{width:min(100%,440px);margin:auto;padding:40px 28px}.auth-panel h2{font-size:32px;letter-spacing:-1px;font-weight:600}.auth-panel>p{color:var(--muted);font-size:14px;line-height:1.6}
+.auth-panel form,.chat-list form{display:grid;gap:20px}label{font-size:13px}
+.auth-panel input,.chat-list input{display:block;width:100%;min-width:0;border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);padding:14px;margin-top:8px;font:inherit;font-size:16px}
+.notice{font-size:13px;line-height:1.6;overflow-wrap:anywhere;padding:0 20px;color:var(--muted)}
+.room-list{display:grid;gap:12px;margin-top:24px}.room-list button{border:0;text-align:left;border-radius:20px;background:var(--paper);color:var(--ink);padding:16px}.room-list button[aria-current]{outline:1px solid var(--link)}.room-list small{display:block;color:var(--muted);margin-top:8px}
+.chat-main{height:calc(100dvh - 61px);min-height:0!important}.message-list{flex:1;min-height:0;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px}.message{align-self:flex-start;max-width:85%;background:var(--soft);border-radius:20px;padding:14px 20px}.message.mine{align-self:flex-end;background:var(--color-pricing-blue);color:white}.message p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.message time{display:block;font-size:10px;opacity:.8;margin-top:8px}
+.composer{display:flex;gap:12px;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));border-top:1px solid var(--line)}.composer textarea{resize:vertical;min-width:0;flex:1;max-height:180px;border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
