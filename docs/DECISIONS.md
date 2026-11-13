@@ -6,3 +6,4 @@
 - 대안은 Supabase Auth/Postgres/Realtime/Storage. 외부 서비스 적용은 승인 후.
 - 공개 배포, 원격 업로드, 서비스 가입은 이번 단계에서 하지 않는다.
 - 2026-11-13 추가: Dot 메인 오케스트레이터/다중 Codex/외부 AI API 연결을 후속 확장으로 채택. 연결 가능성은 미검증. 대화/작업/이벤트/권한을 분리하며 AI_ORCHESTRATION.md 참조.
+- 2026-11-13: Apple 스타일 채택. PWA 단일 앱 + 세 화면 모드, 자동/수동 선택. 상세 INSTALLATION.md. 외부 인증에 대한 공식 Sites 안내를 발견했으나 런타임 미검증; Supabase 혼합안을 추천 후보로 기록(SITES_FEASIBILITY.md).
