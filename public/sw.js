@@ -43,11 +43,27 @@ self.addEventListener('push',event=>event.waitUntil(serialize(async()=>{
  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
  windows.forEach(client=>client.postMessage({type:'BADGE_REFRESH'}));
 })));
-self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{
- const room=event.notification.data?.roomId;
- if(typeof room!=='string'||!/^[0-9a-f-]{36}$/i.test(room))return;
- const url=new URL('/?room='+encodeURIComponent(room),self.location.origin).href;
- const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
- const client=windows.find(c=>new URL(c.url).origin===self.location.origin);
- if(client){await client.navigate(url);await client.focus()}else await self.clients.openWindow(url);
-})())});
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();
+ event.waitUntil((async()=>{
+  const room=event.notification.data?.roomId;
+  const validRoom=typeof room==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(room);
+  // Even an old notification without room data should open the messenger.
+  const url=new URL(validRoom?'/?room='+encodeURIComponent(room):'/',self.location.origin).href;
+  let windows=[];
+  try{windows=await self.clients.matchAll({type:'window',includeUncontrolled:true})}catch{}
+  const candidates=windows.filter(client=>{
+   try{return new URL(client.url).origin===self.location.origin&&client.frameType!=='nested'}catch{return false}
+  }).sort((a,b)=>Number(b.focused)-Number(a.focused));
+  for(const client of candidates){
+   try{
+    // Focus before navigating: navigation can replace the old WindowClient.
+    await client.focus();
+    const navigated=await client.navigate(url);
+    if(navigated){await navigated.focus();return}
+   }catch{/* A stale/closed/unfocusable window must not swallow the click. */}
+  }
+  const opened=await self.clients.openWindow(url);
+  if(opened){try{await opened.focus()}catch{/* openWindow already opened the destination. */}}
+ })());
+});
