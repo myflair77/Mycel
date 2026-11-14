@@ -202,3 +202,17 @@ button:disabled{cursor:default}
 .recovered-id{display:block;font-size:1.4em;margin:20px 0}.recovery-links{display:flex;gap:12px;flex-wrap:wrap}
 .block-confirmation{width:min(420px,calc(100vw - 48px));border:1px solid #ddd;border-radius:14px;padding:24px;box-sizing:border-box;color:#252830;background:white}
 .block-confirmation::backdrop{background:#0006}.block-confirmation h2{font-size:1.2em}.block-confirmation p{line-height:1.6}.block-confirmation .friend-actions{justify-content:flex-end}
+/* Account actions share the app's button language instead of browser defaults. */
+.app .profile-settings button,.account-recovery button,.block-confirmation button{
+ appearance:none;font:inherit;font-size:calc(12px * var(--font-scale,1));font-weight:600;line-height:1.3;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:9px 16px;border:1px solid var(--line,#e5e8ef);border-radius:9px;background:var(--paper,#fff);color:var(--ink,#242936);cursor:pointer;transition:background .15s,border-color .15s,color .15s;
+}
+.app .profile-setting-row>button{flex-shrink:0;min-width:66px;background:var(--soft);color:var(--link);border-color:transparent}
+.app .profile-settings button:hover:not(:disabled),.account-recovery button:hover:not(:disabled),.block-confirmation button:hover:not(:disabled){background:var(--soft,#f0f2f7);border-color:var(--link,#2858c9);color:var(--link,#2858c9)}
+.app .profile-settings button:focus-visible,.account-recovery button:focus-visible,.block-confirmation button:focus-visible{outline:2px solid var(--link,#2858c9);outline-offset:3px}
+.app .profile-settings button:disabled,.account-recovery button:disabled,.block-confirmation button:disabled{opacity:.45;cursor:not-allowed}
+.app .profile-settings .primary-button,.account-recovery .primary-button{background:#365edc;color:#fff;border-color:#365edc}
+.app .profile-settings .primary-button:hover:not(:disabled),.account-recovery .primary-button:hover:not(:disabled){background:#284bbb;color:#fff;border-color:#284bbb}
+.block-confirmation .danger{color:#b33142;background:#fff1f3;border-color:#f3d6dc}
+.block-confirmation .danger:hover:not(:disabled){color:#fff;background:#b33142;border-color:#b33142}
+.app .profile-settings .notice button{margin:4px 8px 4px 0}
+.app[data-layout="phone"] .profile-settings button{min-height:44px}
