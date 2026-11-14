@@ -1,3 +1,4 @@
+import {AccountRecovery,type AccountFlow} from './features/auth/AccountRecovery';
 import {Icon,type IconName} from './components/Icon';
 import {useSaved} from './features/messages/ux';
 import {FontSizeControl} from './components/FontSizeControl';
@@ -10,20 +11,22 @@ import {useLayout} from './hooks/useLayout';
 import {InstallButton} from './components/InstallButton';
 import {AuthPanel} from './features/auth/AuthPanel';
 import {ChatWorkspace} from './features/messages/ChatWorkspace';
-import {supabase} from './services/supabase';
+import {supabase,initialAuthFlow} from './services/supabase';
 import './styles/app.css';
 import './styles/atelier.css';
 function App(){
+ const [accountFlow,setAccountFlow]=useState<AccountFlow|null>(initialAuthFlow as AccountFlow|null);
  const {preference,setPreference,layout}=useLayout();
  const [authMode,setAuthMode]=useState<'login'|'signup'>('login');
  const [theme,setTheme]=useSaved<'light'|'dark'|'system'>('weano-theme',(()=>{try{return localStorage.getItem('weano-dark')==='true'?'dark':'system'}catch{return 'system'}})());const [systemDark,setSystemDark]=useState(()=>matchMedia('(prefers-color-scheme: dark)').matches);useEffect(()=>{const media=matchMedia('(prefers-color-scheme: dark)');const update=()=>setSystemDark(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update)},[]);const dark=theme==='dark'||(theme==='system'&&systemDark); const [section,setSection]=useState<'chats'|'friends'|'settings'>('chats');const [requests,setRequests]=useState(0);const [detail,setDetail]=useState(false),[session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(Boolean(supabase));
  useEffect(()=>{if(!supabase)return;let active=true;
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,current)=>{if(active){setSession(current);setLoading(false)}});
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,current)=>{if(active){setSession(current);setLoading(false);if(_event==='PASSWORD_RECOVERY'){setAccountFlow('recovery');if(current)sessionStorage.setItem('weano-recovery-user',current.user.id)}else if(current&&sessionStorage.getItem('weano-recovery-user')===current.user.id)setAccountFlow('recovery')}});
   void supabase.auth.getSession().then(({data})=>{if(active){setSession(data.session);setLoading(false)}});
   return()=>{active=false;subscription.unsubscribe()};
  },[]);
  useEffect(()=>{if(!loading&&!session)void syncUnreadBadge(0)},[loading,session]);
  useEffect(()=>{const update=()=>{document.documentElement.style.setProperty('--viewport-height',(window.visualViewport?.height??window.innerHeight)+'px')};update();window.visualViewport?.addEventListener('resize',update);window.addEventListener('resize',update);return()=>{window.visualViewport?.removeEventListener('resize',update);window.removeEventListener('resize',update)}},[]);
+ if(accountFlow)return <AccountRecovery flow={accountFlow} session={session} onDone={()=>{sessionStorage.removeItem('weano-recovery-user');history.replaceState(null,'',location.pathname);setAccountFlow(null);setAuthMode('login')}}/>;
  return <div data-layout={layout} data-section={section} className={`app ${session?'signed-in':''} ${dark?'dark':''} ${detail?'detail-open':''}`}>
   <div className="display-controls"><div className="app-brand"><Icon name="chat" size={20}/><span>WebMessenger</span></div><select aria-label="화면 모드" id="layout-mode" value={preference} onChange={e=>setPreference(e.target.value as typeof preference)}><option value="auto">자동</option><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select><FontSizeControl/><InstallButton/></div>
   <nav className="rail" aria-label="주 탐색"><div className="mark" aria-label="WebMessenger"><Icon name="chat" size={23}/></div><div className="nav-items">{([['friends','친구','friends'],['chats','대화','chat'],['settings','설정','settings']] as const).filter(([key])=>session||key==='chats').map(([key,label,icon])=><button key={key} aria-current={section===key?'page':undefined} onClick={()=>{setSection(key);setDetail(false)}}><span aria-hidden="true"><Icon name={icon as IconName}/></span>{label}{key==='friends'&&requests>0&&<b className="nav-count">{requests}</b>}</button>)}</div></nav>

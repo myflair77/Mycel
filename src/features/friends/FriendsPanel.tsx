@@ -1,9 +1,11 @@
+import {useBlockConfirmation} from '../../components/BlockConfirmation';
 import {Icon} from '../../components/Icon';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {supabase} from '../../services/supabase';
 type Person={id:string;username:string;display_name:string};
 type Relation=Person&{status:'pending'|'accepted';incoming:boolean};
 export function FriendsPanel({onChat,onRequests}:{onChat:(username:string)=>Promise<void>;onRequests?:(count:number)=>void}){
+ const {confirmBlock,confirmation}=useBlockConfirmation();
  const [relations,setRelations]=useState<Relation[]>([]),[blocks,setBlocks]=useState<Person[]>([]),[found,setFound]=useState<Person|null>(null);
  const [helpOpen,setHelpOpen]=useState(false);const helpRef=useRef<HTMLDivElement>(null);
  useEffect(()=>{if(!helpOpen)return;const outside=(e:PointerEvent)=>{if(!helpRef.current?.contains(e.target as Node))setHelpOpen(false)};const escape=(e:KeyboardEvent)=>{if(e.key==='Escape')setHelpOpen(false)};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape)}},[helpOpen]);
@@ -11,11 +13,11 @@ export function FriendsPanel({onChat,onRequests}:{onChat:(username:string)=>Prom
  const [notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[ready,setReady]=useState(false);
  async function refresh(){const {data,error}=await supabase!.rpc('list_social');if(error){setNotice('친구 목록을 불러오지 못했습니다. '+error.message);return}setRelations(data.relations);onRequests?.(data.relations.filter((p:Relation)=>p.status==='pending'&&p.incoming).length);setBlocks(data.blocks);setReady(true)}
  useEffect(()=>{void refresh();const timer=setInterval(()=>void refresh(),10000);return()=>clearInterval(timer)},[]);
- async function action(name:string,args:Record<string,unknown>,message:string){if(name==='set_user_block'&&args.p_block&&!window.confirm('차단하면 양쪽 모두 새 메시지와 친구 요청을 보낼 수 없습니다. 기존 대화는 남습니다. 차단할까요?'))return;setBusy(true);setNotice('');try{const {data,error}=await supabase!.rpc(name,args);if(error)throw error;if(data.error)throw new Error(data.error);setNotice(message);setFound(null);await refresh()}catch(e){setNotice(e instanceof Error?e.message:String((e as {message?:string}).message??'요청 실패'))}finally{setBusy(false)}}
+ async function action(name:string,args:Record<string,unknown>,message:string){if(name==='set_user_block'&&args.p_block&&!await confirmBlock([...relations,...blocks,...(found?[found]:[])].find(p=>p.id===args.p_peer)?.display_name??'상대'))return;setBusy(true);setNotice('');try{const {data,error}=await supabase!.rpc(name,args);if(error)throw error;if(data.error)throw new Error(data.error);setNotice(message);setFound(null);await refresh()}catch(e){setNotice(e instanceof Error?e.message:String((e as {message?:string}).message??'요청 실패'))}finally{setBusy(false)}}
  async function search(e:FormEvent<HTMLFormElement>){e.preventDefault();const username=String(new FormData(e.currentTarget).get('friendUsername')).trim();setBusy(true);setFound(null);setNotice('');try{const {data,error}=await supabase!.rpc('search_friend',{p_username:username});if(error)throw error;if(data.error)setNotice(data.error);else setFound(data.user)}catch(e){setNotice(String((e as {message?:string}).message??'검색 실패'))}finally{setBusy(false)}}
  const person=(p:Person)=><><strong>{p.display_name}</strong><small>@{p.username}</small></>;
  const incoming=relations.filter(p=>p.status==='pending'&&p.incoming),outgoing=relations.filter(p=>p.status==='pending'&&!p.incoming),friends=relations.filter(p=>p.status==='accepted');
- return <section className="friends-panel" aria-label="친구 관리">
+ return <>{confirmation}<section className="friends-panel" aria-label="친구 관리">
  <header className="friends-title"><div><h1>친구</h1><p>찾고, 연결하고, 대화를 시작하세요.</p></div><Icon name="friends" size={25}/></header>
  <div className="friend-management" aria-label="요청 및 차단 관리">{([['incoming','받은 요청',incoming.length],['outgoing','보낸 요청',outgoing.length],['blocked','차단 관리',blocks.length]] as const).map(([key,label,count])=><button key={key} type="button" aria-expanded={management===key} aria-controls="friend-management-panel" onClick={()=>setManagement(old=>old===key?null:key)}>{label}<span className={count>0?'has-count':''}>{count}</span></button>)}</div>
  {management&&<section id="friend-management-panel" className="friend-management-panel" aria-label={management==='incoming'?'받은 요청':management==='outgoing'?'보낸 요청':'차단 관리'}><header><strong>{management==='incoming'?'받은 요청':management==='outgoing'?'보낸 요청':'차단 관리'}</strong><button aria-label="관리 패널 닫기" onClick={()=>setManagement(null)}>✕</button></header>
@@ -30,5 +32,5 @@ export function FriendsPanel({onChat,onRequests}:{onChat:(username:string)=>Prom
  <section className="friends-directory"><header><h2>친구 목록 <span>{friends.length}</span></h2><button type="button" className="refresh-friends" disabled={busy} onClick={()=>void refresh()}>새로 고침</button></header>
  {friends.map(p=><div className="friend-row" key={p.id}><span className="friend-avatar" aria-hidden="true">{p.display_name.slice(0,1)}</span><div className="friend-person">{person(p)}</div><button className="friend-chat" disabled={busy} onClick={()=>void onChat(p.username)}><Icon name="chat" size={16}/>대화</button><details className="friend-options"><summary aria-label={p.display_name+'님 관리'}><Icon name="more" size={18}/></summary><button disabled={busy} onClick={()=>void action('set_user_block',{p_peer:p.id,p_block:true},'차단했습니다. 기존 대화는 보존됩니다.')}>차단</button></details></div>)}
  {ready&&!friends.length&&<div className="friends-empty"><Icon name="friends" size={28}/><p>아직 친구가 없습니다.</p><small>위에서 친구 ID를 검색해 요청을 보내세요.</small></div>}{!ready&&<p role="status" className="muted">친구 목록을 불러오는 중…</p>}
- </section></section>;
+ </section></section></>;
 }
