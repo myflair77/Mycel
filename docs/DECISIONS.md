@@ -8,3 +8,5 @@
 - 2026-11-13 추가: Dot 메인 오케스트레이터/다중 Codex/외부 AI API 연결을 후속 확장으로 채택. 연결 가능성은 미검증. 대화/작업/이벤트/권한을 분리하며 AI_ORCHESTRATION.md 참조.
 - 2026-11-13: Apple 스타일 채택. PWA 단일 앱 + 세 화면 모드, 자동/수동 선택. 상세 INSTALLATION.md. 외부 인증에 대한 공식 Sites 안내를 발견했으나 런타임 미검증; Supabase 혼합안을 추천 후보로 기록(SITES_FEASIBILITY.md).
 - 2026-11-13: 사용자 승인으로 Sites UI + Supabase 백엔드 채택. migrations/0001_supabase_chat.sql과 SDK 연결 구현. 실제 서버 검증은 프로젝트 연결 대기. 전화번호/네이티브 앱은 ROADMAP.md 후속 범위. 배포 산출물은 build/로 변경.
+
+- 2026-11-14: 기존 배포 보류 결정은 이후 사용자 공개 배포 승인으로 대체됨. 무료 Supabase + 공개 Sites로 진행한다. 두 실제 기기의 가입 및 채팅은 사용자 확인 완료. 다음 개선은 기존 RLS를 이용한 상대 프로필 표시다.
