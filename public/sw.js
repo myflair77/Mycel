@@ -2,11 +2,19 @@ const DB='web-messenger-push';
 function binding(value){return new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>request.result.createObjectStore('settings');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result;const tx=db.transaction('settings',value===undefined?'readonly':'readwrite');const store=tx.objectStore('settings');const op=value===undefined?store.get('user'):store.put(value,'user');op.onsuccess=()=>resolve(op.result);tx.oncomplete=()=>db.close();tx.onerror=()=>reject(tx.error)}})}
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
-self.addEventListener('message',event=>{if(event.data?.type==='PUSH_USER')event.waitUntil((async()=>{await binding(event.data.userId??'');const notifications=await self.registration.getNotifications();notifications.forEach(n=>n.close());event.ports[0]?.postMessage({ok:true})})())});
+self.addEventListener('message',event=>{
+ if(event.data?.type==='PUSH_STATUS')event.waitUntil((async()=>{
+  const notifications=await self.registration.getNotifications();
+  event.ports[0]?.postMessage({mode:'per-message-v1',count:notifications.length});
+ })());
+ if(event.data?.type==='PUSH_USER')event.waitUntil((async()=>{await binding(event.data.userId??'');const notifications=await self.registration.getNotifications();notifications.forEach(n=>n.close());event.ports[0]?.postMessage({ok:true})})());
+});
 self.addEventListener('push',event=>event.waitUntil((async()=>{
  let payload;try{payload=event.data.json()}catch{return}
  const user=await binding();if(!user||user!==payload.userId)return;
- await self.registration.showNotification('WebMessenger',{body:'새 메시지가 도착했습니다.',icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag:payload.tag,data:{roomId:payload.roomId},renotify:true});
+ // Omit the room-level tag: each delivery stays as a separate notification.
+ // This measures notification badges, not the database unread count.
+ await self.registration.showNotification('WebMessenger',{body:'새 메시지가 도착했습니다.',icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',data:{roomId:payload.roomId}});
 })()));
 self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{
  const room=event.notification.data?.roomId;
