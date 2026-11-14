@@ -1,6 +1,6 @@
 const SB='https://xpbfgppttnqmpevpumhd.supabase.co';
 const PK='sb_publishable_A85gZipL6sx9y5F0FqQ4fQ_KiElgMOV';
-export const CHUNK=4*1024*1024,MAX=50*1024*1024;
+export const CHUNK=4*1024*1024,MAX=300*1024*1024;
 const enc=new TextEncoder();
 const hex=b=>Array.from(new Uint8Array(b),n=>n.toString(16).padStart(2,'0')).join('');
 export async function mac(secret,text){const key=await crypto.subtle.importKey('raw',Uint8Array.from(secret.match(/../g),x=>parseInt(x,16)),{name:'HMAC',hash:'SHA-256'},false,['sign']);return hex(await crypto.subtle.sign('HMAC',key,enc.encode(text)))}
@@ -23,7 +23,7 @@ export async function fileApi(request,env){try{
   let index=0,reader=null;const stream=new ReadableStream({async pull(controller){try{while(true){if(!reader){if(index>=manifest.parts.length){controller.close();return}const part=await env.BUCKET.get(manifest.parts[index++].key);if(!part)throw Error('Missing part');reader=part.body.getReader()}const {done,value}=await reader.read();if(done){reader=null;continue}controller.enqueue(value);return}}catch(e){controller.error(e)}},async cancel(){await reader?.cancel()}});
   return new Response(stream,{headers:{'Content-Type':'application/octet-stream','Content-Length':String(a.size),'Content-Disposition':"attachment; filename*=UTF-8''"+encodeURIComponent(a.name),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  }
- if(Number(a.size)>MAX)fail(413,'파일은 최대 50MB까지 보낼 수 있습니다.');await writable(request,a);
+ if(Number(a.size)>MAX)fail(413,'파일은 최대 300MB까지 보낼 수 있습니다.');await writable(request,a);
  if(action==='start'&&request.method==='POST'){const t={id:a.id,size:Number(a.size),prefix:'files/'+a.id+'/'+a.id,expires:Date.now()+86400000};const payload=btoa(JSON.stringify(t));return json({ticket:payload+'.'+await mac(env.R2_RECEIPT_KEY,payload),chunkSize:CHUNK})}
  const t=await ticket(env,request,a);
  if(action==='part'&&request.method==='PUT'){
@@ -35,7 +35,8 @@ export async function fileApi(request,env){try{
  }
  if(action==='finish'&&request.method==='POST'){
   const data=await smallJson(request),parts=data.parts;if(!Array.isArray(parts)||parts.length!==Math.ceil(t.size/CHUNK))fail(400,'Invalid manifest');
-  for(let i=0;i<parts.length;i++){const p=parts[i];if(p.key!==t.prefix+'/'+i||!(/^[a-f0-9]{64}$/).test(p.hash)||p.size!==Math.min(CHUNK,t.size-i*CHUNK))fail(400,'Invalid part');const h=await env.BUCKET.head(p.key);if(!h||h.size!==p.size||h.customMetadata?.sha256!==p.hash)fail(400,'Missing part')}
+  const listed=await env.BUCKET.list({prefix:t.prefix+'/',limit:1000,include:['customMetadata']});const stored=new Map(listed.objects.map(o=>[o.key,o]));
+  for(let i=0;i<parts.length;i++){const p=parts[i];if(p.key!==t.prefix+'/'+i||!(/^[a-f0-9]{64}$/).test(p.hash)||p.size!==Math.min(CHUNK,t.size-i*CHUNK))fail(400,'Invalid part');const h=stored.get(p.key);if(!h||h.size!==p.size||h.customMetadata?.sha256!==p.hash)fail(400,'Missing part')}
   const key=t.prefix+'/manifest.json',body=JSON.stringify({size:t.size,parts,createdAt:new Date().toISOString()});
   const existing=await env.BUCKET.get(key);if(existing){const m=await existing.json();if(JSON.stringify(m.parts)!==JSON.stringify(parts))fail(409,'Upload conflict')}else{await env.BUCKET.put(key,body,{onlyIf:{etagDoesNotMatch:'*'}});const saved=await(await env.BUCKET.get(key)).json();if(JSON.stringify(saved.parts)!==JSON.stringify(parts))fail(409,'Upload conflict')}
   const receipt=await mac(env.R2_RECEIPT_KEY,a.id+':'+a.size+':'+key);const r=await sb(request,'/rest/v1/rpc/send_r2_attachment',{method:'POST',body:JSON.stringify({p_id:a.id,p_key:key,p_receipt:receipt})});if(!r.ok)fail(409,'전송을 완료하지 못했습니다. 재전송해 주세요.');return json(await r.json());

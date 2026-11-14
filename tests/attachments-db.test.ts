@@ -23,6 +23,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0010_r2_attachments.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0011_r2_retention.sql',import.meta.url),'utf8'));
  await db.query('insert into public.r2_receipt_secret(key_hex) values($1)',['ab'.repeat(32)]);
+ await db.exec(readFileSync(new URL('../migrations/0013_r2_limit_300mb.sql',import.meta.url),'utf8'));
 },30000);
 afterAll(async()=>{await db?.close()});
 it('keeps pending objects private, validates uploads, commits once and prevents overwrites',async()=>{
@@ -42,8 +43,8 @@ it('keeps pending objects private, validates uploads, commits once and prevents 
 });
 it('enforces size, media types, upload paths and blocks new files',async()=>{
  await asUser(a);
- await db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,52428800,$3)',[room,'limit.bin','application/octet-stream']);
- await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,52428801,$3)',[room,'large','image/png'])).rejects.toThrow(/Invalid/);
+ await db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,314572800,$3)',[room,'limit.bin','application/octet-stream']);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,314572801,$3)',[room,'large','image/png'])).rejects.toThrow(/Invalid/);
  await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'active.svg','image/svg+xml'])).rejects.toThrow(/Invalid/);
  await expect(db.query('insert into storage.objects values($1,$2,$3)',['chat-files','forged/path',{}])).rejects.toThrow(/row-level/);
  await db.query('select public.set_user_block($1,true)',[b]);
