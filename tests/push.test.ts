@@ -1,0 +1,48 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {beforeAll,afterAll,it,expect} from 'vitest';
+let db:PGlite;
+const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',c='00000000-0000-0000-0000-000000000003';
+async function asUser(id:string){await db.exec("reset role;set role authenticated;");await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id])}
+beforeAll(async()=>{
+ db=new PGlite();
+ await db.exec(`create role anon;create role authenticated;create schema auth;
+ create table auth.users(id uuid primary key,raw_user_meta_data jsonb);
+ create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ grant usage on schema auth,public to anon,authenticated;
+ grant execute on function auth.uid() to anon,authenticated;`);
+ const migration=readFileSync(new URL('../migrations/0001_supabase_chat.sql',import.meta.url),'utf8');
+ // PGlite validates PostgreSQL schema/RLS/RPCs; not Supabase replication or Auth.
+ await db.exec(migration.replace('alter publication supabase_realtime add table public.messages;',''));
+ for(const [id,username] of [[a,'alice'],[b,'bob'],[c,'carol']])await db.query('insert into auth.users values($1,$2)',[id,JSON.stringify({username,display_name:username})]);
+},30000);
+afterAll(async()=>{await db?.close()});
+
+it('isolates push subscriptions, queues recipient devices and suppresses active/blocked rooms',async()=>{
+ await asUser(a);const room=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
+ await db.exec('reset role;create role service_role bypassrls;grant usage on schema public to service_role;');
+ await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0004_web_push.sql',import.meta.url),'utf8'));
+ const register=async(endpoint:string)=> (await db.query<{id:string}>('select public.register_push($1,$2,$3,$4) as id',[endpoint,'B'.repeat(87),'A'.repeat(22),'test'])).rows[0].id;
+ await asUser(b);const phone=await register('https://fcm.googleapis.com/fcm/send/test-phone');
+ const tablet=await register('https://fcm.googleapis.com/fcm/send/test-tablet');
+ const desktop=await register('https://fcm.googleapis.com/fcm/send/test-desktop');
+ await expect(register('https://127.0.0.1/secret')).rejects.toThrow(/지원/);
+ await expect(db.query('select * from public.push_devices')).rejects.toThrow(/permission/);
+ await expect(db.query('select * from public.push_config')).rejects.toThrow(/permission/);
+ await asUser(a);await db.query('select public.remove_push($1)',[phone]);
+ await db.query("select public.send_message($1,'push to three',gen_random_uuid())",[room]);
+ await db.exec('reset role;set role service_role;');
+ expect((await db.query('select * from public.push_jobs')).rows).toHaveLength(3);
+ const jobs=(await db.query<{jobs:any[]}>('select public.claim_push_jobs() as jobs')).rows[0].jobs;expect(jobs).toHaveLength(3);
+ expect((await db.query<{jobs:any[]}>('select public.claim_push_jobs() as jobs')).rows[0].jobs).toHaveLength(0);
+ await asUser(b);await db.query('select public.touch_push($1,$2)',[phone,room]);await db.query('select public.remove_push($1)',[tablet]);
+ await asUser(a);await db.query("select public.send_message($1,'one device',gen_random_uuid())",[room]);
+ await db.exec('reset role;set role service_role;');
+ const next=(await db.query<{jobs:any[]}>('select public.claim_push_jobs() as jobs')).rows[0].jobs;expect(next).toHaveLength(1);expect(next[0].device_id).toBe(desktop);
+ await asUser(c);await expect(db.query('select public.touch_push($1,$2)',[desktop,room])).rejects.toThrow(/denied/);
+ await expect(db.query('select public.claim_push_jobs()')).rejects.toThrow(/permission/);
+ await asUser(b);await db.query('select public.set_user_block($1,true)',[a]);
+ await asUser(a);await expect(db.query("select public.send_message($1,'blocked',gen_random_uuid())",[room])).rejects.toThrow(/차단/);
+ await db.exec('reset role;set role anon;');await expect(db.query('select public.get_push_public_key()')).rejects.toThrow(/permission/);
+});

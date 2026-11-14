@@ -84,7 +84,8 @@ main{display:flex;flex-direction:column;min-width:0}
 .app[data-layout="phone"] .rail{padding:24px 6px}
 .app[data-layout="phone"] .list{min-height:calc(100dvh - 60px);padding:32px 24px}
 .app[data-layout="phone"] main{display:none}
-.app[data-layout="phone"].detail-open .list{display:none}
+.app[data-layout="phone"].detail-open{grid-template-columns:minmax(0,1fr)}
+.app[data-layout="phone"].detail-open .rail,.app[data-layout="phone"].detail-open .list{display:none}
 .app[data-layout="phone"].detail-open main{display:flex;min-height:calc(100dvh - 60px)}
 .app[data-layout="phone"] .back{display:inline;border:0;background:none;color:var(--link);font-size:12px}
 .app[data-layout="phone"] .topbar{min-height:64px;padding:0 20px}
