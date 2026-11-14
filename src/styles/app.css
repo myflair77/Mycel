@@ -138,3 +138,5 @@ main{display:flex;flex-direction:column;min-width:0}
 .app.signed-in .chat-main{overflow:hidden}
 .chat-main .topbar,.chat-main .composer{flex-shrink:0}
 .chat-main>.notice:empty{display:none}
+
+.outgoing{opacity:.85}.outgoing small{display:block;font-size:12px;overflow-wrap:anywhere}.retry-button{margin-top:6px;padding:6px 12px;border-radius:12px;background:white;color:#005bbb;border:1px solid currentColor;font-size:13px}

@@ -24,6 +24,10 @@ it('enforces real SQL permissions, ordering and retry semantics',async()=>{
  expect(Number(saved.sequence)).toBe(1);
  const retry=(await db.query<{id:string}>("select * from public.send_message($1,'hello',$2)",[room,'10000000-0000-0000-0000-000000000001'])).rows[0];expect(retry.id).toBe(saved.id);
  await expect(db.query("select * from public.send_message($1,'changed',$2)",[room,'10000000-0000-0000-0000-000000000001'])).rejects.toThrow(/Idempotency/);
+ await db.exec('reset role;');
+ await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));
+ await asUser(a);
+ const again=(await db.query<{id:string}>("select * from public.send_message($1,'hello',$2)",[room,'10000000-0000-0000-0000-000000000001'])).rows[0];expect(again.id).toBe(saved.id);
  await asUser(b);
  expect((await db.query<{id:string}>("select public.open_direct_chat('alice') as id")).rows[0].id).toBe(room);
  expect((await db.query('select * from public.messages')).rows).toHaveLength(1);

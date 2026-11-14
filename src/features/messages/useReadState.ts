@@ -24,6 +24,7 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
     const {data,error}=await supabase!.rpc('get_chat_activity');
     if(stopped)return;
     if(error){setReadError('읽음 상태를 확인하지 못했습니다. 자동으로 다시 시도합니다.');return}
+    setReadError('');
     if(savedPush()?.userId===userId)closeReadNotifications(notifications,data as Activity[]);
     const badge=await supabase!.rpc('get_badge_snapshot');
     if(stopped)return;
