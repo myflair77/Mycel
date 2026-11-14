@@ -8,3 +8,19 @@ export function syncUnreadBadge(count:number,target:BadgeNavigator=navigator):Pr
  });
  return pending;
 }
+export async function syncServerBadge(snapshot:{userId:string;unreadCount:number;badgeAt:number}){
+ if('serviceWorker' in navigator){
+  try{
+   const reg=await navigator.serviceWorker.getRegistration('/');
+   if(reg?.active){
+    const matched=await new Promise<boolean>((resolve)=>{
+     const channel=new MessageChannel();const timer=setTimeout(()=>{channel.port1.close();resolve(false)},3000);
+     channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();resolve(e.data?.matched===true)};
+     reg.active!.postMessage({type:'BADGE_SNAPSHOT',...snapshot},[channel.port2]);
+    });
+    if(matched)return;
+   }
+  }catch{}
+ }
+ await syncUnreadBadge(snapshot.unreadCount);
+}

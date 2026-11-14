@@ -16,7 +16,9 @@ Deno.serve(async req=>{
    if(job.skip){await admin.from('push_jobs').update({status:'skipped'}).eq('id',job.id);return 'skipped'}
    const url=new URL(job.endpoint);
    if(url.protocol!=='https:'||!(/^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9.-]+\.notify\.windows\.com)$/).test(url.hostname))throw new Error('Invalid endpoint');
-   const details=webpush.generateRequestDetails({endpoint:job.endpoint,keys:{p256dh:job.p256dh,auth:job.auth}},JSON.stringify({title:'WebMessenger',body:'새 메시지가 도착했습니다.',roomId:job.room_id,userId:job.user_id,tag:'room-'+job.room_id}),{TTL:86400,urgency:'normal',vapidDetails:{subject:'https://web-messenger-jbh.myflair.chatgpt.site',publicKey:config.public_key,privateKey:config.private_key}});
+   const {data:badge,error:badgeError}=await admin.rpc('push_badge_snapshot',{p_user:job.user_id});
+   if(badgeError||!badge)throw new Error('Badge snapshot unavailable');
+   const details=webpush.generateRequestDetails({endpoint:job.endpoint,keys:{p256dh:job.p256dh,auth:job.auth}},JSON.stringify({title:'WebMessenger',body:'새 메시지가 도착했습니다.',roomId:job.room_id,userId:job.user_id,tag:'push-'+job.id,unreadCount:badge.unreadCount,badgeAt:badge.badgeAt}),{TTL:86400,urgency:'normal',vapidDetails:{subject:'https://web-messenger-jbh.myflair.chatgpt.site',publicKey:config.public_key,privateKey:config.private_key}});
    const response=await fetch(details.endpoint,{method:details.method,headers:details.headers,body:details.body,redirect:'error',signal:AbortSignal.timeout(8000)});
    if(response.status===404||response.status===410){await admin.from('push_devices').delete().eq('id',job.device_id);return 'expired'}
    if(!response.ok)throw new Error('Provider rejected');

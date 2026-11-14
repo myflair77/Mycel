@@ -1,4 +1,4 @@
-import {syncUnreadBadge} from '../notifications/badge';
+import {syncServerBadge} from '../notifications/badge';
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../../services/supabase';
 import {canMarkRead} from './readState';
@@ -16,7 +16,10 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
    try{const {data,error}=await supabase!.rpc('get_chat_activity');
     if(stopped)return;
     if(error){setReadError('읽음 상태를 확인하지 못했습니다. 자동으로 다시 시도합니다.');return}
-    void syncUnreadBadge((data as Activity[]).reduce((sum,item)=>sum+Number(item.unread_count),0));
+    const badge=await supabase!.rpc('get_badge_snapshot');
+    if(stopped)return;
+    if(!badge.error&&badge.data)await syncServerBadge(badge.data);
+    if(stopped)return;
     setActivity(Object.fromEntries((data as Activity[]).map(item=>[item.room_id,item])));
    }finally{loading=false;if(queued&&!stopped){queued=false;void refresh()}}
   }
@@ -29,8 +32,10 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
   const timer=setInterval(resume,5000);
   window.addEventListener('focus',resume);window.addEventListener('blur',resume);
   window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
+  const badgeRefresh=(event:MessageEvent)=>{if(event.data?.type==='BADGE_REFRESH')void refresh()};
+  navigator.serviceWorker?.addEventListener('message',badgeRefresh);
   void refresh();
-  return()=>{stopped=true;clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('blur',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);void supabase!.removeChannel(channel)};
+  return()=>{stopped=true;navigator.serviceWorker?.removeEventListener('message',badgeRefresh);clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('blur',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);void supabase!.removeChannel(channel)};
  },[]);
  useEffect(()=>{
   if(!canMarkRead(room,conversationVisible,document.visibilityState==='visible',document.hasFocus())||latestSequence<=0||latestSequence<=(acknowledged.current[room]??0))return;

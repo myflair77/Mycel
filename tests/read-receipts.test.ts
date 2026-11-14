@@ -6,7 +6,7 @@ const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000
 async function asUser(id:string){await db.exec("reset role;set role authenticated;");await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id])}
 beforeAll(async()=>{
  db=new PGlite();
- await db.exec(`create role anon;create role authenticated;create schema auth;
+ await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;
  create table auth.users(id uuid primary key,raw_user_meta_data jsonb);
  create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
  grant usage on schema auth,public to anon,authenticated;
@@ -52,4 +52,21 @@ it('counts incoming messages, persists monotonic own receipts and isolates rooms
  await db.exec('reset role;set role anon;');
  await expect(db.query('select public.get_chat_activity()')).rejects.toThrow(/permission/);
  await expect(db.query('select public.mark_chat_read($1,1)',[room])).rejects.toThrow(/permission/);
+});
+
+it('computes authoritative unread snapshots and restricts cross-account lookup to server',async()=>{
+ await db.exec('reset role');
+ await db.exec(readFileSync(new URL('../migrations/0006_background_badge.sql',import.meta.url),'utf8'));
+ await asUser(a);
+ const room=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
+ await db.query("select public.send_message($1,'badge test',gen_random_uuid())",[room]);
+ await asUser(b);
+ const snapshot=(await db.query<{s:any}>('select public.get_badge_snapshot() as s')).rows[0].s;
+ expect(snapshot.userId).toBe(b);expect(snapshot.unreadCount).toBe(1);expect(Number.isSafeInteger(snapshot.badgeAt)).toBe(true);
+ await expect(db.query('select public.push_badge_snapshot($1)',[a])).rejects.toThrow(/permission/);
+ await asUser(c);expect((await db.query<{s:any}>('select public.get_badge_snapshot() as s')).rows[0].s.unreadCount).toBe(0);
+ await db.exec('reset role;set role service_role');
+ expect((await db.query<{s:any}>('select public.push_badge_snapshot($1) as s',[b])).rows[0].s.unreadCount).toBe(1);
+ await db.exec('reset role;set role anon');
+ await expect(db.query('select public.get_badge_snapshot()')).rejects.toThrow(/permission/);
 });
