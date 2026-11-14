@@ -181,9 +181,17 @@ button:disabled{cursor:default}
 
 .friend-search-heading{position:relative;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .friend-search-heading h2{margin:0}
-.search-help-button{font-size:.8em;padding:5px 8px;min-height:32px;color:var(--muted)}
-.search-limit-popover{position:absolute;z-index:30;top:100%;left:0;margin-top:8px;padding:16px;width:min(360px,100%);box-sizing:border-box;background:var(--surface,#fff);color:var(--text);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0002;line-height:1.7}
-.dark .search-limit-popover{background:#20242c}
+.app .search-help-button{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid transparent;border-radius:999px;background:var(--soft);color:var(--muted);font:inherit;font-size:calc(12px * var(--font-scale,1));font-weight:500;line-height:1.2;padding:8px 12px;min-height:36px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.app .search-help-button svg{flex-shrink:0}
+.app .search-help-button:hover,.app .search-help-button[aria-expanded="true"]{color:var(--link);background:var(--paper);border-color:var(--line)}
+.app .search-help-button:focus-visible{outline:2px solid var(--link);outline-offset:3px}
+.app[data-layout="phone"] .search-help-button{min-height:44px}
+.search-limit-popover strong{display:block;font-size:calc(13px * var(--font-scale,1));margin-bottom:12px;color:var(--ink)}
+.search-limit-popover dl{margin:0;display:grid;gap:8px;font-size:calc(13px * var(--font-scale,1))}
+.search-limit-popover dl div{display:flex;justify-content:space-between;gap:16px}.search-limit-popover dt{color:var(--muted)}.search-limit-popover dd{margin:0;font-weight:600}
+.search-limit-popover p{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:calc(12px * var(--font-scale,1));color:var(--muted);line-height:1.65}
+.search-limit-popover{position:absolute;z-index:30;top:100%;left:0;margin-top:8px;padding:16px;width:min(360px,100%);box-sizing:border-box;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0002;line-height:1.7}
+
 
 .profile-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
 .profile-setting-row div{min-width:0}.profile-setting-row small,.profile-setting-row strong{display:block;overflow-wrap:anywhere}
