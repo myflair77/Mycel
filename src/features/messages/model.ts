@@ -1,4 +1,4 @@
-export interface ChatMessage {id:string;room_id:string;sender_id:string;body:string;sequence:number;created_at:string;idempotency_key?:string}
+export interface ChatMessage {id:string;room_id:string;sender_id:string;body:string;sequence:number;created_at:string;idempotency_key?:string;attachment_id?:string|null}
 export function mergeMessages(previous:ChatMessage[],incoming:ChatMessage[]):ChatMessage[]{
  const byId=new Map(previous.map(message=>[message.id,message]));
  for(const message of incoming) byId.set(message.id,message);

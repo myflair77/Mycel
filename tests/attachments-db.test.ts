@@ -1,0 +1,46 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {beforeAll,afterAll,it,expect} from 'vitest';
+let db:PGlite;
+const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',c='00000000-0000-0000-0000-000000000003';
+const id='10000000-0000-0000-0000-000000000001';let room:string;
+async function asUser(id:string){await db.exec('reset role;set role authenticated;');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id])}
+beforeAll(async()=>{
+ db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create schema storage;
+ create table auth.users(id uuid primary key,raw_user_meta_data jsonb);
+ create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ grant usage on schema auth,public,storage to anon,authenticated;
+ grant execute on function auth.uid() to anon,authenticated;
+ create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+ create table storage.objects(bucket_id text,name text,metadata jsonb,unique(bucket_id,name));
+ alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to authenticated;`);
+ await db.exec(readFileSync(new URL('../migrations/0001_supabase_chat.sql',import.meta.url),'utf8').replace('alter publication supabase_realtime add table public.messages;',''));
+ for(const [id,username] of [[a,'alice'],[b,'bob'],[c,'carol']])await db.query('insert into auth.users values($1,$2)',[id,JSON.stringify({username,display_name:username})]);
+ await asUser(a);room=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
+ await db.exec('reset role');await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0007_attachments.sql',import.meta.url),'utf8'));
+},30000);
+afterAll(async()=>{await db?.close()});
+it('keeps pending objects private, validates uploads, commits once and prevents overwrites',async()=>{
+ await asUser(a);const prepare=()=>db.query('select * from public.prepare_attachment($1,$2,$3,$4,$5)',[room,id,'사진.png',8,'image/png']);
+ await prepare();await prepare();expect((await db.query('select * from public.chat_attachments')).rows).toHaveLength(1);
+ await expect(db.query('select public.send_attachment($1)',[id])).rejects.toThrow(/업로드/);
+ await db.query('insert into storage.objects values($1,$2,$3)',['chat-files',a+'/'+id,{size:8,mimetype:'image/png'}]);
+ await asUser(b);expect((await db.query('select * from storage.objects')).rows).toHaveLength(0);expect((await db.query('select * from public.chat_attachments')).rows).toHaveLength(0);
+ await expect(db.query('select public.send_attachment($1)',[id])).rejects.toThrow(/denied/);
+ await asUser(a);const send=()=>db.query<{id:string}>('select * from public.send_attachment($1)',[id]);const first=(await send()).rows[0];expect((await send()).rows[0].id).toBe(first.id);
+ expect((await db.query('select * from public.messages')).rows).toHaveLength(1);
+ expect((await db.query("update storage.objects set metadata='{}' returning *")).rows).toHaveLength(0);
+ expect((await db.query('delete from storage.objects returning *')).rows).toHaveLength(0);
+ await asUser(b);expect((await db.query('select * from storage.objects')).rows).toHaveLength(1);expect((await db.query('select * from public.chat_attachments')).rows).toHaveLength(1);
+ await asUser(c);expect((await db.query('select * from storage.objects')).rows).toHaveLength(0);expect((await db.query('select * from public.chat_attachments')).rows).toHaveLength(0);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'bad','image/png'])).rejects.toThrow(/denied/);
+});
+it('enforces size, media types, upload paths and blocks new files',async()=>{
+ await asUser(a);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,10485761,$3)',[room,'large','image/png'])).rejects.toThrow(/Invalid/);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'active.svg','image/svg+xml'])).rejects.toThrow(/Invalid/);
+ await expect(db.query('insert into storage.objects values($1,$2,$3)',['chat-files','forged/path',{}])).rejects.toThrow(/row-level/);
+ await db.query('select public.set_user_block($1,true)',[b]);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'blocked','image/png'])).rejects.toThrow(/차단/);
+ expect((await db.query('select * from storage.objects')).rows).toHaveLength(1);
+});

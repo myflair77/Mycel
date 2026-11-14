@@ -1,5 +1,6 @@
+import type {Attachment} from './attachments';
 import type {ChatMessage} from './model';
-export type Outgoing={key:string;room:string;body:string;createdAt:string;status:'sending'|'failed';error:string};
+export type Outgoing={key:string;room:string;body:string;createdAt:string;status:'sending'|'failed';error:string;attachment?:Attachment};
 export class Outbox {
  items:Outgoing[]=[];
  private active=new Set<string>();
@@ -10,7 +11,7 @@ export class Outbox {
  }
  private get storageKey(){return 'messenger-outbox:'+this.userId}
  private emit(){try{this.storage.setItem(this.storageKey,JSON.stringify(this.items))}catch{}this.changed()}
- enqueue(room:string,body:string){const item:Outgoing={key:crypto.randomUUID(),room,body,createdAt:new Date().toISOString(),status:'sending',error:''};this.items=[...this.items,item];this.emit();return item}
+ enqueue(room:string,body:string,attachment?:Attachment){const item:Outgoing={key:attachment?.id??crypto.randomUUID(),room,body,attachment,createdAt:new Date().toISOString(),status:'sending',error:''};this.items=[...this.items,item];this.emit();return item}
  reconcile(rows:ChatMessage[]){const keys=new Set(rows.filter(x=>x.sender_id===this.userId).map(x=>x.idempotency_key));const remaining=this.items.filter(x=>!keys.has(x.key));if(remaining.length!==this.items.length){this.items=remaining;this.emit()}}
  async send(key:string,deliver:(item:Outgoing)=>Promise<ChatMessage>){
   const item=this.items.find(x=>x.key===key);if(!item||this.active.has(key))return;

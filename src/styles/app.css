@@ -140,3 +140,5 @@ main{display:flex;flex-direction:column;min-width:0}
 .chat-main>.notice:empty{display:none}
 
 .outgoing{opacity:.85}.outgoing small{display:block;font-size:12px;overflow-wrap:anywhere}.retry-button{margin-top:6px;padding:6px 12px;border-radius:12px;background:white;color:#005bbb;border:1px solid currentColor;font-size:13px}
+
+.attachment-toolbar{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-shrink:0;flex-wrap:wrap;font-size:12px}.attachment-toolbar span{overflow-wrap:anywhere;min-width:0}.attachment-toolbar button,.attachment-card button{font-size:13px;padding:7px 10px;border:1px solid #ccd1da;border-radius:10px;background:#fff;color:#005bbb}.attachment-card{display:flex;flex-direction:column;gap:8px;max-width:280px;min-height:70px;overflow-wrap:anywhere}.attachment-card img{display:block;width:100%;max-height:280px;object-fit:contain;border-radius:10px}.attachment-card strong{font-size:14px}.attachment-card small{font-size:12px}.reselect-file{display:block;font-size:12px;margin-top:8px}.reselect-file input{max-width:100%;font-size:12px}
