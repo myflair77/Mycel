@@ -10,9 +10,9 @@ it('authorizes, verifies chunks, commits once, downloads exact bytes and expires
  const call=(suffix='',method='GET',body:any=null,headers:any={})=>fileApi(new Request('https://test.local/api/files/'+id+suffix,{method,headers:{Authorization:'Bearer valid',...headers},body}),env);
  expect((await call('','GET',null,{Authorization:'Bearer other'})).status).toBe(404);
  expect((await call('/start','POST',null,{Origin:'https://evil.local'})).status).toBe(403);
- const start=await(await call('/start','POST')).json(),h={'X-Upload-Ticket':start.ticket};
+ const start=await(await call('/start','POST')).json();let h={'X-Upload-Ticket':start.ticket};
  const first=new Uint8Array(CHUNK).fill(7),last=new Uint8Array(13).fill(9);
- await call('/part?index=0','PUT',first,h);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,{'X-Upload-Ticket':'bad'})).status).toBe(403);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,h)).status).toBe(200);expect(objects.size).toBe(0);
+ await call('/part?index=0','PUT',first,h);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,{'X-Upload-Ticket':'bad'})).status).toBe(403);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,h)).status).toBe(200);expect(objects.size).toBe(1);expect((await call('/part?index=0','PUT',first,h)).status).toBe(409);h={'X-Upload-Ticket':(await(await call('/start','POST')).json()).ticket};
  const p1=await(await call('/part?index=0','PUT',first,h)).json(),p2=await(await call('/part?index=1','PUT',last,h)).json();
  expect((await call('/part?index=1','PUT',new Uint8Array(14),h)).status).toBe(413);
  expect((await call('/part?index=1','PUT',new Uint8Array(13).fill(1),h)).status).toBe(409);

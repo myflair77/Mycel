@@ -24,10 +24,12 @@ export async function fileApi(request,env){try{
   return new Response(stream,{headers:{'Content-Type':'application/octet-stream','Content-Length':String(a.size),'Content-Disposition':"attachment; filename*=UTF-8''"+encodeURIComponent(a.name),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  }
  if(Number(a.size)>MAX)fail(413,'파일은 최대 300MB까지 보낼 수 있습니다.');await writable(request,a);
- if(action==='start'&&request.method==='POST'){const t={id:a.id,size:Number(a.size),prefix:'files/'+a.id+'/'+a.id,expires:Date.now()+86400000};const payload=btoa(JSON.stringify(t));return json({ticket:payload+'.'+await mac(env.R2_RECEIPT_KEY,payload),chunkSize:CHUNK})}
+ if(action==='start'&&request.method==='POST'){const root='files/'+a.id+'/'+a.id;const cancelled=await env.BUCKET.head(root+'/terminal');const t={id:a.id,size:Number(a.size),prefix:cancelled?.customMetadata?.mode==='cancel'?('files/'+a.id+'/'+crypto.randomUUID()):root,expires:Date.now()+86400000};const payload=btoa(JSON.stringify(t));return json({ticket:payload+'.'+await mac(env.R2_RECEIPT_KEY,payload),chunkSize:CHUNK})}
  const t=await ticket(env,request,a);
- if(action==='cancel'&&request.method==='POST'){if(await env.BUCKET.head(t.prefix+'/manifest.json'))fail(409,'전송 확정 중이거나 완료되었습니다. 결과를 확인해 주세요.');const keys=Array.from({length:Math.ceil(t.size/CHUNK)},(_,i)=>t.prefix+'/'+i);await env.BUCKET.delete(keys);return json({cancelled:true})}
+ const claim=async(mode)=>{await env.BUCKET.put(t.prefix+'/terminal',mode,{onlyIf:{etagDoesNotMatch:'*'},customMetadata:{mode}});const state=await env.BUCKET.head(t.prefix+'/terminal');if(state?.customMetadata?.mode!==mode)fail(409,'취소 또는 전송 확정이 이미 진행되었습니다. 결과를 확인해 주세요.')};
+ if(action==='cancel'&&request.method==='POST'){if(await env.BUCKET.head(t.prefix+'/manifest.json'))fail(409,'전송 확정 중이거나 완료되었습니다. 결과를 확인해 주세요.');await claim('cancel');const keys=Array.from({length:Math.ceil(t.size/CHUNK)},(_,i)=>t.prefix+'/'+i);await env.BUCKET.delete(keys);return json({cancelled:true})}
  if(action==='part'&&request.method==='PUT'){
+  if((await env.BUCKET.head(t.prefix+'/terminal'))?.customMetadata?.mode==='cancel')fail(409,'취소된 업로드입니다. 다시 전송해 주세요.');
   const index=Number(u.searchParams.get('index')),count=Math.ceil(t.size/CHUNK),expected=Math.min(CHUNK,t.size-index*CHUNK);
   if(!Number.isInteger(index)||index<0||index>=count)fail(400,'Invalid part');
   const reader=request.body?.getReader();if(!reader)fail(400,'Empty body');let total=0,items=[];while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>expected){await reader.cancel();fail(413,'Part too large')}items.push(value)}if(total!==expected)fail(400,'Incomplete part');
@@ -38,7 +40,7 @@ export async function fileApi(request,env){try{
   const data=await smallJson(request),parts=data.parts;if(!Array.isArray(parts)||parts.length!==Math.ceil(t.size/CHUNK))fail(400,'Invalid manifest');
   const listed=await env.BUCKET.list({prefix:t.prefix+'/',limit:1000,include:['customMetadata']});const stored=new Map(listed.objects.map(o=>[o.key,o]));
   for(let i=0;i<parts.length;i++){const p=parts[i];if(p.key!==t.prefix+'/'+i||!(/^[a-f0-9]{64}$/).test(p.hash)||p.size!==Math.min(CHUNK,t.size-i*CHUNK))fail(400,'Invalid part');const h=stored.get(p.key);if(!h||h.size!==p.size||h.customMetadata?.sha256!==p.hash)fail(400,'Missing part')}
-  const key=t.prefix+'/manifest.json',body=JSON.stringify({size:t.size,parts,createdAt:new Date().toISOString()});
+  await claim('finish');const key=t.prefix+'/manifest.json',body=JSON.stringify({size:t.size,parts,createdAt:new Date().toISOString()});
   const existing=await env.BUCKET.get(key);if(existing){const m=await existing.json();if(JSON.stringify(m.parts)!==JSON.stringify(parts))fail(409,'Upload conflict')}else{await env.BUCKET.put(key,body,{onlyIf:{etagDoesNotMatch:'*'}});const saved=await(await env.BUCKET.get(key)).json();if(JSON.stringify(saved.parts)!==JSON.stringify(parts))fail(409,'Upload conflict')}
   const receipt=await mac(env.R2_RECEIPT_KEY,a.id+':'+a.size+':'+key);const r=await sb(request,'/rest/v1/rpc/send_r2_attachment',{method:'POST',body:JSON.stringify({p_id:a.id,p_key:key,p_receipt:receipt})});if(!r.ok)fail(409,'전송을 완료하지 못했습니다. 재전송해 주세요.');return json(await r.json());
  }
@@ -50,7 +52,7 @@ async function cleanup(request,env){
  const rpc=async(name,body)=>{const r=await fetch(SB+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('Retention RPC failed');return r};
  try{const rows=await(await rpc('r2_cleanup_list',{p_mac:await mac(env.R2_RECEIPT_KEY,'retention-scan')})).json();let deleted=0;
  for(const a of rows){if(!new RegExp('^files/'+a.id+'/[a-f0-9-]{36}/manifest.json$').test(a.r2_key))continue;
- const prefix=a.r2_key.slice(0,-'/manifest.json'.length),keys=Array.from({length:Math.ceil(Number(a.size)/CHUNK)},(_,i)=>prefix+'/'+i);keys.push(a.r2_key);await env.BUCKET.delete(keys);
+ const prefix=a.r2_key.slice(0,-'/manifest.json'.length),keys=Array.from({length:Math.ceil(Number(a.size)/CHUNK)},(_,i)=>prefix+'/'+i);keys.push(a.r2_key,prefix+'/terminal');await env.BUCKET.delete(keys);
  await rpc('r2_cleanup_done',{p_id:a.id,p_mac:await mac(env.R2_RECEIPT_KEY,'deleted:'+a.id)});deleted++}
  return json({deleted,pendingMore:rows.length===50});}catch{return json({error:'Retention cleanup failed; will retry'},503)}
 }
