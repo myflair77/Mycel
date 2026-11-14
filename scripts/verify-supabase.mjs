@@ -23,6 +23,14 @@ try{
   const ub=must(await b.auth.signInWithPassword(credentials('TEST_B'))).user;
   assert.notEqual(ua.id,ub.id);assert(ua.email_confirmed_at&&ub.email_confirmed_at,'Both users must have confirmed email');
   console.log('PASS: independent confirmed user logins');
+  const social=must(await a.rpc('list_social'));
+  if(!social.relations.some(person=>person.id===ub.id&&person.status==='accepted')){
+   const request=must(await a.rpc('request_friend',{p_peer:ub.id}));
+   if(request.error)throw new Error(request.error);
+   const response=must(await b.rpc('respond_friend',{p_peer:ua.id,p_accept:true}));
+   if(response.error)throw new Error(response.error);
+  }
+  console.log('PASS: accepted friendship before opening a new conversation');
   const room=must(await a.rpc('open_direct_chat',{p_username:process.env.TEST_B_USERNAME}));
   assert.equal(room,must(await b.rpc('open_direct_chat',{p_username:process.env.TEST_A_USERNAME})));
   const key=randomUUID(),body='integration-'+key;

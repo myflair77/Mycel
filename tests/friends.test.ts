@@ -1,0 +1,67 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {beforeAll,afterAll,it,expect} from 'vitest';
+let db:PGlite;
+const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',c='00000000-0000-0000-0000-000000000003';
+async function asUser(id:string){await db.exec("reset role;set role authenticated;");await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id])}
+beforeAll(async()=>{
+ db=new PGlite();
+ await db.exec(`create role anon;create role authenticated;create schema auth;
+ create table auth.users(id uuid primary key,raw_user_meta_data jsonb);
+ create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ grant usage on schema auth,public to anon,authenticated;
+ grant execute on function auth.uid() to anon,authenticated;`);
+ const migration=readFileSync(new URL('../migrations/0001_supabase_chat.sql',import.meta.url),'utf8');
+ // PGlite validates PostgreSQL schema/RLS/RPCs; not Supabase replication or Auth.
+ await db.exec(migration.replace('alter publication supabase_realtime add table public.messages;',''));
+ for(const [id,username] of [[a,'alice'],[b,'bob'],[c,'carol']])await db.query('insert into auth.users values($1,$2)',[id,JSON.stringify({username,display_name:username})]);
+},30000);
+afterAll(async()=>{await db?.close()});
+
+it('preserves history and enforces friendship, blocking, privacy and failed-attempt quotas',async()=>{
+ await asUser(a);
+ const legacy=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
+ await db.query("select public.send_message($1,'preserved',gen_random_uuid())",[legacy]);
+ await db.exec('reset role;');
+ await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));
+ const rpc=async(sql:string,args:unknown[]=[]) => (await db.query<{v:any}>(sql,args)).rows[0].v;
+ await asUser(a);
+ expect(await rpc("select public.open_direct_chat('bob') as v")).toBe(legacy);
+ await expect(db.query("select public.open_direct_chat('carol')")).rejects.toThrow(/친구/);
+ expect((await rpc("select public.search_friend('carol') as v")).user.username).toBe('carol');
+ expect((await rpc('select public.request_friend($1) as v',[c])).ok).toBe(true);
+ expect((await rpc('select public.respond_friend($1,true) as v',[c])).error).toBeTruthy();
+ await asUser(b);
+ expect((await rpc('select public.list_social() as v')).relations).toHaveLength(0);
+ await expect(db.query('select * from public.friendships')).rejects.toThrow(/permission/);
+ await expect(db.query("select public.social_quota('search',999,1)")).rejects.toThrow(/permission/);
+ await asUser(c);
+ expect((await rpc('select public.list_social() as v')).relations[0].incoming).toBe(true);
+ expect((await rpc('select public.respond_friend($1,false) as v',[a])).ok).toBe(true);
+ await asUser(a);
+ expect((await rpc('select public.request_friend($1) as v',[c])).error).toMatch(/24시간/);
+ await db.exec("reset role;update public.friendships set updated_at=now()-interval '25 hours';");
+ await asUser(a);await rpc('select public.request_friend($1) as v',[c]);
+ await asUser(c);expect((await rpc('select public.respond_friend($1,true) as v',[a])).ok).toBe(true);
+ const newRoom=await rpc("select public.open_direct_chat('alice') as v");
+ await asUser(a);expect(await rpc("select public.open_direct_chat('carol') as v")).toBe(newRoom);
+ await rpc('select public.set_user_block($1,true) as v',[b]);
+ await expect(db.query("select public.send_message($1,'blocked',gen_random_uuid())",[legacy])).rejects.toThrow(/차단/);
+ await asUser(b);
+ expect((await db.query('select * from public.messages')).rows).toHaveLength(1);
+ await expect(db.query("select public.send_message($1,'blocked',gen_random_uuid())",[legacy])).rejects.toThrow(/차단/);
+ expect((await rpc('select public.request_friend($1) as v',[a])).error).toBeTruthy();
+ expect((await rpc("select public.search_friend('alice') as v")).error).toBeTruthy();
+ await rpc('select public.set_user_block($1,false) as v',[a]);
+ await expect(db.query("select public.send_message($1,'still blocked',gen_random_uuid())",[legacy])).rejects.toThrow(/차단/);
+ await asUser(a);await rpc('select public.set_user_block($1,false) as v',[b]);
+ await asUser(b);await db.query("select public.send_message($1,'unblocked',gen_random_uuid())",[legacy]);
+ await asUser(c);
+ for(let i=0;i<20;i++)expect((await rpc("select public.search_friend('does_not_exist') as v")).error).toMatch(/찾을/);
+ expect((await rpc("select public.search_friend('does_not_exist') as v")).error).toMatch(/20회/);
+ for(let i=0;i<10;i++)expect((await rpc('select public.request_friend($1) as v',[c])).error).toBeTruthy();
+ expect((await rpc('select public.request_friend($1) as v',[c])).error).toMatch(/10회/);
+ await db.exec('reset role;set role anon;');
+ await expect(db.query("select public.search_friend('alice')")).rejects.toThrow(/permission/);
+ await expect(db.query('select public.list_social()')).rejects.toThrow(/permission/);
+});
