@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState,type FormEvent} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState,type FormEvent} from 'react';
 import type {Session} from '@supabase/supabase-js';
 import {supabase} from '../../services/supabase';
 import {FriendsPanel} from '../friends/FriendsPanel';
@@ -9,6 +9,19 @@ export function ChatWorkspace({session,onOpen,onBack}:{session:Session;onOpen:()
  const [error,setError]=useState(''),[connection,setConnection]=useState('대화방을 선택하세요'),[body,setBody]=useState(''),[busy,setBusy]=useState(false);
  const pending=useRef<{room:string;body:string;key:string}|null>(null);const activeRoom=useRef(room);activeRoom.current=room;
  const sequence=useRef(0);
+ const messageList=useRef<HTMLDivElement>(null);
+ useLayoutEffect(()=>{
+  const list=messageList.current;
+  if(list)list.scrollTop=list.scrollHeight;
+ },[room,messages]);
+ useEffect(()=>{
+  const list=messageList.current;if(!list)return;
+  // Also show the latest message when a phone conversation becomes visible
+  // or the keyboard changes the available height.
+  const observer=new ResizeObserver(()=>{list.scrollTop=list.scrollHeight});
+  observer.observe(list);
+  return()=>observer.disconnect();
+ },[]);
  const refreshRooms=async()=>{
   const {data,error}=await supabase!.from('chat_rooms').select('id,direct_key').order('created_at',{ascending:false});
   if(error){setError(error.message);return}
@@ -65,6 +78,6 @@ export function ChatWorkspace({session,onOpen,onBack}:{session:Session;onOpen:()
  }
  return <><aside className="list chat-list"><h1>대화</h1><p className="muted">@{session.user.user_metadata.username}</p><FriendsPanel onChat={openChat}/><p className="notice" role="alert">{error}</p><h2>대화 목록</h2><div className="room-list">{rooms.map(item=><button key={item.id} aria-current={room===item.id?'page':undefined} onClick={()=>{setRoom(item.id);onOpen()}}>{item.peer?.display_name??'대화 상대'}<small>{item.peer?'@'+item.peer.username:'프로필 확인 중'}</small></button>)}</div><button className="text-button" onClick={()=>void refreshRooms()}>목록 새로고침</button><button className="text-button" onClick={async()=>{const {error}=await supabase!.auth.signOut();if(error)setError(error.message)}}>로그아웃</button></aside>
  <main className="chat-main"><header className="topbar"><button className="back" onClick={onBack}>← 목록</button><span>{rooms.find(item=>item.id===room)?.peer?.display_name??'1:1 대화'}</span><span className="muted" role="status">{connection}</span>{room&&<button className="text-button" onClick={async()=>{const peer=rooms.find(item=>item.id===room)?.peer;if(!peer)return;const {data,error}=await supabase!.rpc('set_user_block',{p_peer:peer.id,p_block:true});setError(error?.message??data?.error??'차단했습니다. 이전 대화는 보존되고 새 메시지는 양쪽 모두 전송할 수 없습니다.')}}>상대 차단</button>}</header>
- <div className="message-list" aria-label="대화 메시지" aria-live="polite">{!room&&<p>대화방을 선택하거나 사용자 ID로 대화를 시작하세요.</p>}{messages.map(message=><article key={message.id} className={message.sender_id===session.user.id?'message mine':'message'}><p>{message.body}</p><time dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</time></article>)}</div>
+ <div ref={messageList} className="message-list" aria-label="대화 메시지" aria-live="polite">{!room&&<p>대화방을 선택하거나 사용자 ID로 대화를 시작하세요.</p>}{messages.map(message=><article key={message.id} className={message.sender_id===session.user.id?'message mine':'message'}><p>{message.body}</p><time dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</time></article>)}</div>
  <p className="notice" role="alert">{error}</p><form className="composer" onSubmit={send}><label className="sr-only" htmlFor="message">메시지</label><textarea id="message" value={body} onChange={e=>setBody(e.target.value)} maxLength={4000} disabled={!room||busy} placeholder="메시지를 입력하세요" rows={2}/><button className="primary-button" disabled={!room||!body.trim()||busy}>{busy?'저장 중…':'전송'}</button></form></main></>;
 }
