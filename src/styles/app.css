@@ -113,3 +113,21 @@ main{display:flex;flex-direction:column;min-width:0}
 .auth-actions{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
 
 .friends-panel h2,.chat-list h2{font-size:17px;margin:24px 0 16px}.friends-panel details{border-top:1px solid var(--line);padding:12px 0}.friends-panel summary{cursor:pointer;font-size:13px;min-height:32px}.person-card{padding:12px 0;overflow-wrap:anywhere}.person-card strong{font-size:14px}.person-card small{display:block;color:var(--muted);font-size:12px;margin:6px 0}.friend-actions{display:flex;gap:6px;flex-wrap:wrap}.person-card button{border:1px solid var(--line);background:var(--paper);color:var(--link);border-radius:16px;padding:8px 12px;font-size:12px}.friends-panel .notice{padding:0}.chat-list{max-height:calc(100dvh - 60px);overflow-y:auto}.chat-main .topbar{flex-wrap:wrap;gap:8px;padding:12px 20px}.chat-main .topbar .text-button{margin:0}
+
+.unread-badge{display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:var(--color-pricing-blue);color:white;font-size:11px;min-width:22px;text-align:center}.read-receipt{display:block;font-size:11px;margin-top:6px}
+/* Compact typography for adaptive phone/tablet layouts; preserve touch targets. */
+.app:is([data-layout="phone"],[data-layout="tablet"]){font-size:14px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .list h1{font-size:18px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .chat-list h2{font-size:16px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .auth-panel h2{font-size:26px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .auth-panel>p{font-size:13px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .primary-button{font-size:13px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) label{font-size:12px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .message p{font-size:14px;line-height:1.5}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .message{padding:12px 16px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .message-list{gap:12px;padding:16px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .person-card strong{font-size:13px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .room-list button{font-size:14px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .notice{font-size:12px}
+.app:is([data-layout="phone"],[data-layout="tablet"]) .empty-list h2{font-size:20px}
+.app[data-layout="desktop"] .message p{font-size:14px;line-height:1.5}

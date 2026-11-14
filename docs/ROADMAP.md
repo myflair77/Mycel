@@ -26,3 +26,6 @@ Dot 오케스트레이터, 다중 Codex, Gemini/JEV API 어댑터. AI_ORCHESTRAT
 - 무료 프로젝트 xpbfgppttnqmpevpumhd SQL Editor에서 초기 스키마 적용 성공 응답을 확인했다.
 - profiles/chat_rooms/chat_members/messages, RLS, 회원 프로필 트리거, 채팅 RPC, messages Realtime publication을 적용했다.
 - 원격 설정 후속 검증과 두 실사용 계정의 회원가입/실시간 채팅 검증은 아직 완료하지 않았다.
+
+## 데스크톱 별도 대화창 (읽음 기능 후속)
+대화방별 새 창 열기, 활성 창만 읽음 처리, 창 사이 메시지/읽음/로그아웃 동기화. 모바일은 단일 화면 전환 유지.
