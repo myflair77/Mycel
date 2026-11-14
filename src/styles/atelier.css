@@ -245,3 +245,16 @@ button:disabled{cursor:default}
 @media(max-width:540px){.app.invite-mode .invite-page{padding:14px 10px}.invite-welcome{padding:20px}}
 
 .self-chat-note{margin:0;padding:10px 18px;color:var(--muted);font-size:.8em;border-bottom:1px solid var(--line);line-height:1.6}.self-chat-entry{width:100%;text-align:left}
+
+/* Display preferences live in Settings; the workspace has no toolbar row. */
+.app,.app.signed-in{grid-template-rows:minmax(0,1fr)}
+.app.signed-in .rail,.app.signed-in .chat-list,.app.signed-in .chat-main,.app.signed-in .list-resizer{grid-row:1}
+.app.signed-in[data-layout="phone"]{grid-template-rows:minmax(0,1fr) auto}
+.app.signed-in[data-layout="phone"] .rail{grid-row:2}
+.app.signed-in[data-layout="phone"] .chat-list,.app.signed-in[data-layout="phone"] .chat-main{grid-row:1}
+.app.signed-in[data-layout="phone"].detail-open{grid-template-rows:minmax(0,1fr)}
+.settings-display-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:16px 0}
+.app .settings-display-row .font-size-control{margin:0;height:auto;min-height:44px}
+.app .settings-display-row .font-size-control>span{display:none}
+.app .settings-display-row .font-size-control button{min-width:44px;min-height:44px}
+.settings-display-row select{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit}
