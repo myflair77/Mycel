@@ -12,7 +12,7 @@ async function writable(request,a){const r=await sb(request,'/rest/v1/rpc/prepar
 async function ticket(env,request,a){const raw=request.headers.get('X-Upload-Ticket')||'';if(raw.length>1500)fail(400,'Invalid ticket');const dot=raw.lastIndexOf('.'),payload=raw.slice(0,dot),sig=raw.slice(dot+1);if(!/^[a-f0-9]{64}$/.test(sig)||await mac(env.R2_RECEIPT_KEY,payload)!==sig)fail(403,'Invalid ticket');let t;try{t=JSON.parse(atob(payload))}catch{fail(400,'Invalid ticket')}if(t.id!==a.id||t.size!==Number(a.size)||t.expires<Date.now()||!/^files\/[a-f0-9-]{36}\/[a-f0-9-]{36}$/.test(t.prefix))fail(403,'업로드가 만료되었습니다. 다시 전송해 주세요.');return t}
 async function smallJson(r){const text=await r.text();if(text.length>16000)fail(413,'Request too large');try{return JSON.parse(text)}catch{fail(400,'Invalid JSON')}}
 export async function fileApi(request,env){try{
- const u=new URL(request.url);if(u.pathname==='/api/retention/run')return cleanup(request,env);const match=/^\/api\/files\/([a-f0-9-]{36})(?:\/(start|part|finish))?$/.exec(u.pathname);if(!match)return json({error:'Not found'},404);
+ const u=new URL(request.url);if(u.pathname==='/api/retention/run')return cleanup(request,env);const match=/^\/api\/files\/([a-f0-9-]{36})(?:\/(start|part|finish|cancel))?$/.exec(u.pathname);if(!match)return json({error:'Not found'},404);
  if(request.headers.get('Origin')&&request.headers.get('Origin')!==u.origin)fail(403,'Origin denied');
  if(!env.BUCKET||!env.R2_RECEIPT_KEY)fail(503,'파일 저장소를 준비하고 있습니다.');
  const a=await metadata(request,match[1]),action=match[2];
@@ -26,6 +26,7 @@ export async function fileApi(request,env){try{
  if(Number(a.size)>MAX)fail(413,'파일은 최대 300MB까지 보낼 수 있습니다.');await writable(request,a);
  if(action==='start'&&request.method==='POST'){const t={id:a.id,size:Number(a.size),prefix:'files/'+a.id+'/'+a.id,expires:Date.now()+86400000};const payload=btoa(JSON.stringify(t));return json({ticket:payload+'.'+await mac(env.R2_RECEIPT_KEY,payload),chunkSize:CHUNK})}
  const t=await ticket(env,request,a);
+ if(action==='cancel'&&request.method==='POST'){if(await env.BUCKET.head(t.prefix+'/manifest.json'))fail(409,'전송 확정 중이거나 완료되었습니다. 결과를 확인해 주세요.');const keys=Array.from({length:Math.ceil(t.size/CHUNK)},(_,i)=>t.prefix+'/'+i);await env.BUCKET.delete(keys);return json({cancelled:true})}
  if(action==='part'&&request.method==='PUT'){
   const index=Number(u.searchParams.get('index')),count=Math.ceil(t.size/CHUNK),expected=Math.min(CHUNK,t.size-index*CHUNK);
   if(!Number.isInteger(index)||index<0||index>=count)fail(400,'Invalid part');

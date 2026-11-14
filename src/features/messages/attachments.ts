@@ -20,10 +20,10 @@ export async function bounded<T>(request:Promise<T>,milliseconds=30000):Promise<
  try{return await Promise.race([request,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('응답 시간이 초과되었습니다. 연결 확인 후 재전송해 주세요.')),milliseconds)})])}finally{clearTimeout(timer)}
 }
 // The attachment UUID is also the immutable object name and message retry key.
-export async function deliverAttachment(a:Attachment,file:File|undefined,stage:(text:string)=>void):Promise<ChatMessage>{
+export async function deliverAttachment(a:Attachment,file:File|undefined,stage:(text:string)=>void,cancelled:()=>boolean=()=>false):Promise<ChatMessage>{
  if(!navigator.onLine)throw Error('인터넷 연결 후 재전송해 주세요.');
  if(file){validateFile(file);if(file.size!==a.size||await fileMime(file)!==a.mime)throw Error('처음 선택한 원본 파일을 다시 선택해 주세요.')}
- return uploadR2(a,file,stage);
+ return uploadR2(a,file,stage,cancelled);
 }
 export async function prepareDownload(data:Blob,a:Pick<Attachment,'name'|'size'>){
  if(data.size!==Number(a.size))throw Error('파일 크기가 일치하지 않습니다. 다시 다운로드해 주세요.');

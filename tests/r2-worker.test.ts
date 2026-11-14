@@ -12,11 +12,12 @@ it('authorizes, verifies chunks, commits once, downloads exact bytes and expires
  expect((await call('/start','POST',null,{Origin:'https://evil.local'})).status).toBe(403);
  const start=await(await call('/start','POST')).json(),h={'X-Upload-Ticket':start.ticket};
  const first=new Uint8Array(CHUNK).fill(7),last=new Uint8Array(13).fill(9);
+ await call('/part?index=0','PUT',first,h);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,{'X-Upload-Ticket':'bad'})).status).toBe(403);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,h)).status).toBe(200);expect(objects.size).toBe(0);
  const p1=await(await call('/part?index=0','PUT',first,h)).json(),p2=await(await call('/part?index=1','PUT',last,h)).json();
  expect((await call('/part?index=1','PUT',new Uint8Array(14),h)).status).toBe(413);
  expect((await call('/part?index=1','PUT',new Uint8Array(13).fill(1),h)).status).toBe(409);
  expect((await call('/finish','POST',JSON.stringify({parts:[p1]}),h)).status).toBe(400);
- expect((await call('/finish','POST',JSON.stringify({parts:[p1,p2]}),h)).status).toBe(200);expect(committed).toBe(true);
+ expect((await call('/finish','POST',JSON.stringify({parts:[p1,p2]}),h)).status).toBe(200);expect(committed).toBe(true);const count=objects.size;expect((await call('/cancel','POST',null,h)).status).toBe(409);expect(objects.size).toBe(count);
  const bytes=new Uint8Array(await(await call()).arrayBuffer());expect(bytes.length).toBe(a.size);expect(bytes[0]).toBe(7);expect(bytes.at(-1)).toBe(9);
  a.expires_at=new Date(Date.now()-1).toISOString();expect((await call()).status).toBe(410);
 });
