@@ -1,9 +1,11 @@
+import {savedPush} from '../notifications/push';
+import {closeReadNotifications} from '../notifications/readNotifications';
 import {syncServerBadge} from '../notifications/badge';
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../../services/supabase';
 import {canMarkRead} from './readState';
 type Activity={room_id:string;unread_count:number;peer_read_sequence:number};
-export function useReadState(room:string,latestSequence:number,conversationVisible:boolean){
+export function useReadState(room:string,latestSequence:number,conversationVisible:boolean,userId:string){
  const [activity,setActivity]=useState<Record<string,Activity>>({});
  const [readError,setReadError]=useState('');
  const [wake,setWake]=useState(0);
@@ -13,9 +15,16 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
   let stopped=false,loading=false,queued=false;
   async function refresh(){
    if(stopped)return;if(loading){queued=true;return}loading=true;
-   try{const {data,error}=await supabase!.rpc('get_chat_activity');
+   try{
+    let notifications:Notification[]=[];
+    if('serviceWorker' in navigator&&savedPush()?.userId===userId){
+     try{const registration=await navigator.serviceWorker.getRegistration('/');notifications=await registration?.getNotifications()??[]}catch{/* Read state still works without notifications. */}
+    }
+    if(stopped)return;
+    const {data,error}=await supabase!.rpc('get_chat_activity');
     if(stopped)return;
     if(error){setReadError('읽음 상태를 확인하지 못했습니다. 자동으로 다시 시도합니다.');return}
+    if(savedPush()?.userId===userId)closeReadNotifications(notifications,data as Activity[]);
     const badge=await supabase!.rpc('get_badge_snapshot');
     if(stopped)return;
     if(!badge.error&&badge.data)await syncServerBadge(badge.data);
@@ -36,7 +45,7 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
   navigator.serviceWorker?.addEventListener('message',badgeRefresh);
   void refresh();
   return()=>{stopped=true;navigator.serviceWorker?.removeEventListener('message',badgeRefresh);clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('blur',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);void supabase!.removeChannel(channel)};
- },[]);
+ },[userId]);
  useEffect(()=>{
   if(!canMarkRead(room,conversationVisible,document.visibilityState==='visible',document.hasFocus())||latestSequence<=0||latestSequence<=(acknowledged.current[room]??0))return;
   let cancelled=false;

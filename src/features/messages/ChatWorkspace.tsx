@@ -16,7 +16,7 @@ export function ChatWorkspace({session,conversationVisible,onOpen,onBack}:{sessi
  useEffect(()=>{const target=new URLSearchParams(window.location.search).get('room');if(target&&/^[0-9a-f-]{36}$/i.test(target)){setRoom(target);onOpen();window.history.replaceState(null,'',window.location.pathname)}},[]);
  const messageList=useRef<HTMLDivElement>(null);
  const latestSequence=contiguousReadPosition(messages,room);
- const {activity,readError}=useReadState(room,latestSequence,conversationVisible);
+ const {activity,readError}=useReadState(room,latestSequence,conversationVisible,session.user.id);
  useLayoutEffect(()=>{
   const list=messageList.current;
   if(list)list.scrollTop=list.scrollHeight;
