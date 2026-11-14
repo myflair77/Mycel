@@ -145,3 +145,28 @@ main{display:flex;flex-direction:column;min-width:0}
 
 .conversation-preview{display:block;font-size:13px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:7px;color:var(--muted)}.conversation-time{display:block;font-size:11px;font-weight:400;margin-top:5px;color:var(--muted)}.message-search{flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--line);font-size:13px}.message-search form{display:flex;gap:8px}.message-search input{min-width:0;flex:1;border:1px solid var(--line);padding:8px;border-radius:10px;background:var(--paper);color:var(--ink)}.message-search button,.latest-message{padding:8px;border:1px solid var(--line);border-radius:10px;color:var(--link);background:var(--paper);font-size:13px}.search-results{max-height:180px;overflow:auto}.search-results>button{display:block;text-align:left;width:100%;margin-top:5px}.search-results span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.search-results time{font-size:11px;color:var(--muted)}.latest-message{flex-shrink:0}.search-highlight{outline:3px solid #f0aa00;outline-offset:2px}.file-dragging{outline:3px dashed #007aff;outline-offset:-4px}.drop-hint{font-size:13px;padding:10px;margin:0;background:#e7f0ff;color:#154e99;flex-shrink:0}
 .expiry-warning,.expiry-notice{color:#9b4d00}.expiry-notice{font-size:13px;padding:10px;background:#fff6e7;border-radius:10px}.expiry-notice button{display:block;max-width:100%;overflow-wrap:anywhere;text-align:left}
+/* Attachment messages: the photo or compact file card is the bubble. */
+.app .message:has(.attachment-card){background:transparent;color:var(--text,#202124);padding:0;border-radius:0;max-width:min(85%,340px)}
+.attachment-card{max-width:340px;min-height:0;gap:0}
+.attachment-card.image-attachment{background:transparent}
+.attachment-card .image-preview{display:block;border:0;padding:0;background:transparent;border-radius:8px;overflow:hidden;cursor:zoom-in}
+.attachment-card .image-preview img{display:block;width:auto;max-width:100%;height:auto;max-height:360px;object-fit:contain;border-radius:8px}
+.file-summary{display:flex;align-items:center;gap:18px;width:320px;max-width:100%;box-sizing:border-box;padding:16px;background:#fff;border:1px solid #e8e9ed;border-radius:8px;color:#202124}
+.file-description{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.file-description strong{font-size:14px;font-weight:500;line-height:1.45;overflow-wrap:anywhere;margin-bottom:3px}
+.file-description small{font-size:12px;color:#7b8089;line-height:1.4}
+.file-description .expiry-warning{color:#9b4d00}
+.attachment-card .file-download{display:flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#f4f5f6;color:#25282d}
+.file-download:disabled{opacity:.45;cursor:default}
+.attachment-placeholder,.attachment-error{font-size:12px;padding:12px;color:#6c717a;background:var(--soft,#f3f4f6);border-radius:8px}
+.attachment-error{margin-top:6px}
+.attachment-card .image-viewer{padding:0;border:0;background:transparent;color:#fff;max-width:96vw;max-height:94dvh;width:max-content}
+.image-viewer::backdrop{background:rgba(0,0,0,.84)}
+.image-viewer-content{background:#17191d;border-radius:12px;overflow:hidden;max-width:94vw}
+.image-viewer-content header{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.image-viewer-content header span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.attachment-card .image-viewer button{display:grid;place-items:center;min-width:40px;min-height:40px;background:transparent;color:#fff;border:0;padding:8px}
+.attachment-card .image-viewer img{width:auto;max-width:94vw;max-height:72dvh;object-fit:contain;border-radius:0;margin:auto}
+.image-viewer footer{display:flex;gap:12px;flex-wrap:wrap;padding:8px 14px;color:#b9bec8}
+.app[data-layout="phone"] .file-summary{width:280px;gap:12px;padding:14px}
+.image-preview:focus-visible,.file-download:focus-visible{outline:3px solid #007aff;outline-offset:3px}

@@ -1,11 +1,13 @@
 import {downloadAttachment} from './r2';
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../../services/supabase';
-import {bounded,fileSize,prepareDownload,type Attachment} from './attachments';
+import {fileSize,prepareDownload,type Attachment} from './attachments';
 export function AttachmentMessage({id}:{id:string}){
  const [attachment,setAttachment]=useState<Attachment|null>(null),[url,setUrl]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[reload,setReload]=useState(0);
  const [now,setNow]=useState(Date.now());useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(timer)},[]);const expired=Boolean(attachment?.expires_at&&Date.parse(attachment.expires_at)<=now);
- const host=useRef<HTMLDivElement>(null);
+ const host=useRef<HTMLDivElement>(null);const viewer=useRef<HTMLDialogElement>(null);
+ const isImage=Boolean(attachment&&['image/jpeg','image/png','image/gif','image/webp'].includes(attachment.mime));
+ useEffect(()=>{if(expired)viewer.current?.close()},[expired]);
  useEffect(()=>{
   let stopped=false,objectUrl='';const controller=new AbortController();
   async function load(){
@@ -31,5 +33,12 @@ export function AttachmentMessage({id}:{id:string}){
   const objectUrl=URL.createObjectURL(file.blob);
   const a=document.createElement('a');a.href=objectUrl;a.download=file.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),60000);
  }catch{setError('다운로드하지 못했습니다. 다시 시도해 주세요.')}finally{setBusy(false)}}
- return <div className="attachment-card" ref={host}>{url&&!expired&&<a href={url} target="_blank" rel="noopener noreferrer" aria-label="사진 크게 보기"><img src={url} alt={attachment?.name??'첨부 사진'}/></a>}<strong>{attachment?.name??'첨부 파일'}</strong>{attachment&&<><small>{fileSize(attachment.size)}</small>{attachment.expires_at&&<small className={Date.parse(attachment.expires_at)-now<=7*86400000?'expiry-warning':'muted'}>{expired?'30일 보관 기간이 만료되었습니다.':new Date(attachment.expires_at).toLocaleDateString('ko-KR')+' 만료 · 필요한 파일은 미리 저장해 주세요.'}</small>}<button type="button" onClick={()=>void download()} disabled={busy||expired}>{expired?'보관 기간 만료':busy?'다운로드 중…':'다운로드'}</button></>}{error&&<p role="status">{error} <button type="button" onClick={()=>setReload(v=>v+1)}>다시 불러오기</button></p>}</div>
+ const expiry=attachment?.expires_at?new Date(attachment.expires_at).toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}):null;
+ const downloadIcon=<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 20h16"/></svg>;
+ return <div className={'attachment-card '+(isImage?'image-attachment':'file-attachment')} ref={host}>
+ {isImage&&!expired?<>{url?<button type="button" className="image-preview" aria-label="사진 크게 보기" onClick={()=>viewer.current?.showModal()}><img src={url} alt={attachment?.name??'첨부 사진'}/></button>:<span className="attachment-placeholder">사진 불러오는 중…</span>}
+ <dialog ref={viewer} className="image-viewer" onClick={e=>{if(e.target===e.currentTarget)viewer.current?.close()}}><div className="image-viewer-content"><header><span>{attachment?.name}</span><button type="button" disabled={busy||expired} onClick={()=>void download()} aria-label="사진 저장">{downloadIcon}</button><button type="button" autoFocus onClick={()=>viewer.current?.close()} aria-label="닫기">✕</button></header>{url&&<img src={url} alt={attachment?.name??'첨부 사진'}/>}<footer>{expiry&&<small>유효기간: ~{expiry}</small>}{busy&&<small role="status">저장 중…</small>}{error&&<small role="alert">{error}</small>}</footer></div></dialog></>:
+ <div className="file-summary"><div className="file-description"><strong>{attachment?.name??'첨부 파일'}</strong>{attachment&&<><small className={expired?'expiry-warning':''}>{expired?'보관 기간 만료':expiry?'유효기간: ~'+expiry:'유효기간: 제한 없음'}</small><small>용량: {fileSize(attachment.size)}</small></>}</div>{attachment&&<button className="file-download" type="button" onClick={()=>void download()} disabled={busy||expired} aria-label={busy?'저장 중':attachment.name+' 다운로드'} title="저장">{busy?<span>…</span>:downloadIcon}</button>}</div>}
+ {error&&<div className="attachment-error" role="status">{error} <button type="button" onClick={()=>setReload(v=>v+1)}>다시 시도</button></div>}
+ </div>;
 }
