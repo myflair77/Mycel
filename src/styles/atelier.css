@@ -243,3 +243,5 @@ button:disabled{cursor:default}
 .invite-browser-note{padding:16px;border-radius:12px;background:var(--soft);margin:20px 0}.invite-browser-note strong{color:var(--link)}.invite-browser-note small{display:block;margin-top:10px;color:var(--muted);line-height:1.6}.invite-browser-note input{margin-top:12px}
 .invite-footer{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:24px 0 12px}.invite-footer .install-control{margin:0}.invite-welcome .auth-panel{margin:24px 0;padding:0;max-width:none}.invite-welcome .friend-actions{flex-wrap:wrap}
 @media(max-width:540px){.app.invite-mode .invite-page{padding:14px 10px}.invite-welcome{padding:20px}}
+
+.self-chat-note{margin:0;padding:10px 18px;color:var(--muted);font-size:.8em;border-bottom:1px solid var(--line);line-height:1.6}.self-chat-entry{width:100%;text-align:left}

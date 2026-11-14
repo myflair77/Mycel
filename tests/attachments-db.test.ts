@@ -22,6 +22,9 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0009_attachment_limit_50mb.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0010_r2_attachments.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0011_r2_retention.sql',import.meta.url),'utf8'));
+ await db.exec('create role service_role bypassrls');
+ for(const n of ['0003_read_receipts.sql','0004_web_push.sql','0008_conversation_management.sql'])await db.exec(readFileSync(new URL('../migrations/'+n,import.meta.url),'utf8').replace('alter publication supabase_realtime add table public.chat_reads;',''));
+ await db.exec(readFileSync(new URL('../migrations/0016_self_chat.sql',import.meta.url),'utf8'));
  await db.query('insert into public.r2_receipt_secret(key_hex) values($1)',['ab'.repeat(32)]);
  await db.exec(readFileSync(new URL('../migrations/0013_r2_limit_300mb.sql',import.meta.url),'utf8'));
 },30000);
@@ -71,3 +74,27 @@ it('accepts only signed R2 receipts and retains message metadata after expiry',a
  expect((await db.query('select * from public.r2_cleanup_list($1)',[mac('retention-scan')])).rows).toHaveLength(0);
  await asUser(b);expect((await db.query('select * from public.messages where attachment_id=$1',[rid])).rows).toHaveLength(1);
 });
+it('self chat is unique, private, searchable and supports idempotent attachments',async()=>{
+ await asUser(a);const self=(await db.query<{id:string}>('select public.open_self_chat() as id')).rows[0].id;
+ expect((await db.query<{id:string}>('select public.open_self_chat() as id')).rows[0].id).toBe(self);
+ await db.query('select public.register_push($1,$2,$3,$4)',['https://fcm.googleapis.com/fcm/send/self-test','B'.repeat(87),'A'.repeat(22),'self']);
+ const key='30000000-0000-0000-0000-000000000001';
+ const send=()=>db.query('select * from public.send_message($1,$2,$3)',[self,'private note',key]);
+ expect((await send()).rows).toEqual((await send()).rows);
+ const aid='30000000-0000-0000-0000-000000000002',path='files/'+aid+'/'+aid+'/manifest.json';
+ await db.query('select public.prepare_attachment($1,$2,$3,123,$4)',[self,aid,'memo.png','image/png']);
+ const receipt=createHmac('sha256',Buffer.from('ab'.repeat(32),'hex')).update(aid+':123:'+path).digest('hex');
+ await db.query('select public.send_r2_attachment($1,$2,$3)',[aid,path,receipt]);
+ expect((await db.query('select * from public.messages where room_id=$1',[self])).rows).toHaveLength(2);
+ expect((await db.query<any>('select * from public.get_conversations()')).rows.find(r=>r.id===self).peer.display_name).toBe('나와의 대화');
+ expect((await db.query<any>('select * from public.get_chat_activity()')).rows.find(r=>r.room_id===self).unread_count).toBe(0);
+ expect((await db.query('select * from public.search_messages($1,$2)',[self,'private'])).rows).toHaveLength(1);
+ await db.exec('reset role');expect((await db.query('select * from public.push_jobs j join public.messages m on m.id=j.message_id where m.room_id=$1',[self])).rows).toHaveLength(0);
+ await asUser(b);
+ expect((await db.query('select * from public.messages where room_id=$1',[self])).rows).toHaveLength(0);
+ expect((await db.query('select * from public.chat_attachments where id=$1',[aid])).rows).toHaveLength(0);
+ await expect(db.query('select public.send_message($1,$2,gen_random_uuid())',[self,'intrusion'])).rejects.toThrow(/denied/);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[self,'intrusion','image/png'])).rejects.toThrow(/denied/);
+ await db.exec('reset role');await expect(db.query('insert into public.chat_members values($1,$2)',[self,b])).rejects.toThrow(/owner only/);
+});
+
