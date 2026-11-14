@@ -10,11 +10,14 @@ import {mergeMessages,type ChatMessage} from './model';
 import {Outbox} from './outbox';
 import {AttachmentMessage} from './AttachmentMessage';
 import {deliverAttachment,fileName,fileMime,fileSize,validateFile,type Attachment} from './attachments';
+import {useConversations,conversationTime} from './useConversations';
+import {MessageSearch} from './MessageSearch';
 import {recoverMessages} from './recover';
-type Room={id:string;direct_key:string;peer?:{id:string;username:string;display_name:string}};
 export function ChatWorkspace({session,conversationVisible,onOpen,onBack}:{session:Session;conversationVisible:boolean;onOpen:()=>void;onBack:()=>void}){
- const [rooms,setRooms]=useState<Room[]>([]),[room,setRoom]=useState(''),[messages,setMessages]=useState<ChatMessage[]>([]);
- const [roomsError,setRoomsError]=useState('');
+ const {rooms,roomsError,refreshRooms}=useConversations(session.user.id);
+ const [room,setRoom]=useState(''),[messages,setMessages]=useState<ChatMessage[]>([]);
+ const [searchOpen,setSearchOpen]=useState(false),[jumpId,setJumpId]=useState(''),[muteBusy,setMuteBusy]=useState(false),[dragging,setDragging]=useState(false);
+ const jumpRef=useRef('');jumpRef.current=jumpId;
  const [error,setError]=useState(''),[connection,setConnection]=useState('대화방을 선택하세요'),[body,setBody]=useState(''),[outboxVersion,setOutboxVersion]=useState(0),[busy,setBusy]=useState(false);
  const [outbox]=useState(()=>new Outbox(sessionStorage,session.user.id,()=>setOutboxVersion(v=>v+1)));
  const [selected,setSelected]=useState<File|null>(null),[uploadStages,setUploadStages]=useState<Record<string,string>>({});
@@ -26,37 +29,21 @@ export function ChatWorkspace({session,conversationVisible,onOpen,onBack}:{sessi
  useEffect(()=>{const target=new URLSearchParams(window.location.search).get('room');if(target&&/^[0-9a-f-]{36}$/i.test(target)){setRoom(target);onOpen();window.history.replaceState(null,'',window.location.pathname)}},[]);
  const messageList=useRef<HTMLDivElement>(null);
  const latestSequence=contiguousReadPosition(messages,room);
- const {activity,readError}=useReadState(room,latestSequence,conversationVisible,session.user.id);
+ const {activity,readError}=useReadState(room,latestSequence,conversationVisible&&!jumpId,session.user.id);
  useLayoutEffect(()=>{
   const list=messageList.current;
-  if(list)list.scrollTop=list.scrollHeight;
- },[room,messages,outboxVersion]);
+  if(list){if(jumpId){const target=list.querySelector<HTMLElement>('[data-message-id="'+jumpId+'"]');if(target)list.scrollTop+=target.getBoundingClientRect().top-list.getBoundingClientRect().top-20}else list.scrollTop=list.scrollHeight;}
+ },[room,messages,outboxVersion,jumpId]);
  useEffect(()=>{
   const list=messageList.current;if(!list)return;
   // Also show the latest message when a phone conversation becomes visible
   // or the keyboard changes the available height.
-  const observer=new ResizeObserver(()=>{list.scrollTop=list.scrollHeight});
+  const observer=new ResizeObserver(()=>{if(!jumpRef.current)list.scrollTop=list.scrollHeight});
   observer.observe(list);
   return()=>observer.disconnect();
  },[]);
- const refreshRooms=async()=>{
-  const {data,error}=await supabase!.from('chat_rooms').select('id,direct_key').order('created_at',{ascending:false});
-  if(error){setRoomsError('대화 목록 연결을 다시 확인하고 있습니다.');return}
-  const rows=data??[];
-  if(!rows.length){setRoomsError('');setRooms([]);return}
-  const members=await supabase!.from('chat_members').select('room_id,user_id').in('room_id',rows.map(row=>row.id)).neq('user_id',session.user.id);
-  if(members.error){setRoomsError('대화 상대를 다시 확인하고 있습니다.');setRooms(rows);return}
-  const ids=[...new Set((members.data??[]).map(member=>member.user_id))];
-  if(!ids.length){setRooms(rows);return}
-  const profiles=await supabase!.from('profiles').select('id,username,display_name').in('id',ids);
-  if(profiles.error){setRoomsError('대화 상대를 다시 확인하고 있습니다.');setRooms(rows);return}
-  const people=new Map((profiles.data??[]).map(profile=>[profile.id,profile]));
-  const peers=new Map((members.data??[]).map(member=>[member.room_id,people.get(member.user_id)]));
-  setRoomsError('');setRooms(rows.map(row=>({...row,peer:peers.get(row.id)})));
- };
- useEffect(()=>{void refreshRooms();const interval=setInterval(()=>void refreshRooms(),10000);return()=>clearInterval(interval)},[session.user.id]);
  useEffect(()=>{
-  setMessages([]);sequence.current=0;setBody('');setSelected(null);setError('');
+  setMessages([]);setJumpId('');setSearchOpen(false);setDragging(false);sequence.current=0;setBody('');setSelected(null);setError('');
   if(!room)return;let stopped=false;let syncing=false;let queued=false;let realtime=false;
   async function sync(){
    if(stopped)return;if(!navigator.onLine){setConnection('오프라인 · 연결을 기다리는 중');return}if(syncing){queued=true;return}syncing=true;
@@ -90,7 +77,7 @@ export function ChatWorkspace({session,conversationVisible,onOpen,onBack}:{sessi
    if(error)throw new Error(error.message.includes('Abort')?'응답 시간이 초과되었습니다. 재전송해도 중복 저장되지 않습니다.':error.message);
    return data as ChatMessage;
   });
-  if(saved)uploadFiles.current.delete(key);
+  if(saved){uploadFiles.current.delete(key);void refreshRooms()}
   if(saved&&activeRoom.current===saved.room_id)setMessages(old=>mergeMessages(old,[saved]));
  }
  async function send(event:FormEvent){event.preventDefault();if((!body.trim()&&!selected)||sendLock.current||!room)return;
@@ -102,8 +89,12 @@ export function ChatWorkspace({session,conversationVisible,onOpen,onBack}:{sessi
    await retry(item.key);
   }catch(e){setError((e as Error).message)}finally{sendLock.current=false;setBusy(false)}
  }
- return <><aside className="list chat-list"><h1>대화</h1><p className="muted">@{session.user.user_metadata.username}</p><PushSettings userId={session.user.id} room={room} conversationVisible={conversationVisible}/><FriendsPanel onChat={openChat}/><p className="notice" role="alert">{error}</p><p className="notice" role="status">{roomsError}</p><h2>대화 목록</h2><div className="room-list">{rooms.map(item=><button key={item.id} aria-current={room===item.id?'page':undefined} onClick={()=>{setRoom(item.id);onOpen()}}>{item.peer?.display_name??'대화 상대'}{Number(activity[item.id]?.unread_count)>0&&<span className="unread-badge" aria-label={'안 읽은 메시지 '+activity[item.id].unread_count+'개'}>{Number(activity[item.id].unread_count)>99?'99+':activity[item.id].unread_count}</span>}<small>{item.peer?'@'+item.peer.username:'프로필 확인 중'}</small></button>)}</div><button className="text-button" onClick={()=>void refreshRooms()}>목록 새로고침</button><button className="text-button" onClick={async()=>{try{await disablePush();const {error}=await supabase!.auth.signOut();if(error)setError(error.message)}catch(e){setError('알림 구독 해제 실패: '+String((e as {message?:string}).message??e))}}}>로그아웃</button></aside>
- <main className="chat-main"><header className="topbar"><button className="back" onClick={onBack}>← 목록</button><span>{rooms.find(item=>item.id===room)?.peer?.display_name??'1:1 대화'}</span><span className="muted" role="status">{connection}</span>{room&&<button className="text-button" onClick={async()=>{const peer=rooms.find(item=>item.id===room)?.peer;if(!peer)return;const {data,error}=await supabase!.rpc('set_user_block',{p_peer:peer.id,p_block:true});setError(error?.message??data?.error??'차단했습니다. 이전 대화는 보존되고 새 메시지는 양쪽 모두 전송할 수 없습니다.')}}>상대 차단</button>}</header>
- <div ref={messageList} className="message-list" aria-label="대화 메시지" aria-live="polite">{!room&&<p>대화방을 선택하거나 사용자 ID로 대화를 시작하세요.</p>}{messages.map(message=><article key={message.id} className={message.sender_id===session.user.id?'message mine':'message'}><>{message.attachment_id?<AttachmentMessage id={message.attachment_id}/>:<p>{message.body}</p>}</><time dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</time>{message.sender_id===session.user.id&&<small className="read-receipt">{!activity[room]?'확인 중':Number(activity[room].peer_read_sequence)>=message.sequence?'읽음':'안 읽음'}</small>}</article>)}{outbox.items.filter(item=>item.room===room).map(item=><article key={item.key} className="message mine outgoing"><p>{item.body}</p><small role="status">{item.status==='sending'?(uploadStages[item.key]??'전송 중…'):'전송 실패 · '+item.error}</small>{item.status==='failed'&&item.attachment&&!uploadFiles.current.has(item.key)&&<label className="reselect-file">파일 다시 선택<input type="file" onChange={e=>{const file=e.target.files?.[0];if(!file)return;try{validateFile(file);if(fileName(file.name)!==item.attachment!.name||file.size!==item.attachment!.size)throw Error('같은 이름과 크기의 원본 파일을 선택해 주세요.');uploadFiles.current.set(item.key,file);setOutboxVersion(v=>v+1)}catch(err){setError((err as Error).message)}}}/></label>}{item.status==='failed'&&<button type="button" className="retry-button" onClick={()=>void retry(item.key)}>재전송</button>}</article>)}</div>
- <p className="notice" role="status">{readError}</p><p className="notice" role="alert">{error}</p><div className="attachment-toolbar"><input ref={fileInput} className="sr-only" type="file" aria-label="사진 또는 파일 선택" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;try{validateFile(file);setSelected(file);setError('')}catch(err){setError((err as Error).message)}}}/><button type="button" disabled={!room||busy} onClick={()=>fileInput.current?.click()}>＋ 사진·파일</button>{selected?<span>{fileName(selected.name)} · {fileSize(selected.size)} <button type="button" onClick={()=>setSelected(null)}>선택 취소</button></span>:<small>파일당 최대 10MB</small>}</div><form className="composer" onSubmit={send}><label className="sr-only" htmlFor="message">메시지</label><textarea id="message" value={body} onChange={e=>setBody(e.target.value)} maxLength={4000} disabled={!room||Boolean(selected)} placeholder={selected?'선택한 파일을 전송합니다':'메시지를 입력하세요'} rows={2}/><button className="primary-button" disabled={!room||(!body.trim()&&!selected)||busy||outbox.items.some(item=>item.room===room&&item.status==='sending')}>전송</button></form></main></>;
+ async function toggleMute(){const target=room;const current=rooms.find(x=>x.id===target);if(!current||muteBusy)return;setMuteBusy(true);try{const {error}=await supabase!.rpc('set_room_muted',{p_room:target,p_muted:!current.muted}).abortSignal(AbortSignal.timeout(15000));if(error)throw error;await refreshRooms()}catch{setError('알림 설정을 저장하지 못했습니다. 다시 시도해 주세요.')}finally{setMuteBusy(false)}}
+ function chooseFile(file:File){try{validateFile(file);setSelected(file);setError('')}catch(err){setError((err as Error).message)}}
+ function dropFile(event:React.DragEvent){if(!event.dataTransfer.types.includes('Files'))return;event.preventDefault();setDragging(false);if(!room||busy)return;if(event.dataTransfer.files.length!==1){setError('파일은 한 번에 1개씩 첨부해 주세요.');return}chooseFile(event.dataTransfer.files[0]);}
+ return <><aside className="list chat-list"><h1>대화</h1><p className="muted">@{session.user.user_metadata.username}</p><PushSettings userId={session.user.id} room={room} conversationVisible={conversationVisible}/><FriendsPanel onChat={openChat}/><p className="notice" role="alert">{error}</p><p className="notice" role="status">{roomsError}</p><h2>대화 목록</h2><div className="room-list">{rooms.map(item=><button key={item.id} aria-current={room===item.id?'page':undefined} onClick={()=>{setRoom(item.id);onOpen()}}>{item.peer?.display_name??'대화 상대'}{Number(activity[item.id]?.unread_count)>0&&<span className="unread-badge" aria-label={'안 읽은 메시지 '+activity[item.id].unread_count+'개'}>{Number(activity[item.id].unread_count)>99?'99+':activity[item.id].unread_count}</span>}<small>{item.peer?'@'+item.peer.username:'프로필 확인 중'}{item.muted?' · 알림 꺼짐':''}</small><span className="conversation-preview">{item.last_body??'아직 메시지가 없습니다.'}</span>{item.last_at&&<time className="conversation-time" dateTime={item.last_at}>{conversationTime(item.last_at)}</time>}</button>)}</div><button className="text-button" onClick={()=>void refreshRooms()}>목록 새로고침</button><button className="text-button" onClick={async()=>{try{await disablePush();const {error}=await supabase!.auth.signOut();if(error)setError(error.message)}catch(e){setError('알림 구독 해제 실패: '+String((e as {message?:string}).message??e))}}}>로그아웃</button></aside>
+ <main className={'chat-main'+(dragging?' file-dragging':'')} onDragOver={e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();e.dataTransfer.dropEffect=room&&!busy?'copy':'none';setDragging(Boolean(room&&!busy))}}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setDragging(false)}} onDrop={dropFile}><header className="topbar"><button className="back" onClick={onBack}>← 목록</button><span>{rooms.find(item=>item.id===room)?.peer?.display_name??'1:1 대화'}</span><span className="muted" role="status">{connection}</span>{room&&<button className="text-button" onClick={async()=>{const peer=rooms.find(item=>item.id===room)?.peer;if(!peer)return;const {data,error}=await supabase!.rpc('set_user_block',{p_peer:peer.id,p_block:true});setError(error?.message??data?.error??'차단했습니다. 이전 대화는 보존되고 새 메시지는 양쪽 모두 전송할 수 없습니다.')}}>상대 차단</button>}{room&&<><button type="button" className="text-button" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}>대화 검색</button><button type="button" className="text-button" disabled={muteBusy||!rooms.some(x=>x.id===room)} aria-pressed={rooms.find(x=>x.id===room)?.muted??false} onClick={()=>void toggleMute()}>{muteBusy?'저장 중…':rooms.find(x=>x.id===room)?.muted?'이 대화 알림 켜기':'이 대화 알림 끄기'}</button></>}</header>
+ {searchOpen&&room&&<MessageSearch key={room} room={room} onSelect={message=>{setMessages(old=>mergeMessages(old,[message]));setJumpId(message.id)}}/>}{jumpId&&<button type="button" className="latest-message" onClick={()=>setJumpId('')}>최근 메시지로 돌아가기 ↓</button>}{dragging&&<p className="drop-hint">파일을 놓아 첨부하세요 · 전송 버튼을 누르면 보내집니다</p>}
+ <div ref={messageList} className="message-list" aria-label="대화 메시지" aria-live="polite">{!room&&<p>대화방을 선택하거나 사용자 ID로 대화를 시작하세요.</p>}{messages.map(message=><article key={message.id} data-message-id={message.id} className={(message.sender_id===session.user.id?'message mine':'message')+(jumpId===message.id?' search-highlight':'')}><>{message.attachment_id?<AttachmentMessage id={message.attachment_id}/>:<p>{message.body}</p>}</><time dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</time>{message.sender_id===session.user.id&&<small className="read-receipt">{!activity[room]?'확인 중':Number(activity[room].peer_read_sequence)>=message.sequence?'읽음':'안 읽음'}</small>}</article>)}{outbox.items.filter(item=>item.room===room).map(item=><article key={item.key} className="message mine outgoing"><p>{item.body}</p><small role="status">{item.status==='sending'?(uploadStages[item.key]??'전송 중…'):'전송 실패 · '+item.error}</small>{item.status==='failed'&&item.attachment&&!uploadFiles.current.has(item.key)&&<label className="reselect-file">파일 다시 선택<input type="file" onChange={e=>{const file=e.target.files?.[0];if(!file)return;try{validateFile(file);if(fileName(file.name)!==item.attachment!.name||file.size!==item.attachment!.size)throw Error('같은 이름과 크기의 원본 파일을 선택해 주세요.');uploadFiles.current.set(item.key,file);setOutboxVersion(v=>v+1)}catch(err){setError((err as Error).message)}}}/></label>}{item.status==='failed'&&<button type="button" className="retry-button" onClick={()=>void retry(item.key)}>재전송</button>}</article>)}</div>
+ <p className="notice" role="status">{readError}</p><p className="notice" role="alert">{error}</p><div className="attachment-toolbar"><input ref={fileInput} className="sr-only" type="file" aria-label="사진 또는 파일 선택" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;chooseFile(file)}}/><button type="button" disabled={!room||busy} onClick={()=>fileInput.current?.click()}>＋ 사진·파일</button>{selected?<span>{fileName(selected.name)} · {fileSize(selected.size)} <button type="button" onClick={()=>setSelected(null)}>선택 취소</button></span>:<small>파일당 최대 50MB</small>}</div><form className="composer" onSubmit={send}><label className="sr-only" htmlFor="message">메시지</label><textarea id="message" value={body} onChange={e=>setBody(e.target.value)} maxLength={4000} disabled={!room||Boolean(selected)} placeholder={selected?'선택한 파일을 전송합니다':'메시지를 입력하세요'} rows={2}/><button className="primary-button" disabled={!room||(!body.trim()&&!selected)||busy||outbox.items.some(item=>item.room===room&&item.status==='sending')}>전송</button></form></main></>;
 }

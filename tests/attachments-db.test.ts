@@ -18,6 +18,7 @@ beforeAll(async()=>{
  for(const [id,username] of [[a,'alice'],[b,'bob'],[c,'carol']])await db.query('insert into auth.users values($1,$2)',[id,JSON.stringify({username,display_name:username})]);
  await asUser(a);room=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
  await db.exec('reset role');await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0007_attachments.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0009_attachment_limit_50mb.sql',import.meta.url),'utf8'));
 },30000);
 afterAll(async()=>{await db?.close()});
 it('keeps pending objects private, validates uploads, commits once and prevents overwrites',async()=>{
@@ -37,7 +38,8 @@ it('keeps pending objects private, validates uploads, commits once and prevents 
 });
 it('enforces size, media types, upload paths and blocks new files',async()=>{
  await asUser(a);
- await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,10485761,$3)',[room,'large','image/png'])).rejects.toThrow(/Invalid/);
+ await db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,52428800,$3)',[room,'limit.bin','application/octet-stream']);
+ await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,52428801,$3)',[room,'large','image/png'])).rejects.toThrow(/Invalid/);
  await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'active.svg','image/svg+xml'])).rejects.toThrow(/Invalid/);
  await expect(db.query('insert into storage.objects values($1,$2,$3)',['chat-files','forged/path',{}])).rejects.toThrow(/row-level/);
  await db.query('select public.set_user_block($1,true)',[b]);
