@@ -132,3 +132,9 @@ main{display:flex;flex-direction:column;min-width:0}
 .app:is([data-layout="phone"],[data-layout="tablet"]) .notice{font-size:12px}
 .app:is([data-layout="phone"],[data-layout="tablet"]) .empty-list h2{font-size:20px}
 .app[data-layout="desktop"] .message p{font-size:14px;line-height:1.5}
+/* Let the grid allocate the actual remaining viewport height, including controls. */
+.app.signed-in{height:100dvh;min-height:0;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+.app.signed-in .rail,.app.signed-in .chat-list,.app.signed-in .chat-main{min-height:0!important;max-height:none;height:100%;overflow-y:auto}
+.app.signed-in .chat-main{overflow:hidden}
+.chat-main .topbar,.chat-main .composer{flex-shrink:0}
+.chat-main>.notice:empty{display:none}
