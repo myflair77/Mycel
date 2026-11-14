@@ -1,3 +1,4 @@
+import {createHmac} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 import {readFileSync} from 'node:fs';
 import {beforeAll,afterAll,it,expect} from 'vitest';
@@ -19,6 +20,9 @@ beforeAll(async()=>{
  await asUser(a);room=(await db.query<{id:string}>("select public.open_direct_chat('bob') as id")).rows[0].id;
  await db.exec('reset role');await db.exec(readFileSync(new URL('../migrations/0002_friends.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0007_attachments.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0009_attachment_limit_50mb.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0010_r2_attachments.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0011_r2_retention.sql',import.meta.url),'utf8'));
+ await db.query('insert into public.r2_receipt_secret(key_hex) values($1)',['ab'.repeat(32)]);
 },30000);
 afterAll(async()=>{await db?.close()});
 it('keeps pending objects private, validates uploads, commits once and prevents overwrites',async()=>{
@@ -45,4 +49,24 @@ it('enforces size, media types, upload paths and blocks new files',async()=>{
  await db.query('select public.set_user_block($1,true)',[b]);
  await expect(db.query('select public.prepare_attachment($1,gen_random_uuid(),$2,8,$3)',[room,'blocked','image/png'])).rejects.toThrow(/차단/);
  expect((await db.query('select * from storage.objects')).rows).toHaveLength(1);
+});
+
+it('accepts only signed R2 receipts and retains message metadata after expiry',async()=>{
+ await asUser(a);await db.query('select public.set_user_block($1,false)',[b]);
+ const rid='20000000-0000-0000-0000-000000000001',key='files/'+rid+'/'+rid+'/manifest.json';
+ await db.query('select public.prepare_attachment($1,$2,$3,123,$4)',[room,rid,'r2.bin','application/octet-stream']);
+ await expect(db.query('select public.send_r2_attachment($1,$2,$3)',[rid,key,'fake'])).rejects.toThrow(/receipt/);
+ const mac=(value:string)=>createHmac('sha256',Buffer.from('ab'.repeat(32),'hex')).update(value).digest('hex');
+ const receipt=mac(rid+':123:'+key);const r=await db.query('select * from public.send_r2_attachment($1,$2,$3)',[rid,key,receipt]);expect(r.rows).toHaveLength(1);
+ expect((await db.query('select * from public.send_r2_attachment($1,$2,$3)',[rid,key,receipt])).rows).toEqual(r.rows);
+ await expect(db.query('select * from public.r2_receipt_secret')).rejects.toThrow(/permission/);
+ await db.exec('reset role');await db.query("update public.chat_attachments set expires_at=now()+interval '6 days' where id=$1",[rid]);
+ await asUser(b);expect((await db.query('select * from public.get_expiring_files()')).rows).toHaveLength(1);
+ await asUser(c);expect((await db.query('select * from public.get_expiring_files()')).rows).toHaveLength(0);
+ await db.exec('reset role');await db.query("update public.chat_attachments set expires_at=now()-interval '1 hour' where id=$1",[rid]);await db.exec('set role anon');
+ await expect(db.query('select * from public.r2_cleanup_list($1)',['fake'])).rejects.toThrow(/denied/);
+ expect((await db.query('select * from public.r2_cleanup_list($1)',[mac('retention-scan')])).rows).toHaveLength(1);
+ await db.query('select public.r2_cleanup_done($1,$2)',[rid,mac('deleted:'+rid)]);
+ expect((await db.query('select * from public.r2_cleanup_list($1)',[mac('retention-scan')])).rows).toHaveLength(0);
+ await asUser(b);expect((await db.query('select * from public.messages where attachment_id=$1',[rid])).rows).toHaveLength(1);
 });
