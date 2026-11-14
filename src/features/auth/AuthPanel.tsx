@@ -1,7 +1,7 @@
 import {RecoveryRequest} from './RecoveryRequest';
 import {useState,type FormEvent} from 'react';
 import {supabase} from '../../services/supabase';
-export function AuthPanel({signup,onSwitch}:{signup:boolean;onSwitch:()=>void}){
+export function AuthPanel({signup,onSwitch,inviteToken}:{signup:boolean;onSwitch:()=>void;inviteToken?:string}){
  const [recovery,setRecovery]=useState<'password'|'username'|null>(null);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  async function submit(event:FormEvent<HTMLFormElement>){
@@ -10,7 +10,7 @@ export function AuthPanel({signup,onSwitch}:{signup:boolean;onSwitch:()=>void}){
   try{
    const credentials={email:String(form.get('email')).trim(),password:String(form.get('password'))};
    if(signup){
-    const {data,error}=await supabase.auth.signUp({...credentials,options:{data:{username:String(form.get('username')).toLowerCase().trim(),display_name:String(form.get('displayName')).trim()},emailRedirectTo:window.location.origin}});
+    const {data,error}=await supabase.auth.signUp({...credentials,options:{data:{...(inviteToken?{invite_token:inviteToken}:{}),username:String(form.get('username')).toLowerCase().trim(),display_name:String(form.get('displayName')).trim()},emailRedirectTo:window.location.origin}});
     if(error)throw error;
     if(!data.session)setNotice('가입 요청을 접수했습니다. 이메일의 인증 링크를 확인한 뒤 로그인해 주세요.');
    }else{const {error}=await supabase.auth.signInWithPassword(credentials);if(error)throw error}

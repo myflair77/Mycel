@@ -1,3 +1,4 @@
+import {InviteManager} from '../invites/InviteManager';
 import {useBlockConfirmation} from '../../components/BlockConfirmation';
 import {Icon} from '../../components/Icon';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
@@ -19,7 +20,7 @@ export function FriendsPanel({onChat,onRequests}:{onChat:(username:string)=>Prom
  const incoming=relations.filter(p=>p.status==='pending'&&p.incoming),outgoing=relations.filter(p=>p.status==='pending'&&!p.incoming),friends=relations.filter(p=>p.status==='accepted');
  return <>{confirmation}<section className="friends-panel" aria-label="친구 관리">
  <header className="friends-title"><div><h1>친구</h1><p>찾고, 연결하고, 대화를 시작하세요.</p></div><Icon name="friends" size={25}/></header>
- <div className="friend-management" aria-label="요청 및 차단 관리">{([['incoming','받은 요청',incoming.length],['outgoing','보낸 요청',outgoing.length],['blocked','차단 관리',blocks.length]] as const).map(([key,label,count])=><button key={key} type="button" aria-expanded={management===key} aria-controls="friend-management-panel" onClick={()=>setManagement(old=>old===key?null:key)}>{label}<span className={count>0?'has-count':''}>{count}</span></button>)}</div>
+ <InviteManager/><div className="friend-management" aria-label="요청 및 차단 관리">{([['incoming','받은 요청',incoming.length],['outgoing','보낸 요청',outgoing.length],['blocked','차단 관리',blocks.length]] as const).map(([key,label,count])=><button key={key} type="button" aria-expanded={management===key} aria-controls="friend-management-panel" onClick={()=>setManagement(old=>old===key?null:key)}>{label}<span className={count>0?'has-count':''}>{count}</span></button>)}</div>
  {management&&<section id="friend-management-panel" className="friend-management-panel" aria-label={management==='incoming'?'받은 요청':management==='outgoing'?'보낸 요청':'차단 관리'}><header><strong>{management==='incoming'?'받은 요청':management==='outgoing'?'보낸 요청':'차단 관리'}</strong><button aria-label="관리 패널 닫기" onClick={()=>setManagement(null)}>✕</button></header>
  {management==='incoming'&&(incoming.length?incoming.map(p=><div className="person-card" key={p.id}>{person(p)}<div className="friend-actions"><button disabled={busy} onClick={()=>void action('respond_friend',{p_peer:p.id,p_accept:true},'친구가 되었습니다.')}>수락</button><button disabled={busy} onClick={()=>void action('respond_friend',{p_peer:p.id,p_accept:false},'요청을 거절했습니다.')}>거절</button></div></div>):<p className="muted">받은 요청이 없습니다.</p>)}
  {management==='outgoing'&&(outgoing.length?outgoing.map(p=><div className="person-card" key={p.id}>{person(p)}<small>수락 대기 중</small></div>):<p className="muted">보낸 요청이 없습니다.</p>)}

@@ -1,0 +1,16 @@
+import {useState} from 'react';
+import {supabase} from '../../services/supabase';
+import {inviteUrl} from './context';
+type Link={id:string;created_at?:string;expires_at:string;revoked_at?:string|null};
+export function InviteManager(){
+ const [open,setOpen]=useState(false),[links,setLinks]=useState<Link[]>([]),[current,setCurrent]=useState<Link&{token:string}|null>(null),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
+ async function refresh(){const {data,error}=await supabase!.rpc('list_friend_invites');if(error)throw error;setLinks(data)}
+ async function toggle(){setOpen(v=>!v);if(!open)try{await refresh()}catch{setNotice('초대 링크를 불러오지 못했습니다.')}}
+ async function create(){setBusy(true);setNotice('');try{const {data,error}=await supabase!.rpc('create_friend_invite');if(error)throw error;if(data.error)throw Error(data.error);setCurrent(data);await refresh()}catch(e){setNotice(e instanceof Error?e.message:'링크 생성에 실패했습니다.')}finally{setBusy(false)}}
+ async function revoke(id:string){setBusy(true);setNotice('');try{const {data,error}=await supabase!.rpc('revoke_friend_invite',{p_id:id});if(error)throw error;if(data.error)throw Error(data.error);if(current?.id===id)setCurrent(null);await refresh();setNotice('초대 링크를 만료시켰습니다. 기존 친구 관계는 유지됩니다.')}catch(e){setNotice(e instanceof Error?e.message:'처리하지 못했습니다.')}finally{setBusy(false)}}
+ async function copy(){if(!current)return;try{await navigator.clipboard.writeText(inviteUrl(current.token));setNotice('초대 링크를 복사했습니다. 친구에게 보내 주세요.')}catch{setNotice('아래 주소를 선택해 복사해 주세요.')}}
+ async function share(){if(!current)return;if(!navigator.share){await copy();return}try{await navigator.share({title:'메신저 친구 초대',text:'메신저에서 함께 대화해요. 링크에서 가입하거나 로그인한 뒤 친구 요청을 보내 주세요.',url:inviteUrl(current.token)})}catch(e){if((e as Error).name!=='AbortError')setNotice('공유창을 열지 못했습니다. 링크 복사를 이용해 주세요.')}}
+ return <section className="invite-manager"><button className="invite-toggle" aria-expanded={open} onClick={()=>void toggle()}>＋ 친구 초대</button>{open&&<div className="invite-manager-panel"><h2>링크로 친구 초대하기</h2><p>7일 동안 사용할 수 있습니다. 링크를 받은 사람이 가입·로그인 후 요청하면 직접 수락해 주세요.</p><button className="primary-button" disabled={busy} onClick={()=>void create()}>초대 링크 만들기</button>
+ {current&&<div className="invite-current"><label>친구에게 보낼 링크<input readOnly value={inviteUrl(current.token)} onFocus={e=>e.currentTarget.select()}/></label><small>만료: {new Date(current.expires_at).toLocaleString('ko-KR')}</small><div className="friend-actions"><button onClick={()=>void share()}>공유하기</button><button onClick={()=>void copy()}>링크 복사</button></div></div>}
+ <p role="status">{notice}</p><details><summary>내 초대 링크 관리 ({links.filter(l=>!l.revoked_at&&Date.parse(l.expires_at)>Date.now()).length})</summary><p className="muted">공유 주소는 만든 직후 복사해 주세요. 화면을 다시 열면 새 링크를 만들 수 있습니다.</p>{links.map(l=><div className="invite-link-row" key={l.id}><span>{new Date(l.created_at??l.expires_at).toLocaleDateString('ko-KR')} 만든 초대<br/><small>{l.revoked_at?'만료 처리됨':Date.parse(l.expires_at)<=Date.now()?'기간 만료':'유효 · '+new Date(l.expires_at).toLocaleDateString('ko-KR')+'까지'}</small></span>{!l.revoked_at&&Date.parse(l.expires_at)>Date.now()&&<button disabled={busy} onClick={()=>void revoke(l.id)}>링크 만료</button>}</div>)}</details></div>}</section>
+}

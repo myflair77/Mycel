@@ -1,3 +1,5 @@
+import {InvitePage} from './features/invites/InvitePage';
+import {readInvite,clearInvite} from './features/invites/context';
 import {AccountRecovery,type AccountFlow} from './features/auth/AccountRecovery';
 import {Icon,type IconName} from './components/Icon';
 import {useSaved} from './features/messages/ux';
@@ -15,6 +17,7 @@ import {supabase,initialAuthFlow} from './services/supabase';
 import './styles/app.css';
 import './styles/atelier.css';
 function App(){
+ const [inviteToken,setInviteToken]=useState<string|null>(readInvite),[serverInvite,setServerInvite]=useState(false);
  const [accountFlow,setAccountFlow]=useState<AccountFlow|null>(initialAuthFlow as AccountFlow|null);
  const {preference,setPreference,layout}=useLayout();
  const [authMode,setAuthMode]=useState<'login'|'signup'>('login');
@@ -25,12 +28,16 @@ function App(){
   return()=>{active=false;subscription.unsubscribe()};
  },[]);
  useEffect(()=>{if(!loading&&!session)void syncUnreadBadge(0)},[loading,session]);
+ useEffect(()=>{if(!session||inviteToken!==null){setServerInvite(false);return}let live=true;const check=()=>{void supabase!.rpc('resolve_friend_invite').then(({data,error})=>{if(live&&!error)setServerInvite(!data.none)})};check();window.addEventListener('focus',check);return()=>{live=false;window.removeEventListener('focus',check)}},[session?.user.id,inviteToken]);
+ function finishInvite(room?:string,friends=false){clearInvite();if(room){const u=new URL(location.href);u.searchParams.set('room',room);history.replaceState(null,'',u.pathname+u.search)}setInviteToken(null);setServerInvite(false);setSection(friends?'friends':'chats');setDetail(!!room)}
+ const inviteVisible=inviteToken!==null||serverInvite;
+
  useEffect(()=>{const update=()=>{document.documentElement.style.setProperty('--viewport-height',(window.visualViewport?.height??window.innerHeight)+'px')};update();window.visualViewport?.addEventListener('resize',update);window.addEventListener('resize',update);return()=>{window.visualViewport?.removeEventListener('resize',update);window.removeEventListener('resize',update)}},[]);
  if(accountFlow)return <AccountRecovery flow={accountFlow} session={session} onDone={()=>{sessionStorage.removeItem('weano-recovery-user');history.replaceState(null,'',location.pathname);setAccountFlow(null);setAuthMode('login')}}/>;
- return <div data-layout={layout} data-section={section} className={`app ${session?'signed-in':''} ${dark?'dark':''} ${detail?'detail-open':''}`}>
+ return <div data-layout={layout} data-section={section} className={`app ${inviteVisible?'invite-mode':''} ${session?'signed-in':''} ${dark?'dark':''} ${detail?'detail-open':''}`}>
   <InstallGuideHost/><div className="display-controls"><div className="app-brand"><Icon name="chat" size={20}/><span>WebMessenger</span></div><select aria-label="화면 모드" id="layout-mode" value={preference} onChange={e=>setPreference(e.target.value as typeof preference)}><option value="auto">자동</option><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select><FontSizeControl/><InstallButton/></div>
   <nav className="rail" aria-label="주 탐색"><div className="mark" aria-label="WebMessenger"><Icon name="chat" size={23}/></div><div className="nav-items">{([['friends','친구','friends'],['chats','대화','chat'],['settings','설정','settings']] as const).filter(([key])=>session||key==='chats').map(([key,label,icon])=><button key={key} aria-current={section===key?'page':undefined} onClick={()=>{setSection(key);setDetail(false)}}><span aria-hidden="true"><Icon name={icon as IconName}/></span>{label}{key==='friends'&&requests>0&&<b className="nav-count">{requests}</b>}</button>)}</div></nav>
-  {session?<ChatWorkspace theme={theme} onTheme={setTheme} key={session.user.id} session={session} section={section} onSection={setSection} onRequests={setRequests} layout={layout} conversationVisible={section==='chats'&&(layout!=='phone'||detail)} onOpen={()=>{setSection('chats');setDetail(true)}} onBack={()=>setDetail(false)}/>:<>
+  {inviteVisible?<InvitePage token={inviteToken} session={session} authLoading={loading} onDone={finishInvite}/>:session?<ChatWorkspace theme={theme} onTheme={setTheme} key={session.user.id} session={session} section={section} onSection={setSection} onRequests={setRequests} layout={layout} conversationVisible={section==='chats'&&(layout!=='phone'||detail)} onOpen={()=>{setSection('chats');setDetail(true)}} onBack={()=>setDetail(false)}/>:<>
    <aside className="list"><header><p className="eyebrow">A LITTLE CLOSER</p><h1>{appConfig.displayName}</h1><p className="muted">{appConfig.nameStatus}</p></header><section className="empty-list"><div className="outline-icon">＋</div><h2>대화의 시작.</h2><p>나만의 계정으로 소중한 대화를 이어가세요.</p><div className="auth-actions"><button className="primary-button" onClick={()=>{setAuthMode('login');setDetail(true)}}>로그인</button><button className="text-button" onClick={()=>{setAuthMode('signup');setDetail(true)}}>회원가입</button></div></section><footer>언제 어디서나, 이어지는 대화</footer></aside>
    <main><header className="topbar"><button className="back" onClick={()=>setDetail(false)}>← 목록</button><span>우리의 대화가 시작되는 곳</span><span className="badge">개발 베타</span></header>{loading?<p role="status">로그인 상태 확인 중…</p>:<AuthPanel key={authMode} signup={authMode==='signup'} onSwitch={()=>setAuthMode(authMode==='signup'?'login':'signup')}/>}<footer className="main-footer">이름은 고민 중, 좋은 대화는 준비 중.</footer></main>
   </>}

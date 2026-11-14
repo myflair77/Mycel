@@ -1,0 +1,43 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {it,expect} from 'vitest';
+it('invites require explicit request, preserve relationships, restore signup context and honor revoke/expiry/block/quota',async()=>{
+ const db=new PGlite();const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',c='00000000-0000-0000-0000-000000000003';
+ try{
+ await db.exec("create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key,raw_user_meta_data jsonb);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth,public to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;");
+ const read=(n:string)=>readFileSync(new URL('../migrations/'+n,import.meta.url),'utf8');
+ await db.exec(read('0001_supabase_chat.sql').replace('alter publication supabase_realtime add table public.messages;',''));
+ await db.exec(read('0002_friends.sql'));await db.exec(read('0015_friend_invites.sql'));
+ for(const [id,name] of [[a,'alice'],[b,'bob']])await db.query('insert into auth.users values($1,$2)',[id,JSON.stringify({username:name,display_name:name})]);
+ const as=async(id:string|null)=>{await db.exec('reset role;set role '+(id?'authenticated':'anon'));await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id??''])};
+ const rpc=async(sql:string,args:any[]=[]) => (await db.query<any>(sql,args)).rows[0].v;
+ await as(a);const invite=await rpc('select public.create_friend_invite() as v');expect(invite.token).toMatch(/^[a-f0-9]{64}$/);
+ expect((await rpc('select public.resolve_friend_invite($1) as v',[invite.token])).status).toBe('self');
+ await as(null);const preview=await rpc('select public.resolve_friend_invite($1) as v',[invite.token]);expect(preview.name).toBe('alice');expect(preview.username).toBeUndefined();
+ await expect(db.query('select * from public.friend_invites')).rejects.toThrow(/permission/);
+ await expect(rpc('select public.create_friend_invite() as v')).rejects.toThrow(/permission/);
+ await as(b);expect((await rpc('select public.revoke_friend_invite($1) as v',[invite.id])).error).toBeTruthy();
+ expect((await rpc('select public.remember_friend_invite($1) as v',[invite.token])).status).toBe('ready');
+ expect((await rpc('select public.list_social() as v')).relations).toHaveLength(0);
+ expect((await rpc('select public.request_invited_friend($1) as v',[a])).error).toBeTruthy();
+ expect((await rpc('select public.request_invited_friend($1) as v',[invite.id])).ok).toBe(true);
+ expect((await rpc('select public.resolve_friend_invite($1) as v',[invite.token])).status).toBe('pending');
+ expect((await rpc('select public.resolve_friend_invite() as v')).none).toBe(true);
+ await as(a);await rpc('select public.respond_friend($1,true) as v',[b]);
+ const room=await rpc("select public.open_direct_chat('bob') as v");await db.query("select public.send_message($1,'preserved',gen_random_uuid())",[room]);
+ await rpc('select public.revoke_friend_invite($1) as v',[invite.id]);
+ await as(b);expect((await rpc('select public.resolve_friend_invite($1) as v',[invite.token])).error).toBeTruthy();
+ expect((await rpc('select public.list_social() as v')).relations[0].status).toBe('accepted');expect((await db.query('select * from public.messages')).rows).toHaveLength(1);
+ await as(a);const second=await rpc('select public.create_friend_invite() as v');
+ await db.exec('reset role');await db.query('insert into auth.users values($1,$2)',[c,JSON.stringify({username:'carol',display_name:'carol',invite_token:second.token})]);
+ await as(c);expect((await rpc('select public.resolve_friend_invite() as v')).name).toBe('alice');
+ await as(a);await rpc('select public.set_user_block($1,true) as v',[c]);
+ await as(c);expect((await rpc('select public.request_invited_friend($1) as v',[second.id])).error).toBeTruthy();
+ await as(a);await rpc('select public.set_user_block($1,false) as v',[c]);
+ await as(c);for(let i=0;i<10;i++)await rpc('select public.request_friend($1) as v',[c]);
+ expect((await rpc('select public.request_invited_friend($1) as v',[second.id])).error).toMatch(/10회/);
+ await db.exec("reset role;update public.friend_invites set expires_at=now()-interval '1 second'");await as(c);
+ expect((await rpc('select public.request_invited_friend($1) as v',[second.id])).error).toMatch(/만료/);
+ await rpc('select public.dismiss_friend_invite($1) as v',[second.id]);expect((await rpc('select public.resolve_friend_invite() as v')).none).toBe(true);
+ }finally{await db.close()}
+},30000);
