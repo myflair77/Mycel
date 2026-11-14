@@ -298,3 +298,4 @@ body{font-size:calc(16px * var(--font-scale,1))}
 .image-pan{width:min(800px,90vw);height:65dvh;overflow:auto;cursor:grab;touch-action:pan-x pan-y pinch-zoom;background:#111}
 .image-pan:active{cursor:grabbing}.attachment-card .image-pan img{height:auto;object-fit:contain;margin:0}
 .image-viewer-content header{flex-wrap:wrap}.image-viewer-content header span{flex-basis:100%}
+.message-list{overflow-anchor:none}
