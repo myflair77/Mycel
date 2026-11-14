@@ -1,3 +1,4 @@
+import {syncUnreadBadge} from './features/notifications/badge';
 import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import type {Session} from '@supabase/supabase-js';
@@ -17,6 +18,7 @@ function App(){
   void supabase.auth.getSession().then(({data})=>{if(active){setSession(data.session);setLoading(false)}});
   return()=>{active=false;subscription.unsubscribe()};
  },[]);
+ useEffect(()=>{if(!loading&&!session)void syncUnreadBadge(0)},[loading,session]);
  return <div data-layout={layout} className={`app ${session?'signed-in':''} ${dark?'dark':''} ${detail?'detail-open':''}`}>
   <div className="display-controls"><label htmlFor="layout-mode">화면 모드</label><select id="layout-mode" value={preference} onChange={e=>setPreference(e.target.value as typeof preference)}><option value="auto">자동</option><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select><span className="active-layout" aria-live="polite">{layout==='desktop'?'데스크톱':layout==='tablet'?'태블릿':'휴대폰'} 화면</span><InstallButton/></div>
   <nav className="rail" aria-label="주 탐색"><div className="mark" aria-label="메신저">w·</div><div className="nav-items"><button aria-current="page" onClick={()=>setDetail(false)}><span aria-hidden="true">◫</span>채팅</button></div><button className="theme" onClick={()=>setDark(!dark)} aria-label={dark?'라이트 모드':'다크 모드'}>{dark?'☀':'☾'}</button></nav>

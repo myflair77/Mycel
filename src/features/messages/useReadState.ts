@@ -1,3 +1,4 @@
+import {syncUnreadBadge} from '../notifications/badge';
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../../services/supabase';
 import {canMarkRead} from './readState';
@@ -15,6 +16,7 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
    try{const {data,error}=await supabase!.rpc('get_chat_activity');
     if(stopped)return;
     if(error){setReadError('읽음 상태를 확인하지 못했습니다. 자동으로 다시 시도합니다.');return}
+    void syncUnreadBadge((data as Activity[]).reduce((sum,item)=>sum+Number(item.unread_count),0));
     setActivity(Object.fromEntries((data as Activity[]).map(item=>[item.room_id,item])));
    }finally{loading=false;if(queued&&!stopped){queued=false;void refresh()}}
   }

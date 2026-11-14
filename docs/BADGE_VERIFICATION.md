@@ -14,3 +14,5 @@ Priority: Edge, Chrome, then Samsung Internet; test independently on Galaxy phon
 8. Dismiss notifications and compare badges again. Repeat after reading on another device to demonstrate unread/notification divergence.
 
 Record device, Android/One UI version, browser version, install type and each result. Do not claim badge success from service-worker unit tests. The private message text is not included in notifications. Existing database unread counts remain unchanged.
+
+Windows taskbar: installed Edge/Chrome web apps synchronize the total from successful get_chat_activity responses, including read events on another device. Zero and logout clear the badge. Updates are serialized and unavailable/denied APIs do not break messaging. Exact counts update while the app runs (background timers may be throttled). With all app windows closed, the worker does not have authoritative unread counts; the exact number is refreshed on reopening. Verify minimize/send/read/logout separately. Version 8 was saved but not deployed; the combined release supersedes it.
