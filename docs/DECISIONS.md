@@ -50,3 +50,9 @@
 - 신규 참여자는 현재 공간 자료를 보되 과거 수정 이력은 첫 접근 이후로 제한한다. 일반 공유 원본은 기존 대화 참여 시점 공개 범위를 유지한다.
 - 개인 자료를 공유할 때 공간에 독립 복사가 권장 기본이며 원본 연결 공유는 명시적 선택이다.
 - 일정, 노트, 댓글, 수정 이력, 휴지통에는 만료 일자나 정리 작업을 만들지 않는다. 기존 파일 만료 정책은 변경하지 않는다.
+
+## 2026-11-16 Page editor and brand
+- Keep internal note identifiers for backward compatibility; display 페이지 in the interface.
+- Slash commands select text, heading, list, checklist, quote, divider, table or link. Six-dot menu offers reorder, duplicate, comment and soft deletion.
+- Insert blocks atomically after the selected block and record the final ordering in permanent revision history.
+- Keep the existing PWA identity; update icon asset URLs for the approved Mycel M artwork.

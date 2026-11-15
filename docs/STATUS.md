@@ -182,3 +182,10 @@
 
 ## 2026-11-16 — 내 메시지 색상
 - 보낸 메시지와 전송 중 메시지를 연한 파란색(#e0edff) 배경, 검은색 계열(#111) 글씨로 변경. 공통 스타일로 기기·테마에 동일 적용.
+
+## 2026-11-16 Mycel icon and page blocks
+- Applied approved blue/white M icon to manifest, favicon, navigation and notifications.
+- Renamed user-facing notes to pages; added per-block + and six-dot actions, slash search with keyboard selection, adjacent insertion and duplication.
+- Existing block IDs, permissions and permanent revision histories retained.
+- Supabase migration 0027 applied: SQL Editor returned Success. No rows returned.
+- TypeScript check and 109 tests across 35 files passed. Public browser verification follows publication.

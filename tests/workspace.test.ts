@@ -40,7 +40,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0022_polls_scheduled.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0024_poll_options.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0025_workspace.sql',import.meta.url),'utf8'));
- await db.exec(readFileSync(new URL('../migrations/0026_spaces.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0026_spaces.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0027_page_blocks.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -87,3 +87,5 @@ it('prevents permission escalation and keeps a space copy independent from the o
  await asUser(a);const r=(await db.query<any>("select public.create_space(gen_random_uuid(),'Copy space',array[]::uuid[]) id")).rows[0].id;
  await db.query('select public.invite_group_members($1,array[$2::uuid])',[r,b]);const n=await create(),copy=crypto.randomUUID();await db.query('select public.workspace_copy($1,$2,$3)',[n,copy,r]);let d=await doc(copy,r);await db.query('select public.workspace_save($1,$2,$3,$4)',[copy,d.item.version,'Space copy',{allow_edit:true}]);await asUser(b);d=await doc(copy,r);expect(d.permission).toBe(3);await expect(db.query('select public.workspace_save($1,$2,$3,$4)',[copy,d.item.version,'Escalation',{allow_edit:false}])).rejects.toThrow(/관리자/);await db.query('select public.workspace_save($1,$2,$3,$4)',[copy,d.item.version,'Edited',{allow_edit:true}]);await asUser(a);expect((await doc(n)).item.title).toBe('Document');await expect(db.query("select public.workspace_share($1,$2,'read')",[copy,r])).rejects.toThrow(/공간 소유/);
 });
+
+it('inserts adjacent blocks and preserves IDs and history',async()=>{await asUser(a);const n=await create(),x=crypto.randomUUID(),y=crypto.randomUUID(),z=crypto.randomUUID();await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,x,{text:'first'}]);await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,y,{text:'last'}]);await db.query("select public.page_block_insert($1,$2,$3,'heading',$4)",[n,z,x,{text:'middle'}]);const d=await doc(n);expect(d.blocks.map((v:any)=>v.id)).toEqual([x,z,y]);const h=(await db.query<any>('select public.workspace_history_view($1,$2) h',[n,d.history[0].id])).rows[0].h;expect(h.blocks.map((v:any)=>v.id)).toEqual([x,z,y]);await asUser(b);await expect(db.query("select public.page_block_insert($1,gen_random_uuid(),null,'text',$2)",[n,{text:'bad'}])).rejects.toThrow(/권한/);});
