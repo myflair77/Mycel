@@ -1,0 +1,4 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>이미지 복사 검증</title><h1>이미지 복사 검증</h1><p>검증용 JPEG를 PNG로 복사하여 아래에 붙여넣습니다.</p><button id="copy" disabled>검증 이미지 복사</button><p id="status"></p><div contenteditable="true" role="textbox" aria-label="이미지 붙여넣기 영역" style="border:1px solid;padding:20px;min-height:160px">여기를 누르고 붙여넣기</div><script type="module">
+import {copyImage} from '/src/features/sharing/imageClipboard.ts';
+const c=document.createElement('canvas');c.width=200;c.height=100;const x=c.getContext('2d');x.fillStyle='#4b60d6';x.fillRect(0,0,200,100);x.fillStyle='white';x.font='20px sans-serif';x.fillText('Weano copy test',20,55);c.toBlob(b=>{document.querySelector('#copy').disabled=false;document.querySelector('#copy').onclick=async()=>{try{await copyImage(b);document.querySelector('#status').textContent='복사 완료'}catch(e){document.querySelector('#status').textContent=e.message}}},'image/jpeg');
+</script></html>
