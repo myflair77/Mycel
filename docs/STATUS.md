@@ -122,3 +122,9 @@
 2026-11-15: 외부 앱 공유 및 공유 수신 구현. 메시지 메뉴 → 다른 앱으로 공유, 파일 준비 후 Web Share API와 복사/다운로드 대안. share_target POST를 SW에서 수신해 IndexedDB에 보관, 로그인 후 대화 선택·미리보기·명시적 전송. 최대 10개/합계 300MB/텍스트 4000자/대기 3건·24시간. 계정·대화 원자적 고정과 안정적인 전송 UUID로 재시도 중복 방지. 74개 테스트 통과. 로컬 브라우저에서 수신 후 나와의 대화 전송 및 Windows 공유창 호출 확인. Galaxy OS 공유 대상 등록/실제 사진·파일 왕복은 사용자 기기 검증 필요.
 
 2026-11-15: 공유 화면을 시스템 공유와 복사·다운로드로 분리. 사진 이미지 복사 추가(PNG 클립보드, JPEG/GIF/WebP 변환, 사용자 클릭 시 write 시작, 비지원/권한 거부/대형 해상도 안내). 자동 테스트 78개 통과, 브라우저 테스트에서 JPEG 복사 완료 확인. 자동 붙여넣기는 브라우저 도구의 가상 클립보드 제한으로 미검증; 실제 카카오톡 붙여넣기는 사용자 확인 필요.
+
+## 2026-11-15 — Groups and layout polish
+- 0018 adds group rooms and membership RPCs without replacing existing direct rooms or attachments. Up to 50 active members; friends-only invitations; blocked pairs rejected; any member may rename/invite; leave requires UI confirmation and revokes room access without removing history/files.
+- New invitees can see earlier history; joins are initialized at current sequence, and prior messages do not count as their unread. Group read counts use active members and join/read positions, with sender names.
+- Conversation refresh moved to sticky list header. Profile labels/values use 12/14px scaled typography with bold values and soft backgrounds. Compact tablet navigation rail stays 48px across all sections.
+- Local validation: 82 tests passed, including group membership/reads/access/idempotency and existing regression suites. Actual two-device group testing remains user-assisted.

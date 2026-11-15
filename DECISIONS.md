@@ -14,3 +14,6 @@
 2026-11-15: 개인 대화방은 self_owner UUID와 unique index로 계정당 하나를 보장한다. 기존 방/메시지를 변경하지 않으며 파일 300MB·30일 정책을 동일 적용한다.
 
 2026-11-15: 표시 환경 조절은 설정 > 화면과 입력에 통합. 상단 표시 행과 대화 더보기의 중복 글자 조절 제거.
+
+## Group chat behavior (2026-11-15)
+Groups are separate from direct/self rooms. Maximum 50 active members. Current members can invite their accepted friends and rename the shared room. All members can leave; no ownership handoff is needed. Invite UI discloses visibility of old messages/files. Leave preserves server history for remaining members; re-entry requires invitation. Read counts exclude senders, departed members and messages preceding a member's join. Browser UI polls group roster/read state as a realtime fallback.

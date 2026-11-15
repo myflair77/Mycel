@@ -315,3 +315,6 @@ body{font-size:calc(16px * var(--font-scale,1))}
 .list-resizer::after{content:"";position:absolute;inset:0 -10px;cursor:col-resize}
 .list-resizer::before{content:"";position:absolute;width:4px;height:36px;top:50%;left:0;border-radius:4px;background:var(--muted);opacity:.45}
 .list-resizer:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+@media(max-width:743px){
+ .app.signed-in:not([data-layout="phone"]):not([data-section="chats"]){grid-template-columns:48px minmax(0,1fr)}
+}

@@ -1,0 +1,26 @@
+import {useEffect,useState,useRef} from 'react';
+import {supabase} from '../../services/supabase';
+import {ActionDialog} from './ActionDialog';
+import {SearchInput} from '../../components/SearchInput';
+export type GroupMember={id:string;display_name:string;username:string;joined_sequence:number;read_sequence:number};
+export function unreadPeople(members:GroupMember[],sender:string,sequence:number){return members.filter(m=>m.id!==sender&&Number(m.joined_sequence)<sequence&&Number(m.read_sequence)<sequence).length}
+export function useGroupState(room:string,enabled:boolean){
+ const [state,setState]=useState<{room:string;members:GroupMember[];authors:Record<string,string>}>({room:'',members:[],authors:{}});
+ useEffect(()=>{if(!enabled||!room)return;let stop=false,busy=false;
+ const refresh=async()=>{if(busy||stop)return;busy=true;try{const {data,error}=await supabase!.rpc('get_group_state',{p_room:room});if(!stop&&!error)setState({room,...data})}catch{/* Retry on the next poll. */}finally{busy=false}};
+ const channel=supabase!.channel('group-state:'+crypto.randomUUID()).on('postgres_changes',{event:'*',schema:'public',table:'chat_reads',filter:'room_id=eq.'+room},()=>void refresh()).subscribe();
+ const timer=setInterval(()=>void refresh(),3000);void refresh();window.addEventListener('focus',refresh);
+ return()=>{stop=true;clearInterval(timer);window.removeEventListener('focus',refresh);void supabase!.removeChannel(channel)};
+ },[room,enabled]);return state.room===room?state:{members:[] as GroupMember[],authors:{} as Record<string,string>};
+}
+export function GroupDialog({room,name,members,userId,onClose,onChanged,onCreated,onLeft}:{room?:string;name?:string;members:GroupMember[];userId:string;onClose:()=>void;onChanged:()=>void;onCreated:(id:string)=>void;onLeft:()=>void}){
+ const [title,setTitle]=useState(name??''),[friends,setFriends]=useState<GroupMember[]>([]),[selected,setSelected]=useState<string[]>([]),[query,setQuery]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[leaving,setLeaving]=useState(false);const key=useRef(crypto.randomUUID());
+ useEffect(()=>{let stop=false;void supabase!.rpc('list_social').then(({data,error})=>{if(stop)return;if(error)setError('친구 목록을 불러오지 못했습니다. 다시 열어 주세요.');else setFriends(data.relations.filter((x:{status:string})=>x.status==='accepted'))});return()=>{stop=true}},[]);
+ async function run(action:()=>PromiseLike<{error:any;data:any}>,done: (data:any)=>void){if(busy)return;setBusy(true);setError('');try{const {data,error}=await action();if(error)throw error;done(data)}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ const candidates=friends.filter(x=>!members.some(m=>m.id===x.id)&&(x.display_name+' '+x.username).toLowerCase().includes(query.toLowerCase()));
+ return <ActionDialog title={room?'그룹 대화 관리':'새 그룹 대화'} onClose={()=>{if(!busy)onClose()}}><div className="group-dialog"><label>방 이름<input maxLength={60} value={title} onChange={e=>setTitle(e.target.value)} placeholder="그룹 이름 (최대 60자)"/></label>{room&&<button disabled={busy||!title.trim()||title.trim()===name} onClick={()=>void run(()=>supabase!.rpc('rename_group_chat',{p_room:room,p_name:title}),()=>{onChanged();onClose()})}>방 이름 변경</button>}
+ {room&&<><h3>참여자 ({members.length}명)</h3><ul className="group-people">{members.map(m=><li key={m.id}><strong>{m.display_name}{m.id===userId?' (나)':''}</strong><small>@{m.username}</small></li>)}</ul></>}
+ <h3>{room?'친구 더 초대하기':'초대할 친구'}</h3><SearchInput aria-label="초대할 친구 검색" placeholder="친구 이름 또는 아이디 검색" value={query} onChange={e=>setQuery(e.target.value)} onClear={()=>setQuery('')}/><div className="group-choices">{candidates.map(f=><label key={f.id}><input type="checkbox" checked={selected.includes(f.id)} disabled={busy} onChange={e=>setSelected(v=>e.target.checked?[...v,f.id]:v.filter(x=>x!==f.id))}/><span><strong>{f.display_name}</strong><small>@{f.username}</small></span></label>)}{!candidates.length&&<p className="muted">초대할 친구가 없습니다.</p>}</div><p className="muted">최대 50명 · 초대된 친구는 이전 대화와 파일도 볼 수 있습니다. 방 이름은 모든 참여자에게 적용됩니다.</p>
+ <button className="primary-button" disabled={busy||!selected.length||(!room&&!title.trim())} onClick={()=>void run(()=>room?supabase!.rpc('invite_group_members',{p_room:room,p_users:selected}):supabase!.rpc('create_group_chat',{p_key:key.current,p_name:title,p_users:selected}),data=>{onChanged();if(!room)onCreated(data);onClose()})}>{busy?'처리 중…':room?`선택한 친구 ${selected.length}명 초대`:`그룹 만들기 (${selected.length+1}명)`}</button>
+ {room&&<div className="group-leave">{leaving?<><p>그룹에서 나갈까요? 내 목록에서 사라지며, 다시 초대받아야 참여할 수 있습니다. 다른 참여자의 대화와 파일은 유지됩니다.</p><button disabled={busy} onClick={()=>setLeaving(false)}>취소</button><button className="danger" disabled={busy} onClick={()=>void run(()=>supabase!.rpc('leave_group_chat',{p_room:room}),()=>{onLeft();onChanged();onClose()})}>나가기 확인</button></>:<button className="danger" onClick={()=>setLeaving(true)}>그룹 나가기</button>}</div>}<p role="status">{error}</p></div></ActionDialog>
+}
