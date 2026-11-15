@@ -17,3 +17,5 @@
 
 ## Group chat behavior (2026-11-15)
 Groups are separate from direct/self rooms. Maximum 50 active members. Current members can invite their accepted friends and rename the shared room. All members can leave; no ownership handoff is needed. Invite UI discloses visibility of old messages/files. Leave preserves server history for remaining members; re-entry requires invitation. Read counts exclude senders, departed members and messages preceding a member's join. Browser UI polls group roster/read state as a realtime fallback.
+
+2026-11-15: Supersedes initial group history disclosure. Existing members keep their history; future joiners see only messages/files/posts after joining, including after rejoining. A 1:1 addition opens a separate group and preserves the original room. General/team selection and conversion remain a design proposal, not an implemented capability. See docs/GROUP_CHAT_DESIGN.md for unanimous consent and unchanged history boundaries.

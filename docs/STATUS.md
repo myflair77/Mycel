@@ -128,3 +128,11 @@
 - New invitees can see earlier history; joins are initialized at current sequence, and prior messages do not count as their unread. Group read counts use active members and join/read positions, with sender names.
 - Conversation refresh moved to sticky list header. Profile labels/values use 12/14px scaled typography with bold values and soft backgrounds. Compact tablet navigation rail stays 48px across all sections.
 - Local validation: 82 tests passed, including group membership/reads/access/idempotency and existing regression suites. Actual two-device group testing remains user-assisted.
+
+## 2026-11-15 — Group history boundary
+- 0019_group_history.sql applied successfully to production Supabase through Edge SQL Editor. Existing membership visibility starts at zero; future joins start after the room sequence at admission. Existing messages and files are not removed.
+- Direct chat → add people creates a separate group with the original peer and selected friends. The private room is preserved without copying its history.
+- Message RLS, search, conversation preview, reply/forward/edit/delete, posts, flags, attachment reads/downloads, and idempotent send retries respect the history boundary. R2 download authorization uses attachment RLS on every request.
+- Late-join read tracking starts at the visibility floor. Rejoining establishes a new boundary; explicit forwarding creates a newly shared message.
+- Validation: 84 automated tests and TypeScript checks passed; added database regression confirms pre-migration members retain old records. Live DB migration success verified; three-account device verification remains outstanding.
+- General/team selection and consent-based conversion are design only: docs/GROUP_CHAT_DESIGN.md.

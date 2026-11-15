@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {supabase} from '../../services/supabase';
-export type Conversation={id:string;direct_key:string;peer:{id:string;username:string;display_name:string;member_count?:number}|null;last_body:string|null;last_at:string|null;muted:boolean};
+export type Conversation={id:string;direct_key:string;peer:{id:string;username:string;display_name:string;member_count?:number;history_start_sequence?:number}|null;last_body:string|null;last_at:string|null;muted:boolean};
 export function conversationTime(value:string|null){if(!value)return '';const date=new Date(value),now=new Date();return date.toDateString()===now.toDateString()?date.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):date.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric',...(date.getFullYear()!==now.getFullYear()?{year:'numeric' as const}:{})})}
 export function useConversations(userId:string){
  const [rooms,setRooms]=useState<Conversation[]>([]),[roomsError,setRoomsError]=useState('');
