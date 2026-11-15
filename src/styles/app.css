@@ -191,7 +191,7 @@ body{font-size:calc(16px * var(--font-scale,1))}
 @media(max-width:480px){.font-size-control{margin-left:0}.font-size-control>span{display:none}}
 /* Conversation-first adaptive workspace */
 [hidden]{display:none!important}
-.app.signed-in{height:var(--viewport-height,100dvh);width:100%;min-width:0;grid-template-columns:64px var(--list-width,310px) 4px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.app.signed-in{height:var(--viewport-height,100dvh);width:100%;min-width:0;grid-template-columns:64px clamp(140px,var(--list-width,310px),min(600px,calc(100vw - 348px))) 4px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
 .app.signed-in .display-controls{min-height:52px;padding:4px 16px;gap:8px;position:relative}
 .app.signed-in .display-controls select{border-radius:10px;max-width:130px}
 .app.signed-in .rail{grid-column:1;grid-row:2;padding:18px 4px;gap:12px;overflow:hidden}
@@ -272,7 +272,7 @@ body{font-size:calc(16px * var(--font-scale,1))}
 .drawer-results article>a{color:var(--link)}
 .drawer-results article>small{display:block;margin:8px;color:var(--muted)}
 .font-size-control button{min-width:44px;min-height:44px}
-@media(max-width:1099px){.app.signed-in{grid-template-columns:56px 280px 4px minmax(0,1fr)}.app.signed-in.list-collapsed{grid-template-columns:56px 0 0 minmax(0,1fr)}.app.signed-in:not([data-section="chats"]){grid-template-columns:56px minmax(0,1fr)}}
+@media(max-width:1099px){.app.signed-in{grid-template-columns:56px clamp(140px,var(--list-width,310px),min(600px,calc(100vw - 340px))) 4px minmax(0,1fr)}.app.signed-in.list-collapsed{grid-template-columns:56px 0 0 minmax(0,1fr)}.app.signed-in:not([data-section="chats"]){grid-template-columns:56px minmax(0,1fr)}}
 .app.signed-in[data-layout="phone"]{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;min-width:0}
 .app.signed-in[data-layout="phone"] .chat-list{grid-column:1;grid-row:2;padding:12px 16px;min-height:0;width:100%}
 .app.signed-in[data-layout="phone"] .rail{grid-column:1;grid-row:3;display:flex;flex-direction:row;min-height:64px!important;height:auto;padding:2px 8px max(2px,env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);gap:6px}
@@ -302,10 +302,16 @@ body{font-size:calc(16px * var(--font-scale,1))}
 
 /* Compact split view for unfolded phones. Manual modes stay authoritative. */
 @media(max-width:743px){
- .app.signed-in:not([data-layout="phone"])[data-section="chats"]{grid-template-columns:48px minmax(140px,32%) 4px minmax(0,1fr)}
+ .app.signed-in:not([data-layout="phone"])[data-section="chats"]{grid-template-columns:48px clamp(140px,var(--list-width,310px),min(600px,calc(100vw - 332px))) 4px minmax(0,1fr)}
  .app.signed-in:not([data-layout="phone"])[data-section="chats"].list-collapsed{grid-template-columns:48px 0 0 minmax(0,1fr)}
  .app.signed-in:not([data-layout="phone"]) .chat-list{padding:12px 8px}
  .app.signed-in:not([data-layout="phone"]) .topbar{padding:6px;gap:4px}
  .app.signed-in:not([data-layout="phone"]) .message-list{padding:12px 8px}
  .app.signed-in:not([data-layout="phone"]) .composer{padding:8px 6px;gap:4px}
 }
+
+/* Wide touch target around the slim divider. */
+.list-resizer{position:relative;z-index:3;user-select:none}
+.list-resizer::after{content:"";position:absolute;inset:0 -10px;cursor:col-resize}
+.list-resizer::before{content:"";position:absolute;width:4px;height:36px;top:50%;left:0;border-radius:4px;background:var(--muted);opacity:.45}
+.list-resizer:focus-visible{outline:2px solid var(--link);outline-offset:2px}
