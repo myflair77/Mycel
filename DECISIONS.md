@@ -19,3 +19,11 @@
 Groups are separate from direct/self rooms. Maximum 50 active members. Current members can invite their accepted friends and rename the shared room. All members can leave; no ownership handoff is needed. Invite UI discloses visibility of old messages/files. Leave preserves server history for remaining members; re-entry requires invitation. Read counts exclude senders, departed members and messages preceding a member's join. Browser UI polls group roster/read state as a realtime fallback.
 
 2026-11-15: Supersedes initial group history disclosure. Existing members keep their history; future joiners see only messages/files/posts after joining, including after rejoining. A 1:1 addition opens a separate group and preserves the original room. General/team selection and conversion remain a design proposal, not an implemented capability. See docs/GROUP_CHAT_DESIGN.md for unanimous consent and unchanged history boundaries.
+
+## 2026-11-15 — Mycel and team chat
+- Official display name is Mycel. Preserve the deployed origin, PWA ID, storage keys and existing data.
+- Group conversion requires every current member to explicitly agree within 72 hours; the designated owner must separately accept the role. Reject, expiry, membership/policy change prevents conversion. Existing history floors remain unchanged.
+- Team owners/admins manage invitations and notices; owner transfer requires acceptance. Private votes are exposed only as totals and the current user's own vote.
+- Shared section heading layout and app-root dialog portals prevent inconsistent headings and transparent group dialogs.
+- Desktop detached-chat behavior is documented in docs/DESKTOP_CHAT_WINDOWS.md; this iteration does not implement that design.
+- Working checkout moved to D:/(개발)/Mycel/web-messenger. Old residual files are retained until the locked source can be safely cleaned up.

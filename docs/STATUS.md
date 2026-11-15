@@ -137,3 +137,12 @@
 - Validation: 84 automated tests and TypeScript checks passed; added database regression confirms pre-migration members retain old records. Live DB migration success verified; three-account device verification remains outstanding.
 - General/team selection and consent-based conversion are design only: docs/GROUP_CHAT_DESIGN.md.
 - Browser QA found the more-menu history cleanup immediately cancelled the new group dialog. Group dialogs now participate in overlay navigation and render outside the collapsible list, including on mobile.
+
+## 2026-11-15 — Mycel release preparation
+- Official branding changed to Mycel without changing origin, installation ID or persisted settings keys.
+- Friends/chat/settings headings share typography and spacing. Group dialogs inherit app theme through an app-root portal, with an opaque surface fallback.
+- General/team selection, role management, owner acceptance and unanimous conversion are implemented. 0020_team_chat.sql is locally validated but production application is waiting for approval after the SQL editor retained old text on the first attempt. The editor now contains only 0020.
+- Local tests: 88 passing across 31 files; production build passes. Actual multi-device team conversion remains to be verified after production DB application.
+- Detached desktop chat windows have a detailed design in DESKTOP_CHAT_WINDOWS.md; implementation is a future task.
+- New checkout: D:/(개발)/Mycel/web-messenger. Git object integrity verified. Source remnants in the old locked folder are preserved; readable residual files match the copied versions.
+- Production update: user executed the prepared 0020 SQL after approval review required manual confirmation. Supabase SQL Editor returned Success. No rows returned. Team DB migration is now applied; deployment can proceed.

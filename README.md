@@ -1,15 +1,27 @@
-# WebMessenger (가칭)
-메신저 이름은 미정입니다. 표시 이름: `src/config.ts`.
+# Mycel
 
-## 로컬 실행
-Node.js 24 환경에서 검증합니다.
-```powershell
-npm ci
-npm run dev
-```
-출력된 로컬 URL을 여세요. `npm run check`, `npm run build`로 검증합니다.
+반응형 웹 메신저. React·TypeScript 화면, Supabase 인증·Postgres·Realtime, Cloudflare R2 파일 저장소를 사용합니다.
 
-현재는 0단계 UI 셸이며 로그인·서버·실시간 전송은 연결되지 않았습니다. 채팅 MVP가 아닙니다.
-진행 상황은 [docs/STATUS.md](docs/STATUS.md), 기술 결정은 [docs/DECISIONS.md](docs/DECISIONS.md)를 확인하세요.
+## 주요 기능
+- 이메일 가입·로그인·계정 복구와 프로필 변경
+- 친구 요청·차단, 1:1 대화, 나와의 대화, 일반 그룹 및 팀채팅
+- 전원 동의 기반 그룹 유형 전환, 역할·초대 권한·방장 위임
+- 답장·전달·검색·읽음 수·공지·게시판
+- 사진·파일 전송, 300MB 제한, 새 파일 30일 보관
+- 웹 푸시·공유·설치형 PWA, 반응형 레이아웃·글자 크기 설정
 
-현재: Supabase 인증/채팅 코드 준비. 연결 설정 및 검증: [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). 실제 서버 미검증. 빌드 산출물은 build/.
+## 개발
+Node.js 환경에서 `npm ci`, `npm run dev`를 실행합니다. `.env.example`을 참고해 로컬 환경을 구성하세요. 클라이언트에는 Supabase 공개 키만 사용하고 서버 비밀키는 호스팅 환경의 비밀 설정으로 관리합니다.
+
+`npm run check`, `npm test`, `npm run build`로 검사합니다. DB 변경은 `migrations`의 순번대로 적용하며, 운영 데이터가 있는 프로젝트에 초기화를 실행하지 않습니다. R2 Worker 패키징은 `scripts/build-r2.mjs`를 사용합니다.
+
+## 데이터와 접근 범위
+유형 전환은 같은 방의 정책만 변경합니다. 기존 대화·친구·파일은 유지하며, 새 그룹 참여자는 참여 이후의 대화와 파일만 볼 수 있습니다. 기존 1:1 대화에서 사람을 추가하면 별도 그룹을 만듭니다.
+
+## 문서
+- [작업 상태](docs/STATUS.md)
+- [그룹채팅 설계](docs/GROUP_CHAT_DESIGN.md)
+- [개별 대화창 설계](docs/DESKTOP_CHAT_WINDOWS.md)
+- [결정 기록](DECISIONS.md)
+
+현재 서비스 주소와 PWA 식별자·로컬 설정 키는 기존 설치 및 로그인 연속성을 위해 유지합니다. 실제 기기별 푸시·홈화면 숫자 지원은 OS와 브라우저에 따라 다릅니다.

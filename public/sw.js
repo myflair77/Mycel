@@ -39,7 +39,7 @@ self.addEventListener('push',event=>event.waitUntil(serialize(async()=>{
  // Stable per-delivery job tag prevents retry duplicates while preserving separate messages.
  const tag=typeof payload.tag==='string'&&payload.tag.startsWith('push-')?payload.tag:undefined;
  await updateBadge(payload);
- await self.registration.showNotification('WebMessenger',{body:'새 메시지가 도착했습니다.',icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag,data:{roomId:payload.roomId}});
+ await self.registration.showNotification('Mycel',{body:'새 메시지가 도착했습니다.',icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',tag,data:{roomId:payload.roomId}});
  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
  windows.forEach(client=>client.postMessage({type:'BADGE_REFRESH'}));
 })));

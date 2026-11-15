@@ -1,1 +1,1 @@
-export const appConfig = { displayName: 'WebMessenger', nameStatus: '가칭 · 이름 미정' } as const;
+export const appConfig = { displayName: 'Mycel', nameStatus: '함께 이어지는 대화' } as const;
