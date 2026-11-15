@@ -199,3 +199,5 @@
 - Added selection-quote comments with immutable original text and conservative reattachment after edits.
 - Enter at block end inserts a block; Shift+Enter retains a line break; Markdown shortcuts and block type conversion preserve existing workflows.
 - DB and permission tests passed locally; live SQL and browser verification in progress.
+- Live Supabase migration 0028 succeeded. Public browser verified drag-to-two-columns, persisted 52% width, quote-comment creation and jump-to-selected-text.
+- Full suite: 110 tests passed, plus 2 new pure interaction tests passed. New-block focus now runs after the refreshed block is mounted.
