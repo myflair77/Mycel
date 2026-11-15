@@ -299,3 +299,13 @@ body{font-size:calc(16px * var(--font-scale,1))}
 .image-pan:active{cursor:grabbing}.attachment-card .image-pan img{height:auto;object-fit:contain;margin:0}
 .image-viewer-content header{flex-wrap:wrap}.image-viewer-content header span{flex-basis:100%}
 .message-list{overflow-anchor:none}
+
+/* Compact split view for unfolded phones. Manual modes stay authoritative. */
+@media(max-width:743px){
+ .app.signed-in:not([data-layout="phone"])[data-section="chats"]{grid-template-columns:48px minmax(140px,32%) 4px minmax(0,1fr)}
+ .app.signed-in:not([data-layout="phone"])[data-section="chats"].list-collapsed{grid-template-columns:48px 0 0 minmax(0,1fr)}
+ .app.signed-in:not([data-layout="phone"]) .chat-list{padding:12px 8px}
+ .app.signed-in:not([data-layout="phone"]) .topbar{padding:6px;gap:4px}
+ .app.signed-in:not([data-layout="phone"]) .message-list{padding:12px 8px}
+ .app.signed-in:not([data-layout="phone"]) .composer{padding:8px 6px;gap:4px}
+}

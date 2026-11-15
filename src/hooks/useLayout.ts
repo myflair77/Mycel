@@ -6,5 +6,5 @@ export function useLayout(){
  const [width,setWidth]=useState(()=>window.innerWidth);
  useEffect(()=>{const resize=()=>setWidth(window.innerWidth);window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[]);
  useEffect(()=>{try{localStorage.setItem(key,preference)}catch{/* Preferences remain usable without storage. */}},[preference]);
- return {preference,setPreference,layout:width<744?'phone':resolveLayout(preference,width)};
+ return {preference,setPreference,layout:resolveLayout(preference,width)};
 }
