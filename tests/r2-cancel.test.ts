@@ -1,6 +1,6 @@
 import {it,expect,vi,afterEach} from 'vitest';
 const rpc=vi.hoisted(()=>vi.fn(()=>({abortSignal:()=>Promise.resolve({data:{},error:null})})));
-vi.mock('../src/services/supabase',()=>({supabase:{rpc,auth:{getSession:async()=>({data:{session:{access_token:'token'}}})},from:()=>({select:()=>({eq:()=>({abortSignal:()=>({maybeSingle:async()=>({data:null,error:null})})})})})}}));
+vi.mock('../src/services/supabase',()=>({supabase:{rpc,auth:{getSession:async()=>({data:{session:{access_token:'token'}}})},from:()=>{const q={select:()=>q,eq:()=>q,abortSignal:()=>q,maybeSingle:async()=>({data:null,error:null})};return q}}}));
 import {uploadR2} from '../src/features/messages/r2';
 afterEach(()=>vi.unstubAllGlobals());
 it('cancels between parts, cleans pending chunks, clears resume state, never commits',async()=>{

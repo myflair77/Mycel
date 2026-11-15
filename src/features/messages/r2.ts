@@ -8,7 +8,7 @@ type Part={key:string;size:number;hash:string};
 export async function uploadR2(a:Attachment,file:File|undefined,stage:(text:string)=>void,cancelled:()=>boolean=()=>false):Promise<ChatMessage>{
  const prepared=await supabase!.rpc('prepare_attachment',{p_room:a.room_id,p_id:a.id,p_name:a.name,p_size:a.size,p_mime:a.mime}).abortSignal(AbortSignal.timeout(15000));if(prepared.error)throw prepared.error;
  // Reconcile a commit whose response was lost before retrying the upload.
- const sent=await supabase!.from('messages').select('*').eq('attachment_id',a.id).abortSignal(AbortSignal.timeout(15000)).maybeSingle();if(sent.error)throw sent.error;if(sent.data)return sent.data;
+ const sent=await supabase!.from('messages').select('*').eq('attachment_id',a.id).eq('idempotency_key',a.id).eq('sender_id',a.sender_id).abortSignal(AbortSignal.timeout(15000)).maybeSingle();if(sent.error)throw sent.error;if(sent.data)return sent.data;
  const savedKey='r2-upload:'+a.sender_id+':'+a.id;let state:{ticket:string;chunkSize:number;parts:Part[];created:number}|null=null;
  try{state=JSON.parse(sessionStorage.getItem(savedKey)||'null')}catch{}
  if(state&&Date.now()-state.created>23*3600000){state=null;sessionStorage.removeItem(savedKey)}

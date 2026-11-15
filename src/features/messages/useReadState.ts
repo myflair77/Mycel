@@ -36,7 +36,7 @@ export function useReadState(room:string,latestSequence:number,conversationVisib
   refreshRef.current=()=>void refresh();
   const resume=()=>{setWake(value=>value+1);void refresh()};
   const channel=supabase!.channel('activity:'+crypto.randomUUID())
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},()=>void refresh())
+   .on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>void refresh())
    .on('postgres_changes',{event:'*',schema:'public',table:'chat_reads'},()=>void refresh())
    .subscribe(status=>{if(status==='SUBSCRIBED')void refresh()});
   const timer=setInterval(resume,5000);

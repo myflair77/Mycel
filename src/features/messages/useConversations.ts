@@ -14,7 +14,7 @@ export function useConversations(userId:string){
    finally{loading=false;if(queued&&!stopped){queued=false;void refresh()}}
   }
   refreshRef.current=refresh;
-  const channel=supabase!.channel('conversations:'+userId+':'+crypto.randomUUID()).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},()=>void refresh()).subscribe(status=>{if(status==='SUBSCRIBED')void refresh()});
+  const channel=supabase!.channel('conversations:'+userId+':'+crypto.randomUUID()).on('postgres_changes',{event:'*',schema:'public',table:'messages'},()=>void refresh()).subscribe(status=>{if(status==='SUBSCRIBED')void refresh()});
   const resume=()=>{if(document.visibilityState==='visible')void refresh()};const timer=setInterval(resume,5000);
   window.addEventListener('focus',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);void refresh();
   return()=>{stopped=true;clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);void supabase!.removeChannel(channel)};
