@@ -1,0 +1,5 @@
+import {it,expect,vi,afterEach} from 'vitest';
+import {canShareFile,sendOutside} from '../src/features/sharing/share';
+afterEach(()=>vi.unstubAllGlobals());
+it('checks actual file share support and sends file bytes instead of private URLs',async()=>{const share=vi.fn(async()=>{});vi.stubGlobal('navigator',{share,canShare:({files}:ShareData)=>files?.[0]?.type==='image/png'});const f=new File(['sample'],'a.png',{type:'image/png'});expect(canShareFile(f)).toBe(true);await sendOutside({files:[f]});expect(share).toHaveBeenCalledWith({files:[f]});expect(canShareFile(new File(['x'],'a.bin'))).toBe(false)});
+it('treats cancelling as normal and reports unsupported or failed sharing',async()=>{vi.stubGlobal('navigator',{});expect(canShareFile(new File(['a'],'a.txt'))).toBe(false);await expect(sendOutside({text:'a'})).rejects.toThrow();vi.stubGlobal('navigator',{share:async()=>{throw Object.assign(Error('cancel'),{name:'AbortError'})}});await expect(sendOutside({text:'a'})).resolves.toBeUndefined();vi.stubGlobal('navigator',{share:async()=>{throw Error('failed')}});await expect(sendOutside({text:'a'})).rejects.toThrow('failed')});

@@ -67,3 +67,13 @@ self.addEventListener('notificationclick',event=>{
   if(opened){try{await opened.focus()}catch{/* openWindow already opened the destination. */}}
  })());
 });
+// Receive OS shares locally; never POST private content to the hosting server.
+importScripts('/share-store.js');
+self.addEventListener('fetch',event=>{
+ const url=new URL(event.request.url);
+ if(url.origin!==self.location.origin||url.pathname!=='/share-target'||event.request.method!=='POST')return;
+ event.respondWith((async()=>{
+  try{const job=WeanoShareStore.normalize(await event.request.formData());await WeanoShareStore.put(job);return Response.redirect(new URL('/?share='+job.id,self.location.origin),303)}
+  catch{return Response.redirect(new URL('/?shareError=1',self.location.origin),303)}
+ })());
+});

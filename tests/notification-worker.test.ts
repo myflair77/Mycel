@@ -3,7 +3,7 @@ import {createContext,runInContext} from 'node:vm';
 import {it,expect} from 'vitest';
 function worker(unsupported=false){
  const handlers:Record<string,(e:any)=>void>={};const notifications:any[]=[];const badges:number[]=[];const storage=new Map<string,any>([['user','recipient']]);
- const context=createContext({self:{navigator:unsupported?{}:{setAppBadge:async(n:number)=>badges.push(n),clearAppBadge:async()=>badges.push(0)},clients:{matchAll:async()=>[]},addEventListener:(type:string,handler:any)=>handlers[type]=handler,registration:{showNotification:async(title:string,options:any)=>{const i=options.tag?notifications.findIndex(n=>n.tag===options.tag):-1;const n={title,...options};if(i<0)notifications.push(n);else notifications[i]=n},getNotifications:async()=>notifications}},URL,storage});
+ const context=createContext({importScripts:()=>{},self:{navigator:unsupported?{}:{setAppBadge:async(n:number)=>badges.push(n),clearAppBadge:async()=>badges.push(0)},clients:{matchAll:async()=>[]},addEventListener:(type:string,handler:any)=>handlers[type]=handler,registration:{showNotification:async(title:string,options:any)=>{const i=options.tag?notifications.findIndex(n=>n.tag===options.tag):-1;const n={title,...options};if(i<0)notifications.push(n);else notifications[i]=n},getNotifications:async()=>notifications}},URL,storage});
  runInContext(readFileSync(new URL('../public/sw.js',import.meta.url),'utf8'),context);
  runInContext("setting=async(key,value)=>{if(value!==undefined)storage.set(key,value);return storage.get(key)}",context);
  async function emit(type:string,event:any){let done:any;handlers[type]({...event,waitUntil:(p:any)=>done=p});await done}

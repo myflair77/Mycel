@@ -37,6 +37,7 @@ export function InstallGuideHost(){
  {!platform.chrome&&<><p className="install-guide-address">{origin}</p><p className="install-guide-footnote">Chrome이 없다면 Play 스토어에서 Google Chrome을 설치한 뒤 이 주소를 열어 주세요. 기존 대화와 친구는 같은 계정으로 로그인하면 그대로 보입니다.</p></>}
  <a className="install-official" href="https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DAndroid&hl=ko" target="_blank" rel="noreferrer">Chrome 공식 설치 도움말 ↗</a>
  </>:platform.ios?<><p>iPhone·iPad에서는 Safari로 사이트를 열어 주세요.</p><ol><li>공유 버튼 누르기</li><li>‘홈 화면에 추가’ 선택</li><li>‘추가’를 누르고 홈 화면 아이콘으로 실행</li><li>로그인 후 설정에서 알림 켜기</li></ol></>:platform.mac?<><p>Mac에서는 Safari의 ‘파일 → Dock에 추가’로 설치할 수 있습니다(macOS Sonoma 14 이상).</p><p>Chrome·Edge에서도 앱 설치를 이용할 수 있습니다. 설치 후 앱에서 로그인하고 알림을 켜 주세요.</p><p>Mac의 알림·숫자 배지는 현재 실기기 검증 전입니다.</p></>:<><p>Chrome·Edge 브라우저에서 주소창의 설치 아이콘 또는 메뉴의 ‘앱 설치’를 선택하세요.</p><p>설치 후에도 같은 계정으로 기존 대화를 이어갈 수 있습니다.</p></>}
+ <div className="install-guide-note"><strong>다른 앱에서 공유받기</strong><p>갤럭시 Chrome 또는 Windows Edge에서 앱으로 설치한 뒤 갤러리·파일 앱의 공유 메뉴에서 WebMessenger를 선택하세요. 목록에 없으면 메신저를 온라인에서 다시 열고 잠시 후 확인해 주세요. 계속 보이지 않으면 미전송 내용을 처리한 뒤 앱을 다시 설치해야 할 수 있습니다. 지원하지 않는 기기에서는 복사·붙여넣기 또는 파일 첨부를 이용하세요.</p></div>
  {prompt&&!installed&&(!platform.android||platform.chrome)&&<button className="guide-primary" onClick={()=>void install()}>지금 앱 설치</button>}
  {installed&&<p className="install-guide-footnote">앱이 설치되어 있습니다. 홈 화면 아이콘으로 실행해 주세요. 설치 안내는 설정에서 다시 볼 수 있어요.</p>}
  <p role="status">{notice}</p><footer><button onClick={close}>확인 · 닫기</button><small>나중에 설정 → 설치 안내에서 다시 볼 수 있어요.</small></footer>

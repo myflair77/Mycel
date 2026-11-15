@@ -5,7 +5,7 @@ const origin='https://web-messenger-jbh.myflair.chatgpt.site';
 const room='00000000-0000-0000-0000-000000000001';
 async function click(clients:any[],data:any={roomId:room},enumerationFails=false){
  let handler:any;const close=vi.fn();const opened={focus:vi.fn(async()=>{})};const openWindow=vi.fn(async()=>opened);
- const context=createContext({URL,self:{location:{origin},clients:{matchAll:async()=>{if(enumerationFails)throw new Error('gone');return clients},openWindow},addEventListener:(name:string,fn:any)=>{if(name==='notificationclick')handler=fn}}});
+ const context=createContext({importScripts:()=>{},URL,self:{location:{origin},clients:{matchAll:async()=>{if(enumerationFails)throw new Error('gone');return clients},openWindow},addEventListener:(name:string,fn:any)=>{if(name==='notificationclick')handler=fn}}});
  runInContext(readFileSync(new URL('../public/sw.js',import.meta.url),'utf8'),context);
  let done:any;handler({notification:{data,close},waitUntil:(p:any)=>done=p});await done;
  return {openWindow,close};
