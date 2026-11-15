@@ -59,7 +59,7 @@ button:disabled{cursor:default}
 .app .message-list{background:#fcfcfe;padding:24px 22px;gap:14px}
 .app.dark .message-list{background:#171a21}
 .app .message-bubble{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:9px 13px;box-shadow:0 1px 1px #1e2a4003}
-.app .mine .message-bubble{background:#3466de;border-color:#3466de;color:#fff}
+.app .mine .message-bubble{background:#e0edff;border-color:#d2e3fb;color:#111}
 .app .message.grouped .message-bubble{border-top-left-radius:6px}
 .app .message.mine.grouped .message-bubble{border-top-left-radius:12px;border-top-right-radius:6px}
 .app .message .attachment-bubble{border:0;box-shadow:none;background:transparent;padding:0}
@@ -337,3 +337,8 @@ button:disabled{cursor:default}
 .app.signed-in[data-layout="phone"][data-section="spaces"] .space-library,.app.signed-in[data-layout="phone"][data-section="spaces"] .chat-main:not([hidden]){grid-row:2}
 .app .workspace pre{white-space:pre-wrap;overflow-wrap:anywhere}
 .app .space-heading>strong{flex:1;min-width:0;overflow-wrap:anywhere}
+
+/* Keep pending messages consistent with sent messages. */
+.app .message.mine.outgoing{background:#e0edff;color:#111}
+.app .message.mine.outgoing progress{accent-color:#3466de}
+.app .message.mine.outgoing button{border-color:#a9c5ec;color:#111}
