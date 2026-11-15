@@ -56,3 +56,6 @@
 - Slash commands select text, heading, list, checklist, quote, divider, table or link. Six-dot menu offers reorder, duplicate, comment and soft deletion.
 - Insert blocks atomically after the selected block and record the final ordering in permanent revision history.
 - Keep the existing PWA identity; update icon asset URLs for the approved Mycel M artwork.
+
+## 2026-11-16 Approved icon revision
+- Use the newly supplied M artwork unchanged in shape and color; retain original margins while resizing for app assets.

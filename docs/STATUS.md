@@ -189,3 +189,6 @@
 - Existing block IDs, permissions and permanent revision histories retained.
 - Supabase migration 0027 applied: SQL Editor returned Success. No rows returned.
 - TypeScript check and 109 tests across 35 files passed. Public browser verification follows publication.
+
+## 2026-11-16 Icon replacement
+- Replaced app, navigation, favicon and notification icons with the user-selected cf2cb58c artwork. Versioned asset URLs retain existing PWA identity.
