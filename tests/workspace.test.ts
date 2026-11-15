@@ -41,6 +41,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0024_poll_options.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0025_workspace.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0026_spaces.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0027_page_blocks.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0028_page_interactions.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -89,3 +90,20 @@ it('prevents permission escalation and keeps a space copy independent from the o
 });
 
 it('inserts adjacent blocks and preserves IDs and history',async()=>{await asUser(a);const n=await create(),x=crypto.randomUUID(),y=crypto.randomUUID(),z=crypto.randomUUID();await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,x,{text:'first'}]);await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,y,{text:'last'}]);await db.query("select public.page_block_insert($1,$2,$3,'heading',$4)",[n,z,x,{text:'middle'}]);const d=await doc(n);expect(d.blocks.map((v:any)=>v.id)).toEqual([x,z,y]);const h=(await db.query<any>('select public.workspace_history_view($1,$2) h',[n,d.history[0].id])).rows[0].h;expect(h.blocks.map((v:any)=>v.id)).toEqual([x,z,y]);await asUser(b);await expect(db.query("select public.page_block_insert($1,gen_random_uuid(),null,'text',$2)",[n,{text:'bad'}])).rejects.toThrow(/권한/);});
+
+it('atomically reorders columns and retains quoted comments after text edits',async()=>{
+ await asUser(a);const n=await create(),x=crypto.randomUUID(),y=crypto.randomUUID(),comment=crypto.randomUUID();
+ await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,x,{text:'안녕 😀 함께 일해요'}]);
+ await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,y,{text:'second'}]);
+ let d=await doc(n);const layout={[x]:{group:x,column:0,width:40},[y]:{group:x,column:1,width:60}};
+ await db.query('select public.page_block_reorder($1,$2,$3,$4)',[n,d.item.version,[y,x],layout]);
+ await expect(db.query('select public.page_block_reorder($1,$2,$3,$4)',[n,d.item.version,[x,y],{}])).rejects.toThrow(/다른 수정/);
+ d=await doc(n);expect(d.blocks.map((b:any)=>b.id)).toEqual([y,x]);expect(d.blocks[1].content._layout.width).toBe(40);
+ await expect(db.query('select public.page_block_reorder($1,$2,$3,$4)',[n,d.item.version,[x,x],{}])).rejects.toThrow(/목록/);
+ await db.query('select public.page_quote_comment($1,null,$2,$3,$4,1,5,7,$5)',[n,comment,'의견입니다',x,'함께']);
+ expect((await doc(n)).comments[0].anchor.quote).toBe('함께');
+ await db.query("select public.note_block_save($1,$2,1,'text',$3)",[n,x,{text:'수정된 본문'}]);
+ expect((await doc(n)).comments[0].anchor.quote).toBe('함께');
+ await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,1,5,7,$4)',[n,'stale',x,'함께'])).rejects.toThrow(/변경/);
+ await asUser(b);await expect(db.query('select public.page_block_reorder($1,1,$2,$3)',[n,[x,y],{}])).rejects.toThrow(/권한/);
+});

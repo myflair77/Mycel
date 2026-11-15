@@ -192,3 +192,10 @@
 
 ## 2026-11-16 Icon replacement
 - Replaced app, navigation, favicon and notification icons with the user-selected cf2cb58c artwork. Versioned asset URLs retain existing PWA identity.
+
+## 2026-11-16 Page interactions
+- Added pointer/touch block dragging, insertion markers, auto-scroll, Escape cancellation and keyboard move alternatives.
+- Added up to four columns, adjustable widths, single-column reset and narrow-screen stacking.
+- Added selection-quote comments with immutable original text and conservative reattachment after edits.
+- Enter at block end inserts a block; Shift+Enter retains a line break; Markdown shortcuts and block type conversion preserve existing workflows.
+- DB and permission tests passed locally; live SQL and browser verification in progress.

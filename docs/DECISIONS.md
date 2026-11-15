@@ -59,3 +59,9 @@
 
 ## 2026-11-16 Approved icon revision
 - Use the newly supplied M artwork unchanged in shape and color; retain original margins while resizing for app assets.
+
+## Page block interactions
+- Store column layout in block content so existing permanent snapshots restore it together with content.
+- Persist ordering and columns atomically under document revision checks.
+- Quote anchors use Unicode code-point offsets and surrounding context; ambiguous or changed text keeps an orphaned quotation instead of attaching to an unrelated sentence.
+- This iteration covers block gestures and quote comments; it is not a complete clone of every Notion feature.
