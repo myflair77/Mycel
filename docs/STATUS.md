@@ -146,3 +146,11 @@
 - Detached desktop chat windows have a detailed design in DESKTOP_CHAT_WINDOWS.md; implementation is a future task.
 - New checkout: D:/(개발)/Mycel/web-messenger. Git object integrity verified. Source remnants in the old locked folder are preserved; readable residual files match the copied versions.
 - Production update: user executed the prepared 0020 SQL after approval review required manual confirmation. Supabase SQL Editor returned Success. No rows returned. Team DB migration is now applied; deployment can proceed.
+
+## 2026-11-15 — Previous-history invitations
+- Added 0021_history_invitation.sql and per-invitation consent UI. Default after-join access unchanged; team owner proposes named recipients, current members unanimously approve, owner completes admission within 72h.
+- Full-history access includes accessible old messages/attachments/posts/notices, never restores deleted or expired original files. Ordinary re-invites do not reuse prior consent.
+- Five database tests cover history/file/post access, unchanged unread positions, repeat/unauthorized calls, rejection/expiry/cancel, owner transfer, membership/policy changes and final-invite rollback.
+- Production DB application and browser verification pending at this source preparation point.
+- Production: 0021 applied successfully in Supabase SQL Editor. 0022 polling/scheduling RPCs applied; 0023 registered pg_cron job 3 for minute-by-minute dispatch. No existing messages/files were removed.
+- Added clickable links/metadata cards, public polls and scheduled texts in the composer + menu. Validation: 100 tests across 34 files passed, TypeScript and production build passed. Production UI and real cron delivery are checked separately after deployment.

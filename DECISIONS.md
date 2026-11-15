@@ -27,3 +27,15 @@ Groups are separate from direct/self rooms. Maximum 50 active members. Current m
 - Shared section heading layout and app-root dialog portals prevent inconsistent headings and transparent group dialogs.
 - Desktop detached-chat behavior is documented in docs/DESKTOP_CHAT_WINDOWS.md; this iteration does not implement that design.
 - Working checkout moved to D:/(개발)/Mycel/web-messenger. Old residual files are retained until the locked source can be safely cleaned up.
+
+## 2026-11-15 — Team history invitation consent
+- Team owners may propose full-history access for a fixed list of invited friends. Default invitations remain after-join only. Each existing member, including the owner, explicitly votes; the deadline is 72 hours, with no implicit consent.
+- On unanimous approval the proposing owner completes admission. Final admission rechecks friendship/block/capacity conditions. Only those new members get visible_after_sequence=0; joined/read positions remain at admission to avoid old unread counts. Existing records, expiry and other members' visibility remain unchanged.
+- Rejection, cancellation, expiration, membership or policy/owner change prevents admission under the proposal. Individual ballots are private; clients see totals and their own vote. Admission records name the recipients and scope.
+- Existing owner transfer remains proposal + recipient acceptance. Ownership/policy changes invalidate active history consent.
+
+## 2026-11-15 — Link previews, public polls and scheduled messages
+- Clickable HTTP(S) URLs and lazy metadata cards. HTTPS previews use an authenticated Worker endpoint that verifies message RLS before fetching; no target receives the user's token/cookies. Private-network targets, unsafe redirects, oversized HTML/images and non-image formats are rejected. Failure leaves the original link usable.
+- Composer + now offers files, public single-choice polls and scheduled text messages. Poll options 2–10; names/selections are public; users can change their vote before closure. Author or team manager can close. Existing history boundaries apply.
+- Scheduled texts are private to the author before sending, editable/cancellable while pending, and dispatched by pg_cron once per minute. Server rechecks write permission/blocking and uses the schedule ID for idempotent sending. Failed jobs remain visible; no browser needs to remain open.
+- Current limits: 50 group members, 100 pending scheduled texts per account, schedule within one year. Poll expiry 1 minute–30 days. No payment-plan changes.
