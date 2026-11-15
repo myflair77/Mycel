@@ -136,3 +136,4 @@
 - Late-join read tracking starts at the visibility floor. Rejoining establishes a new boundary; explicit forwarding creates a newly shared message.
 - Validation: 84 automated tests and TypeScript checks passed; added database regression confirms pre-migration members retain old records. Live DB migration success verified; three-account device verification remains outstanding.
 - General/team selection and consent-based conversion are design only: docs/GROUP_CHAT_DESIGN.md.
+- Browser QA found the more-menu history cleanup immediately cancelled the new group dialog. Group dialogs now participate in overlay navigation and render outside the collapsible list, including on mobile.
