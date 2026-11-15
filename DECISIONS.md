@@ -39,3 +39,6 @@ Groups are separate from direct/self rooms. Maximum 50 active members. Current m
 - Composer + now offers files, public single-choice polls and scheduled text messages. Poll options 2–10; names/selections are public; users can change their vote before closure. Author or team manager can close. Existing history boundaries apply.
 - Scheduled texts are private to the author before sending, editable/cancellable while pending, and dispatched by pg_cron once per minute. Server rechecks write permission/blocking and uses the schedule ID for idempotent sending. Failed jobs remain visible; no browser needs to remain open.
 - Current limits: 50 group members, 100 pending scheduled texts per account, schedule within one year. Poll expiry 1 minute–30 days. No payment-plan changes.
+
+## 투표 공개 범위와 선택 개수
+신규 투표는 익명이 기본이며 실명은 프로필 이름 공개를 의미한다. 작성자는 1~선택지 수 범위의 최대 선택 수를 지정한다. 참가자는 1개 이상 상한 이하로 골라 명시적으로 제출/변경 저장한다. 익명은 다른 참여자와 방장에게 응답자를 숨기는 모델이며 운영 DB 자체의 무기명 저장은 아니다. 생성 이후 공개 범위/상한을 변경하지 않아 기존 투표자의 기대를 유지한다. 기존 실명 투표는 익명으로 소급 전환하지 않는다.

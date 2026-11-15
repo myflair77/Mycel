@@ -154,3 +154,12 @@
 - Production DB application and browser verification pending at this source preparation point.
 - Production: 0021 applied successfully in Supabase SQL Editor. 0022 polling/scheduling RPCs applied; 0023 registered pg_cron job 3 for minute-by-minute dispatch. No existing messages/files were removed.
 - Added clickable links/metadata cards, public polls and scheduled texts in the composer + menu. Validation: 100 tests across 34 files passed, TypeScript and production build passed. Production UI and real cron delivery are checked separately after deployment.
+
+## 2026-11-15 익명 및 복수선택 투표 확장
+- 새 투표 기본 익명, 실명 선택 가능. 작성자가 항목 수 이내 최대 선택 수 지정(최소 선택 1).
+- 투표 제출/선택 변경 저장으로 한 번에 원자적 교체, 중복/범위/최대 개수 서버 검증.
+- 익명 결과 RPC는 이름/사용자 ID/다른 사람별 응답을 반환하지 않으며 합계와 본인 선택만 제공. 방장도 동일. DB 운영자는 관리상 원시 데이터 접근 가능.
+- 기존 공개 단일선택 투표 보존 및 구버전 RPC 호환. 게시 후 익명 여부 변경 불가.
+- 0024_poll_options.sql 로컬 DB 테스트 통과. 운영 DB 실행은 자동 승인 검토가 명시 승인 부족으로 차단하여 미적용. 공개 사이트 배포도 새 스키마 적용 후 진행 필요.
+
+- 후속: 사용자 0024 실행 승인 후 운영 DB 적용 성공 확인. 전체 101개 테스트 및 빌드 통과. 공개 배포 진행.

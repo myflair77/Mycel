@@ -38,6 +38,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0020_team_chat.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0021_history_invitation.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0022_polls_scheduled.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0024_poll_options.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -66,4 +67,17 @@ it('delivers due schedules once without a browser, preserves attribution and fai
  const r=await group('regular',[b]),id='10000000-0000-0000-0000-000000000094',bad='10000000-0000-0000-0000-000000000095',at=new Date(Date.now()+3600000).toISOString();
  await db.query('select public.save_scheduled_message($1,$2,$3,$4)',[id,r,'server sent',at]);await asUser(b);await db.query('select public.save_scheduled_message($1,$2,$3,$4)',[bad,r,'must fail',at]);await db.query('select public.leave_group_chat($1)',[r]);await db.exec('reset role');await db.query("update public.scheduled_messages set send_at=now()-interval '1 minute' where id=any($1::uuid[])",[[id,bad]]);await db.query('select public.run_scheduled_messages()');await db.query('select public.run_scheduled_messages()');
  expect((await db.query<any>('select * from public.messages where idempotency_key=$1',[id])).rows).toHaveLength(1);expect((await db.query<any>('select sender_id from public.messages where idempotency_key=$1',[id])).rows[0].sender_id).toBe(a);expect((await db.query<any>('select status from public.scheduled_messages where id=$1',[bad])).rows[0].status).toBe('failed');expect((await db.query('select * from public.messages where idempotency_key=$1',[bad])).rows).toHaveLength(0);
+});
+
+it('hides anonymous voters from owner and participants and validates bounded multi-choice replacement',async()=>{
+ const r=await group('team',[b]),id='10000000-0000-0000-0000-000000000096',end=new Date(Date.now()+3600000).toISOString();
+ await db.query('select public.create_chat_poll($1,$2,$3,$4,$5,true,2)',[id,r,'Pick up to two',['A','B','C','D','E'],end]);
+ await asUser(b);await db.query('select public.vote_chat_poll_choices($1,array[1,3])',[id]);
+ let p=(await toolsState(r)).polls[0];expect(p.my_choices).toEqual([1,3]);expect(p.votes).toEqual([]);expect(p.counts).toEqual([1,0,1,0,0]);expect(p.voter_count).toBe(1);
+ await expect(db.query('select public.vote_chat_poll_choices($1,array[1,2,3])',[id])).rejects.toThrow(/개수/);
+ await expect(db.query('select public.vote_chat_poll_choices($1,array[1,1])',[id])).rejects.toThrow(/개수/);
+ await expect(db.query('select * from public.chat_poll_votes')).rejects.toThrow(/permission/);
+ await db.query('select public.vote_chat_poll_choices($1,array[2])',[id]);
+ await asUser(a);p=(await toolsState(r)).polls[0];expect(p.votes).toEqual([]);expect(p.my_choices).toEqual([]);expect(p.counts).toEqual([0,1,0,0,0]);expect(JSON.stringify(p)).not.toContain(b);
+ await db.query('select public.close_chat_poll($1)',[id]);await expect(db.query('select public.vote_chat_poll_choices($1,array[1])',[id])).rejects.toThrow(/마감/);
 });
