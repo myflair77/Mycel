@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "check": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/build-r2.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:integration": "node --env-file-if-exists=.env.test scripts/verify-supabase.mjs"
