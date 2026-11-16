@@ -201,3 +201,21 @@
 - DB and permission tests passed locally; live SQL and browser verification in progress.
 - Live Supabase migration 0028 succeeded. Public browser verified drag-to-two-columns, persisted 52% width, quote-comment creation and jump-to-selected-text.
 - Full suite: 110 tests passed, plus 2 new pure interaction tests passed. New-block focus now runs after the refreshed block is mounted.
+
+
+## 2026-11-16 — 배지·스크롤 수정 및 설치 안내
+- v48 배포 성공: 알림 표시 후 최신 숫자 배지 적용, 동일 계정 알림 재연결 시 기존 알림 보존, 서비스 워커 미지원 시 전경 배지 보완.
+- 주기적인 메시지 갱신에서 사용자의 위쪽 스크롤 위치를 보존.
+- 배포 소스 전체 113개 테스트 및 빌드 통과. GitHub main b48748c 반영.
+- 설치 안내에 브라우저별 알림 등록, 앱 설치와 알림 켜기의 차이, Chrome 수신 확인 후 Edge 알림 해제 절차 추가. f50ff6a GitHub 반영, v49 배포 진행.
+- 사용자가 Chrome 알림 켜기 이후 정상화를 보고했으나 데스크톱 숫자 실기기 검증은 미완료. CUA 브라우저 목록 요청이 반복 시간 초과.
+- 페이지 편집기/0029(운영 DB 적용됨) 변경은 작업 폴더에 보존. 전체 작업 트리 115개 테스트 통과. 아직 공개 배포하지 않음.
+- 공간 제거 및 나·대화 중심의 자료 소유/추가/복사/공유 권한 개편은 남은 작업. 완료로 보고하지 않음.
+
+## 2026-11-16 — 개인·대화 중심 개편 준비
+- 탐색: 나·대화·친구·설정. 각 대화에 채팅/일정/페이지 탭. 기존 공간 생성 UI와 팀채팅 전환 제한 제거. 기존 방/자료 ID 보존.
+- 내 목록 연결 추가·제거와 개인 독립 복사 구분. 자료와 수정/댓글 이력의 자동 삭제 없음.
+- 연속 블록 편집기, 서식 선택 도구, / 메뉴, 블록 이동/다단/열 너비, 인용 댓글 표시. 기존 블록 변환 테스트 추가.
+- 타입 검사/118개 테스트/워커 빌드 통과. 운영 0029는 이전에 적용 성공. 0030은 로컬 DB 검증 통과, 운영 적용 대기.
+- 브라우저 연결 시간 초과로 사용자에게 0030 실행을 요청함. 운영 적용 확인 전 개편 화면 배포하지 않음.
+- 데스크톱/모바일 실제 화면 및 데스크톱 숫자 배지 검증은 미완료. 기존 배지·스크롤 수정과 설치 안내는 v49까지 배포 성공.

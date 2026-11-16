@@ -382,3 +382,66 @@ button:disabled{cursor:default}
 @media(max-width:600px){.app .page-columns{display:flex;flex-direction:column;gap:0}.app .page-column{width:100%}.app .page-column-resizer{display:none}}
 @media(prefers-reduced-motion:reduce){.app .page-block{transition:none}}
 
+
+/* Continuous page editor. Keep form styling out of the writing surface. */
+.page-document{position:relative;--page-reading-width:850px}
+.page-document .document-title{display:block;max-width:var(--page-reading-width);margin:24px auto 10px}
+.page-document .document-title>span{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+.page-document .document-title input{font-size:2rem;font-weight:750;border:0;background:transparent;box-shadow:none;padding:8px 0;width:100%;border-radius:0}
+.page-editor{max-width:var(--page-reading-width);margin:0 auto;min-height:350px;padding:0 36px 80px 48px;position:relative}
+.editor-status{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:36px;font-size:.75rem;color:var(--muted,#747984)}
+.editor-status button,.editor-status summary{font-size:.8rem;padding:4px 8px;min-height:28px;border:0;background:transparent;cursor:pointer}
+.editor-status details{position:relative}.editor-status details[open]{background:var(--surface,#fff);z-index:5}.editor-status details button{display:block}
+.page-editor .tiptap{outline:none;min-height:280px;padding-top:20px;line-height:1.65;color:var(--text,#242933);overflow-wrap:anywhere}
+.page-editor .tiptap p{margin:.25em 0;min-height:1.65em}
+.page-editor .tiptap h1{font-size:1.7em;margin:.8em 0 .25em}.page-editor .tiptap h2{font-size:1.4em;margin:.7em 0 .25em}.page-editor .tiptap h3{font-size:1.2em;margin:.6em 0 .25em}
+.page-editor .tiptap ul,.page-editor .tiptap ol{padding-left:1.5em;margin:.25em 0}
+.page-editor .tiptap li p{margin:0}.page-editor .tiptap blockquote{border-left:3px solid #7d90b8;padding-left:1em;margin:.4em 0}
+.page-editor .tiptap pre{background:var(--surface-alt,#f2f4f8);border-radius:8px;padding:14px;white-space:pre-wrap}
+.page-editor .tiptap code{background:#8996ac20;padding:.1em .25em;border-radius:3px}
+.page-editor .tiptap a{color:#3264bd;text-decoration:underline}
+.page-editor .tiptap ul[data-type=taskList]{list-style:none;padding:0}
+.page-editor .tiptap li[data-type=taskItem]{display:flex;align-items:flex-start;gap:9px}
+.page-editor .tiptap li[data-type=taskItem]>label{flex:none;margin:0;padding:0;display:block}
+.page-editor .tiptap li[data-type=taskItem]>label input{width:16px;height:16px;min-height:0;margin-top:6px}
+.page-editor .tiptap li[data-type=taskItem]>div{flex:1;min-width:0}
+.page-editor .tiptap .is-empty:before{content:attr(data-placeholder);color:#929aa8;float:left;height:0;pointer-events:none}
+.page-editor .tiptap table{border-collapse:collapse;table-layout:fixed;width:100%;margin:.5em 0}
+.page-editor .tiptap td,.page-editor .tiptap th{border:1px solid #aab3c3;padding:6px 10px;vertical-align:top;position:relative;min-width:40px}
+.page-editor .tiptap th{background:#8294b51a}.page-editor .tiptap .tableWrapper{overflow-x:auto}
+.page-editor .tiptap .column-resize-handle{position:absolute;right:-2px;top:0;bottom:0;width:4px;background:#4584ec;pointer-events:none}
+.page-editor .tiptap .selectedCell{background:#4388ef20}.page-editor .tiptap.resize-cursor{cursor:col-resize}
+.editor-columns{display:flex;gap:24px;margin:8px 0}.editor-column{position:relative;min-width:0;flex-grow:1;flex-shrink:1}.editor-column-content{min-height:40px}
+.editor-column-resize{position:absolute;right:-16px;top:0;bottom:0;width:8px!important;min-height:40px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;cursor:col-resize;opacity:0;touch-action:none}
+.editor-column:last-child>.editor-column-resize{display:none}.editor-columns:hover .editor-column-resize,.editor-column-resize:focus-visible{opacity:1;background:#4b82da40!important}
+.editor-handles{position:fixed;display:flex;z-index:35;height:28px;align-items:center}
+.editor-handles button{border:0!important;background:transparent!important;padding:0!important;width:23px;height:28px;min-height:0!important;color:#8d97a7;cursor:grab;font-size:22px}
+.editor-handles button:hover{background:#8191ab20!important}
+.editor-menu{position:fixed;z-index:1000;max-height:350px;overflow:auto;width:260px;border:1px solid #a5afc530;border-radius:10px;padding:6px;background:var(--surface,#fff);box-shadow:0 12px 40px #18203228}
+.editor-menu button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;border-radius:5px;padding:6px 10px;min-height:32px;text-align:left;font-size:.9rem}
+.editor-menu button:hover,.editor-menu .selected{background:#5a88db20}.editor-menu small{font-size:.7rem;color:#8e98aa}
+.editor-selection-tools{display:flex;gap:2px;background:var(--surface,#fff);padding:4px;border-radius:8px;border:1px solid #b6bfd330;box-shadow:0 6px 24px #1e293b25}
+.editor-selection-tools button{border:0;padding:5px 9px;min-height:30px;border-radius:4px;background:transparent}
+.editor-link{top:30%;left:calc(50% - 140px);width:280px}.editor-link input{width:100%}
+.editor-drag-ghost{position:fixed;left:0;top:0;z-index:2000;pointer-events:none;max-width:400px;padding:10px 16px;background:var(--surface,#fff);box-shadow:0 8px 30px #26324938;border-radius:7px;opacity:.9}
+.editor-drop-line{position:fixed;z-index:1999;background:#4384ee;border-radius:2px;pointer-events:none}
+.page-comment-mark{background:#f1c54738;border-bottom:2px solid #e3b031;cursor:pointer}
+.editor-warning{padding:10px;border-radius:8px;background:#f9c44f20;color:inherit;font-size:.85rem}
+.editor-table-tools{display:flex;gap:6px;flex-wrap:wrap}.editor-table-tools button{font-size:.8rem;padding:6px}
+.page-document.comments-open{padding-right:360px}
+.page-document>.page-comments{position:fixed;z-index:40;right:0;top:0;bottom:0;width:340px;background:var(--surface,#fff);border-left:1px solid #a6b0c530;padding:18px;overflow:auto;box-shadow:-5px 0 22px #21334c08}
+.page-comments[hidden]{display:none!important}.page-comments>header{display:flex;justify-content:space-between;align-items:center}.page-comments>header button{border:0;background:transparent;font-size:22px}
+.page-comments article{padding:12px 0;border-bottom:1px solid #adb9ce30;font-size:.85rem}.page-comments article>button{padding:4px 7px;min-height:26px;font-size:.75rem}
+.page-comments textarea{width:100%;min-height:90px}.page-comments article:target{background:#568bea20}
+.page-document>details{max-width:var(--page-reading-width);margin:12px auto}
+@media(max-width:900px){.page-document.comments-open{padding-right:16px}.page-document>.page-comments{top:auto;max-height:65dvh;width:100%;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px #17243524}.page-editor{padding-left:38px;padding-right:8px}.editor-columns{gap:18px}}
+@media(max-width:600px){.editor-columns{display:block}.editor-column{width:100%;margin:8px 0}.editor-column-resize{display:none!important}.page-document .document-title input{font-size:1.7rem}}
+@media(prefers-reduced-motion:reduce){.page-editor *{animation:none!important;transition:none!important}}
+
+
+/* Conversation resources share the room identity and layout. */
+.conversation-resource-tabs{display:flex;gap:6px;padding:8px 16px;border-bottom:1px solid var(--border,#e4e7ed);flex-shrink:0}
+.conversation-resource-tabs button{border:0;border-radius:8px;padding:8px 16px;background:transparent;color:inherit}
+.conversation-resource-tabs button[aria-selected=true]{background:#e0edff;color:#163e8a;font-weight:700}
+.conversation-resource-library{flex:1;min-height:0;overflow:auto}
+.chat-main:not([data-room-tab=chat])>:not(.topbar):not(.conversation-resource-tabs):not(.conversation-resource-library){display:none!important}

@@ -65,3 +65,9 @@
 - Persist ordering and columns atomically under document revision checks.
 - Quote anchors use Unicode code-point offsets and surrounding context; ambiguous or changed text keeps an orphaned quotation instead of attaching to an unrelated sentence.
 - This iteration covers block gestures and quote comments; it is not a complete clone of every Notion feature.
+
+## 2026-11-16 — Conversation resources
+- Retire the separate space product, keep its database identifiers and original access semantics for legacy content.
+- Conversation resources remain in their originating room. My library contains private originals and explicit links; independent copies exclude comments and revision history.
+- A Tiptap/ProseMirror document retains legacy block UUIDs and stores rich text alongside readable legacy content. Saves use optimistic revision checks and mutation receipts.
+- Apply 0030 before publishing the conversation-resource UI; do not report local database tests as production validation.

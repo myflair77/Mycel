@@ -42,6 +42,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0025_workspace.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0026_spaces.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migrations/0027_page_blocks.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0028_page_interactions.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0029_page_document.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -106,4 +107,51 @@ it('atomically reorders columns and retains quoted comments after text edits',as
  expect((await doc(n)).comments[0].anchor.quote).toBe('함께');
  await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,1,5,7,$4)',[n,'stale',x,'함께'])).rejects.toThrow(/변경/);
  await asUser(b);await expect(db.query('select public.page_block_reorder($1,1,$2,$3)',[n,[x,y],{}])).rejects.toThrow(/권한/);
+});
+
+it('saves a document atomically, retains comment anchors, IDs, history and retry identity',async()=>{
+ await asUser(a);const n=await create(),x=crypto.randomUUID(),y=crypto.randomUUID(),cm=crypto.randomUUID(),mutation=crypto.randomUUID();
+ await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[n,x,{text:'앞부분 댓글문장 뒷부분'}]);
+ await db.query('select public.page_quote_comment($1,null,$2,$3,$4,1,4,8,$5)',[n,cm,'남겨둘 의견',x,'댓글문장']);
+ let d=await doc(n);const input=[{id:x,kind:'text',content:{text:'앞부분 '}},{id:y,kind:'text',content:{text:'댓글문장 뒷부분'}}];
+ await db.query('select public.page_document_save($1,$2,$3,$4)',[n,d.item.version,mutation,input]);
+ let after=await doc(n);expect(after.blocks.map((b:any)=>b.id)).toEqual([x,y]);expect(after.comments[0].block_id).toBe(y);expect(after.comments[0].anchor.quote).toBe('댓글문장');
+ await db.query('select public.page_document_save($1,$2,$3,$4)',[n,d.item.version,mutation,input]);
+ expect((await doc(n)).history.length).toBe(after.history.length);
+ await expect(db.query('select public.page_document_save($1,$2,gen_random_uuid(),$3)',[n,d.item.version,input])).rejects.toThrow(/다른 수정/);
+ await expect(db.query('select public.page_document_save($1,$2,gen_random_uuid(),$3)',[n,after.item.version,[...input,input[0]]])).rejects.toThrow(/중복/);
+ expect((await doc(n)).blocks).toEqual(after.blocks);
+ await db.query('select public.page_document_save($1,$2,gen_random_uuid(),$3)',[n,after.item.version,[]]);
+ after=await doc(n);expect(after.blocks.length).toBe(0);expect(after.comments[0].anchor.quote).toBe('댓글문장');
+ await db.query('select public.workspace_restore($1,$2,$3)',[n,after.history[1].id,after.item.version]);expect((await doc(n)).blocks.length).toBe(2);
+ await asUser(b);await expect(db.query('select public.page_document_save($1,1,gen_random_uuid(),$2)',[n,[]])).rejects.toThrow(/권한/);
+});
+it('rejects cross-page IDs and read-only document saves without modifying originals',async()=>{
+ await asUser(a);const n=await create(),other=await create(),x=crypto.randomUUID();
+ await db.query("select public.page_block_insert($1,$2,null,'text',$3)",[other,x,{text:'keep'}]);
+ let d=await doc(n);await expect(db.query('select public.page_document_save($1,$2,gen_random_uuid(),$3)',[n,d.item.version,[{id:x,kind:'text',content:{text:'bad'}}]])).rejects.toThrow(/다른 페이지/);
+ expect((await doc(other)).blocks[0].content.text).toBe('keep');
+ const r=await group('team',[b]);await db.query("select public.workspace_share($1,$2,'read')",[n,r]);await asUser(b);d=await doc(n,r);
+ await expect(db.query('select public.page_document_save($1,$2,gen_random_uuid(),$3)',[n,d.item.version,[]])).rejects.toThrow(/권한/);
+});
+
+
+it('moves resources to conversations without losing data and distinguishes library links from copies',async()=>{
+ await db.exec('reset role');await db.exec(readFileSync(new URL('../migrations/0030_personal_conversations.sql',import.meta.url),'utf8'));
+ await asUser(a);const resource='10000000-0000-0000-0000-000000000030',copy='10000000-0000-0000-0000-000000000031';
+ await db.query("select public.create_space_item($1,'note','대화 페이지','{}',$2)",[resource,room]);
+ expect((await db.query<any>('select public.workspace_permission($1) as p',[resource])).rows[0].p).toBe(4);
+ await asUser(b);
+ const list=async(r:string|null)=>(await db.query<any>("select public.workspace_list('note',$1) as x",[r])).rows[0].x;
+ expect((await list(room)).some((x:any)=>x.id===resource)).toBe(true);
+ expect((await list(null)).some((x:any)=>x.id===resource)).toBe(false);
+ await db.query('select public.workspace_library_set($1,true)',[resource]);
+ expect((await list(null)).some((x:any)=>x.id===resource)).toBe(true);
+ await db.query('select public.workspace_copy($1,$2,null)',[resource,copy]);
+ await db.query('select public.workspace_library_set($1,false)',[resource]);
+ expect((await list(null)).some((x:any)=>x.id===resource)).toBe(false);
+ expect((await list(null)).some((x:any)=>x.id===copy)).toBe(true);
+ await asUser(c);await expect(db.query('select public.workspace_get($1)',[resource])).rejects.toThrow();
+ await expect(db.query('select public.workspace_library_set($1,true)',[resource])).rejects.toThrow();
+ await asUser(a);await expect(db.query("select public.create_space(gen_random_uuid(),'obsolete','{}')")).rejects.toThrow();
 });
