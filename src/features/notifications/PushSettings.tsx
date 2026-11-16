@@ -4,7 +4,7 @@ import {bindWorker,disablePush,rememberPush,savedPush} from './push';
 export function PushSettings({userId,room,conversationVisible}:{userId:string;room:string;conversationVisible:boolean}){
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const [enabled,setEnabled]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
- useEffect(()=>{if(!supported)return;void navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).then(async reg=>{const device=savedPush();setEnabled(Boolean(device?.userId===userId&&Notification.permission==='granted'&&await reg.pushManager.getSubscription()))}).catch(()=>setNotice('알림 서비스 준비에 실패했습니다. 새로고침해 주세요.'))},[userId,supported]);
+ useEffect(()=>{if(!supported)return;void navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).then(async reg=>{const device=savedPush();const active=Boolean(device?.userId===userId&&Notification.permission==='granted'&&await reg.pushManager.getSubscription());if(active)await bindWorker(reg,userId);setEnabled(active)}).catch(()=>setNotice('알림 서비스 준비에 실패했습니다. 새로고침해 주세요.'))},[userId,supported]);
  useEffect(()=>{
   if(!enabled)return;const device=savedPush();if(!device||device.userId!==userId)return;
   const update=()=>{const visible=conversationVisible&&document.visibilityState==='visible'&&document.hasFocus();void supabase!.rpc('touch_push',{p_device:device.id,p_room:visible&&room?room:null})};

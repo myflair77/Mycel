@@ -7,12 +7,14 @@ async function updateBadge(payload){
  const count=payload.unreadCount,at=payload.badgeAt;
  if(!Number.isSafeInteger(count)||count<0||!Number.isSafeInteger(at)||at<=0)return false;
  const previous=await setting('badge');
- if(previous?.userId===payload.userId&&previous.badgeAt>at)return false;
+ if(previous?.userId===payload.userId&&previous.badgeAt>at)return updateBadge(previous);
  try{
+  const supported=count===0?typeof self.navigator.clearAppBadge==='function':typeof self.navigator.setAppBadge==='function';
   if(count===0)await self.navigator.clearAppBadge?.();else await self.navigator.setAppBadge?.(count);
   await setting('badge',{userId:payload.userId,badgeAt:at,unreadCount:count});
+  return supported;
  }catch{/* An unavailable badge must not suppress message notifications. */}
- return true;
+ return false;
 }
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
@@ -23,11 +25,14 @@ self.addEventListener('message',event=>{
  }));
  if(event.data?.type==='BADGE_SNAPSHOT')event.waitUntil(serialize(async()=>{
   const user=await binding();const matched=Boolean(user&&user===event.data.userId);
-  if(matched)await updateBadge(event.data);
-  event.ports[0]?.postMessage({matched});
+  const applied=matched?await updateBadge(event.data):false;
+  const current=matched?await setting('badge'):null;
+  event.ports[0]?.postMessage({matched,applied,unreadCount:current?.unreadCount});
  }));
  if(event.data?.type==='PUSH_USER')event.waitUntil(serialize(async()=>{
-  await binding(event.data.userId??'');await setting('badge',null);
+  const nextUser=event.data.userId??'';const previousUser=await binding();
+  if(previousUser===nextUser){event.ports[0]?.postMessage({ok:true});return}
+  await binding(nextUser);await setting('badge',null);
   try{await self.navigator.clearAppBadge?.()}catch{}
   const notifications=await self.registration.getNotifications();notifications.forEach(n=>n.close());
   event.ports[0]?.postMessage({ok:true});
@@ -38,8 +43,11 @@ self.addEventListener('push',event=>event.waitUntil(serialize(async()=>{
  const user=await binding();if(!user||user!==payload.userId)return;
  // Stable per-delivery job tag prevents retry duplicates while preserving separate messages.
  const tag=typeof payload.tag==='string'&&payload.tag.startsWith('push-')?payload.tag:undefined;
- await updateBadge(payload);
  await self.registration.showNotification('Mycel',{body:'새 메시지가 도착했습니다.',icon:'/icons/mycel-m-v2-192.png',badge:'/icons/mycel-m-v2-192.png',tag,data:{roomId:payload.roomId}});
+ // Notifications can replace a numeric taskbar badge with a generic dot.
+ // Apply the newest numeric snapshot after displaying the notification.
+ const previous=await setting('badge');
+ await updateBadge(previous?.userId===user&&previous.badgeAt>payload.badgeAt?previous:payload);
  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
  windows.forEach(client=>client.postMessage({type:'BADGE_REFRESH'}));
 })));

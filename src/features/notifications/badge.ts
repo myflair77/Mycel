@@ -13,12 +13,12 @@ export async function syncServerBadge(snapshot:{userId:string;unreadCount:number
   try{
    const reg=await navigator.serviceWorker.getRegistration('/');
    if(reg?.active){
-    const matched=await new Promise<boolean>((resolve)=>{
-     const channel=new MessageChannel();const timer=setTimeout(()=>{channel.port1.close();resolve(false)},3000);
-     channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();resolve(e.data?.matched===true)};
+    const result=await new Promise<{matched:boolean;applied?:boolean;unreadCount?:number}>((resolve)=>{
+     const channel=new MessageChannel();const timer=setTimeout(()=>{channel.port1.close();resolve({matched:false})},3000);
+     channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();resolve(e.data??{matched:false})};
      reg.active!.postMessage({type:'BADGE_SNAPSHOT',...snapshot},[channel.port2]);
     });
-    if(matched)return;
+    if(result.matched){if(!result.applied)await syncUnreadBadge(result.unreadCount??snapshot.unreadCount);return;}
    }
   }catch{}
  }
