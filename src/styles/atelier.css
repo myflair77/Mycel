@@ -445,3 +445,12 @@ button:disabled{cursor:default}
 .conversation-resource-tabs button[aria-selected=true]{background:#e0edff;color:#163e8a;font-weight:700}
 .conversation-resource-library{flex:1;min-height:0;overflow:auto}
 .chat-main:not([data-room-tab=chat])>:not(.topbar):not(.conversation-resource-tabs):not(.conversation-resource-library){display:none!important}
+
+/* Save status stays in a compact row; recovery actions float over the page. */
+.app .page-editor .editor-status{min-height:20px;margin:0;padding:0;gap:10px;font-size:.72rem;line-height:20px;flex-wrap:wrap}
+.app .page-editor .editor-status details{margin:0;padding:0;border:0;background:transparent}
+.app .page-editor .editor-status summary{font-size:inherit;line-height:20px;min-height:0;margin:0;padding:0;color:var(--muted,#747984);cursor:pointer}
+.app .page-editor .editor-recovery-popover{position:absolute;right:0;top:calc(100% + 6px);width:min(320px,70vw);padding:12px;background:var(--surface,#fff);border:1px solid var(--border,#dce0e8);border-radius:10px;box-shadow:0 8px 24px #0002;z-index:20}
+.app .page-editor .editor-recovery-popover p{margin:0 0 8px;font-size:.8rem}
+.app .page-editor .editor-recovery-popover button{display:block;width:100%;margin:4px 0;padding:6px 8px;min-height:32px;font-size:.8rem}
+.app .page-editor .tiptap{padding-top:8px}
