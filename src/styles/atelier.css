@@ -476,3 +476,19 @@ button:disabled{cursor:default}
 .app .table-action-menu{width:230px}.app .table-action-menu strong{display:block;padding:6px 10px;font-size:.85rem}
 
 .app .table-axis-handle{color:#a9b1bf!important;opacity:.65;font-weight:400!important}.app .table-axis-handle:hover,.app .table-axis-handle:focus-visible,.app .table-axis-handle:active{color:#677489!important;opacity:1}
+
+/* Fixed-size grip geometry is independent of inherited button fonts and padding. */
+.app .table-axis-handle{display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;padding:0!important;line-height:1!important;border-radius:4px!important}
+.app .table-axis-handle.row{width:12px!important;height:24px!important}
+.app .table-axis-handle.column{width:24px!important;height:12px!important}
+.app .table-axis-handle svg,.editor-handles svg{display:block;flex:none;pointer-events:none}
+.app .table-axis-handle:focus,.app .table-axis-handle:active{background:#d9e9ff!important;color:#3577d0!important;opacity:1}
+.editor-handles,.editor-handles button{height:24px!important;display:flex;align-items:center;justify-content:center;line-height:1!important}
+.page-editor .tiptap .selectedCell{background:#dcecff!important;box-shadow:inset 0 0 0 1px #528bda}
+.page-editor .editor-menu button.selected{background:#e8effb!important;outline:1px solid #7a9bd5;outline-offset:-1px;color:var(--ink)!important}
+.table-drop-line{transition:top 100ms ease-out,left 100ms ease-out}
+@media(prefers-reduced-motion:reduce){.table-drop-line{transition:none}}
+.editor-block-comment{position:fixed;z-index:36;display:flex;align-items:center;justify-content:center;width:26px!important;height:24px!important;min-width:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:4px;background:var(--surface,#fff)!important;color:#8792a4!important;cursor:pointer}
+.editor-block-comment:hover,.editor-block-comment:focus-visible{background:#e1ecfc!important;color:#3577d0!important}
+.app .table-axis-handle,.app .editor-handles button{color:#929dac!important;opacity:.85}
+.app .page-editor{max-width:none;margin-left:0;margin-right:0;padding-left:56px;padding-right:36px;box-sizing:border-box;width:100%}
