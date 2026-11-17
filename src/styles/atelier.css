@@ -541,3 +541,5 @@ button:disabled{cursor:default}
 .cell-color-options span{display:block;width:18px;height:18px;border:1px solid #8294b540;border-radius:4px}
 .app .editor-cell-menu .cell-align-options{display:flex;gap:3px}
 .app .editor-cell-menu small{font-size:11px;padding:6px;line-height:1.5}
+
+.page-editor .editor-handles,.page-editor .editor-block-comment{position:absolute}
