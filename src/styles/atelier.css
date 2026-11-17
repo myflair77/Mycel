@@ -512,3 +512,19 @@ button:disabled{cursor:default}
 .app .personal-tabs [role="tab"][aria-selected="true"],.app .conversation-resource-tabs [role="tab"][aria-selected="true"]{background:var(--paper,#fff);border-color:var(--line,#e1e6ee);border-bottom-color:var(--paper,#fff);color:var(--link,#365bb1);font-weight:650;box-shadow:0 -2px 5px #1d355005;z-index:1}
 .app .personal-self-link{margin-bottom:7px;flex-shrink:0}
 @media(max-width:480px){.app .personal-tabs [role="tab"],.app .conversation-resource-tabs [role="tab"]{padding:10px 12px}.app .personal-self-link{font-size:.7rem;padding:6px}}
+
+/* Compact page library: title and one metadata row, without a reserved heading gap. */
+.app .page-library>.section-heading{min-height:0;margin:0 0 8px;align-items:center;flex-wrap:wrap;gap:4px 12px}
+.app .page-library>.section-heading h1{margin:0}
+.app .page-library>.workspace-toolbar{margin:8px 0}
+.app .page-library>p[role=status]:empty{display:none}
+.app .page-library>.workspace-cards{margin:8px 0;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.app .page-library .workspace-cards>button{min-height:0;min-width:0;padding:11px 13px;gap:5px}
+.app .page-library .workspace-cards>button>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app .page-library .library-card-meta{display:flex;align-items:center;gap:10px;font-size:11px;min-width:0}
+.app .page-library .library-card-meta>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app .page-library .library-card-meta>time{flex:none;white-space:nowrap}
+/* Reserve an inner table gutter, separate from the block's outer controls. */
+.page-editor .tiptap .tableWrapper{margin-left:20px;width:calc(100% - 20px)}
+/* Scroll with the editor content; never chase viewport scroll using React state. */
+.app .page-editor .table-axis-handle{position:absolute}
