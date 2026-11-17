@@ -474,3 +474,5 @@ button:disabled{cursor:default}
 .app .editor-table-tools{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0;font-size:.75rem}
 .app .editor-table-tools button,.app .editor-table-tools select{min-height:30px;padding:4px 7px;margin:0;font-size:inherit;width:auto}
 .app .table-action-menu{width:230px}.app .table-action-menu strong{display:block;padding:6px 10px;font-size:.85rem}
+
+.app .table-axis-handle{color:#a9b1bf!important;opacity:.65;font-weight:400!important}.app .table-axis-handle:hover,.app .table-axis-handle:focus-visible,.app .table-axis-handle:active{color:#677489!important;opacity:1}
