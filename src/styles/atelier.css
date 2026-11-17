@@ -528,3 +528,16 @@ button:disabled{cursor:default}
 .page-editor .tiptap .tableWrapper{padding-left:20px;box-sizing:border-box;width:100%}
 /* Scroll with the editor content; never chase viewport scroll using React state. */
 .app .page-editor .table-axis-handle{position:absolute}
+
+/* Active cell indication is a decoration, never part of saved content. */
+.page-editor .tiptap td.active-table-cell,.page-editor .tiptap th.active-table-cell{box-shadow:inset 0 0 0 1.5px #5b8bd9}
+.app .editor-cell-trigger{position:absolute;z-index:41;display:grid;place-items:center;width:20px;height:20px;min-height:0;padding:0;border:1px solid #5b8bd9;border-radius:7px;background:var(--paper);color:#3975c6;line-height:1;cursor:pointer}
+.app .editor-cell-menu>strong{display:inline-block;padding:6px 8px}
+.app .editor-cell-menu fieldset{border:0;margin:5px 0;padding:3px}
+.app .editor-cell-menu legend{color:var(--muted);font-size:12px}
+.app .editor-cell-menu .cell-color-options{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.app .editor-cell-menu .cell-color-options button{justify-content:center;width:100%;height:28px;min-height:28px;padding:2px;font-weight:600}
+.app .cell-color-options button[aria-pressed=true]{outline:1px solid #5b8bd9;background:#8294b518}
+.cell-color-options span{display:block;width:18px;height:18px;border:1px solid #8294b540;border-radius:4px}
+.app .editor-cell-menu .cell-align-options{display:flex;gap:3px}
+.app .editor-cell-menu small{font-size:11px;padding:6px;line-height:1.5}

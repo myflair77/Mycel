@@ -1,0 +1,12 @@
+import {it,expect} from 'vitest';
+import {getSchema} from '@tiptap/core';
+import {EditorState,TextSelection} from '@tiptap/pm/state';
+import {CellSelection,TableMap} from '@tiptap/pm/tables';
+import {extensions} from '../src/features/workspace/pageExtensions';
+import {selectedCells,clearCellContents} from '../src/features/workspace/tableCells';
+import {blocksToDoc,docToBlocks} from '../src/features/workspace/pageDocument';
+const schema=getSchema(extensions());
+function fixture(){const cell=(text:string,attrs={})=>schema.nodes.tableCell.create({color:'#2563bb',background:'#dbeafe',...attrs},schema.nodes.paragraph.create(null,schema.text(text,[schema.marks.bold.create()])));const table=schema.nodes.table.create({id:'t'},[schema.nodes.tableRow.create(null,[cell('keep spans',{colspan:2,colwidth:[90,110]}),cell('other')]),schema.nodes.tableRow.create(null,[cell('A',{colwidth:[90]}),cell('B',{colwidth:[110]}),cell('C')])]);const doc=schema.nodes.doc.create(null,table);return {doc,table,map:TableMap.get(table)}}
+it('caret identifies one merged cell and clears content without removing its geometry or style',()=>{const {doc,table,map}=fixture(),pos=1+map.map[0];let state=EditorState.create({schema,doc,selection:TextSelection.create(doc,pos+2)});expect(selectedCells(state)).toEqual([pos]);const attrs=state.doc.nodeAt(pos)!.attrs;clearCellContents(state,tr=>state=state.apply(tr));expect(state.doc.nodeAt(pos)!.textContent).toBe('');expect(state.doc.nodeAt(pos)!.attrs).toEqual(attrs);expect(state.doc.textContent).toBe('otherABC');expect(TableMap.get(state.doc.firstChild!).problems).toBeNull()});
+it('range clear only empties selected cells and preserves all colors through save/reload',()=>{const {doc,map}=fixture();let state=EditorState.create({schema,doc,selection:CellSelection.create(doc,1+map.map[3],1+map.map[4])});expect(selectedCells(state)).toHaveLength(2);clearCellContents(state,tr=>state=state.apply(tr));expect(state.doc.textContent).toBe('keep spansotherC');const restored=schema.nodeFromJSON(blocksToDoc(docToBlocks(state.doc.toJSON())));expect(restored.toJSON()).toEqual(state.doc.toJSON());expect(restored.firstChild!.firstChild!.firstChild!.attrs.color).toBe('#2563bb')});
+it('outside tables cannot clear paragraph content',()=>{const doc=schema.nodes.doc.create(null,schema.nodes.paragraph.create(null,schema.text('safe')));const state=EditorState.create({schema,doc});expect(selectedCells(state)).toEqual([]);expect(clearCellContents(state)).toBe(false)});

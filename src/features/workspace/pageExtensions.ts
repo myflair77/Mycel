@@ -1,3 +1,4 @@
+import {selectedCells} from './tableCells';
 import {pageEnter,pageBackspace} from './pageEnter';
 import {Extension,Node as TipNode,mergeAttributes,type JSONContent,type Editor} from '@tiptap/core';
 import {Plugin,PluginKey,TextSelection} from '@tiptap/pm/state';
@@ -35,8 +36,9 @@ export const Column=TipNode.create({
  }
 });
 export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Backspace:()=>pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
-export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
-export function extensions(){return [CellStyle,PageEnter,StarterKit.configure({heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true}),Placeholder.configure({placeholder:({node})=>node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
+export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{color:{default:null,parseHTML:e=>e.style.color,renderHTML:a=>a.color?{style:'color:'+a.color}:{}},background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
+export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
+export function extensions(){return [ActiveCell,CellStyle,PageEnter,StarterKit.configure({heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true}),Placeholder.configure({placeholder:({node})=>node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
 export function blockPositions(editor:Editor){const entries:{id:string;pos:number;node:any}[]=[];editor.state.doc.forEach((n,pos)=>{if(n.type.name==='columns'){n.forEach((col,offset)=>col.forEach((b,bo)=>entries.push({id:b.attrs.id,pos:pos+offset+bo+2,node:b})))}else entries.push({id:n.attrs.id,pos,node:n})});return entries}
 export function selectionQuote(editor:Editor){const {from,to}=editor.state.selection;if(from===to)return null;const b=blockPositions(editor).find(b=>from>b.pos&&to<=b.pos+b.node.nodeSize-1);if(!b||!b.node.isTextblock)return null;const text=b.node.textBetween(0,b.node.content.size,'\n','\n'),start=from-b.pos-1,end=to-b.pos-1;return {blockId:b.id,quote:text.slice(start,end),start:Array.from(text.slice(0,start)).length,end:Array.from(text.slice(0,end)).length}}
 
