@@ -503,3 +503,12 @@ button:disabled{cursor:default}
 .app .personal-tabs button[aria-selected="true"]{background:#e4ecff;color:#2f58a8}
 .app .personal-self-link{border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:.8rem;padding:7px 10px;min-height:34px;cursor:pointer}
 .app .personal-self-link:hover{color:var(--link);background:var(--soft)}
+/* Shared attached tabs: curved upper corners, a continuous baseline and an open active edge. */
+.app .personal-navigation{padding-bottom:0;align-items:flex-end;gap:8px;flex-wrap:nowrap}
+.app .personal-tabs,.app .conversation-resource-tabs{display:flex;gap:4px;align-items:flex-end}
+.app .conversation-resource-tabs{padding:8px 16px 0;background:var(--soft,#f5f7fb);border-bottom:1px solid var(--line,#e1e6ee)}
+.app .personal-tabs [role="tab"],.app .conversation-resource-tabs [role="tab"]{position:relative;margin:0 0 -1px;border:1px solid transparent;border-bottom:1px solid var(--line,#e1e6ee);border-radius:16px 16px 0 0;padding:11px 20px;min-height:44px;background:transparent;color:var(--muted,#727d91);font:inherit;font-size:.9rem;font-weight:500;cursor:pointer;transition:background-color 140ms,color 140ms;white-space:nowrap}
+.app .personal-tabs [role="tab"]:hover,.app .conversation-resource-tabs [role="tab"]:hover{background:#8ba9e510;color:var(--ink)}
+.app .personal-tabs [role="tab"][aria-selected="true"],.app .conversation-resource-tabs [role="tab"][aria-selected="true"]{background:var(--paper,#fff);border-color:var(--line,#e1e6ee);border-bottom-color:var(--paper,#fff);color:var(--link,#365bb1);font-weight:650;box-shadow:0 -2px 5px #1d355005;z-index:1}
+.app .personal-self-link{margin-bottom:7px;flex-shrink:0}
+@media(max-width:480px){.app .personal-tabs [role="tab"],.app .conversation-resource-tabs [role="tab"]{padding:10px 12px}.app .personal-self-link{font-size:.7rem;padding:6px}}
