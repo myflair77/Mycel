@@ -5,7 +5,7 @@ import {changeTableAxis,tableBand} from './tableAxis';
 import {TextSelection} from '@tiptap/pm/state';
 type Axis='row'|'column';
 export function Grip({horizontal=false}:{horizontal?:boolean}){
- return <svg aria-hidden="true" width={horizontal?12:8} height={horizontal?8:12} viewBox={horizontal?'0 0 12 8':'0 0 8 12'}>{Array.from({length:6},(_,i)=><circle key={i} cx={2+(i%(horizontal?3:2))*4} cy={2+Math.floor(i/(horizontal?3:2))*4} r=".9" fill="currentColor"/>)}</svg>
+ return <svg aria-hidden="true" width={horizontal?15:10} height={horizontal?10:15} viewBox={horizontal?'0 0 12 8':'0 0 8 12'}>{Array.from({length:6},(_,i)=><circle key={i} cx={2+(i%(horizontal?3:2))*4} cy={2+Math.floor(i/(horizontal?3:2))*4} r=".9" fill="currentColor"/>)}</svg>
 }
 function tableGeometry(editor:Editor){
  const c=tableContext(editor);if(!c)return null;const dom=editor.view.nodeDOM(c.pos) as HTMLElement;
