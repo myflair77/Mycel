@@ -25,7 +25,7 @@ export function PageTableTools({editor}:{editor:Editor}){
  useEffect(()=>{const update=()=>{if(dragging.current)return;setGeometry(tableGeometry(editor));if(!tableContext(editor))setMenu(null)};
  const outside=(e:PointerEvent)=>{if(!panel.current?.contains(e.target as Node)&&!(e.target as HTMLElement).closest('.table-axis-handle'))setMenu(null)};
  const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){cancelDrag.current?.();setMenu(null)}};
- const onScroll=(e:Event)=>{if((e.target as HTMLElement).classList?.contains('tableWrapper'))update();setMenu(null)};const observer=new ResizeObserver(update);observer.observe(editor.view.dom);
+ const onScroll=(e:Event)=>{if(panel.current?.contains(e.target as Node))return;if((e.target as HTMLElement).classList?.contains('tableWrapper'))update();setMenu(null)};const observer=new ResizeObserver(update);observer.observe(editor.view.dom);
  editor.on('transaction',update);window.addEventListener('scroll',onScroll,true);window.addEventListener('resize',update);document.addEventListener('pointerdown',outside);window.addEventListener('keydown',escape);update();return()=>{cancelDrag.current?.();observer.disconnect();editor.off('transaction',update);window.removeEventListener('scroll',onScroll,true);window.removeEventListener('resize',update);document.removeEventListener('pointerdown',outside);window.removeEventListener('keydown',escape)}},[editor]);
  function select(axis:Axis,index:number){const c=tableContext(editor);if(!c)return;const map=TableMap.get(c.node),band=tableBand(c.node,axis,index);
  const first=map.map[(axis==='row'?band.start:0)*map.width+(axis==='column'?band.start:0)],last=map.map[(axis==='row'?band.end-1:map.height-1)*map.width+(axis==='column'?band.end-1:map.width-1)];
