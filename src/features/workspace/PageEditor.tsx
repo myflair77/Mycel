@@ -1,3 +1,4 @@
+import {PageTableTools} from './PageTableTools';
 import {useEditor,EditorContent} from '@tiptap/react';
 import {BubbleMenu} from '@tiptap/react/menus';
 import {useEffect,useRef,useState} from 'react';
@@ -17,10 +18,11 @@ export function PageEditor(p:Props){
  onUpdate:({editor})=>{revision.current++;setStatus('저장 대기');latest.current.onStatus(true);try{localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}))}catch{};schedule();inspect(editor)},
  onSelectionUpdate:({editor})=>inspect(editor)
  },[p.id]);
+ const slashQuery=useRef('');
  const keyHandler=useRef<(e:KeyboardEvent)=>boolean>(()=>false);
  const commands=[['text','텍스트'],['h1','제목 1'],['h2','제목 2'],['h3','제목 3'],['bullet','글머리 목록'],['number','번호 목록'],['check','체크리스트'],['quote','인용'],['code','코드'],['divider','구분선'],['table','표'],['columns','2단 배치']] as const;
  const filtered=commands.filter(c=>(c[0]+' '+c[1]).toLowerCase().includes(slash?.q.toLowerCase()??''));
- function inspect(e:any){setTick(t=>t+1);const {selection}=e.state;if(!selection.empty){setSlash(null);return}const $p=selection.$from;if(!$p.parent.isTextblock){setSlash(null);return}const before=$p.parent.textBetween(0,$p.parentOffset,'\n','\n'),m=before.match(/^\/([^\n/]*)$/);if(m){const c=e.view.coordsAtPos(selection.from);setSlash({from:$p.start(),to:selection.from,q:m[1],x:Math.min(c.left,window.innerWidth-280),y:Math.min(c.bottom+8,window.innerHeight-360)});setChoice(0)}else setSlash(null)}
+ function inspect(e:any){setTick(t=>t+1);const {selection}=e.state;if(!selection.empty){setSlash(null);return}const $p=selection.$from;if(!$p.parent.isTextblock){setSlash(null);return}const before=$p.parent.textBetween(0,$p.parentOffset,'\n','\n'),m=before.match(/^\/([^\n/]*)$/);if(m){const c=e.view.coordsAtPos(selection.from);setSlash({from:$p.start(),to:selection.from,q:m[1],x:Math.min(c.left,window.innerWidth-280),y:Math.min(c.bottom+8,window.innerHeight-360)});const query=$p.start()+':'+m[1];if(slashQuery.current!==query){slashQuery.current=query;setChoice(0)}}else {slashQuery.current='';setSlash(null)}}
  function schedule(){if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>void flush(),900)}
  async function flush():Promise<boolean>{
  if(!editor||!latest.current.edit||blocked.current)return false;if(saving.current)return false;if(revision.current===savedRevision.current&&!pending.current)return true;
@@ -42,7 +44,8 @@ export function PageEditor(p:Props){
  function choose(cmd:string){if(!editor)return;if(slash)editor.chain().focus().deleteRange({from:slash.from,to:slash.to}).run();else if(menu){const b=focusBlock(menu.id);if(menu.add&&b){editor.chain().insertContentAt(b.pos+b.node.nodeSize,{type:'paragraph',attrs:{id:crypto.randomUUID()}}).setTextSelection(b.pos+b.node.nodeSize+1).run()}}
  const chain=editor.chain().focus();switch(cmd){case 'text':chain.clearNodes().setParagraph().run();break;case 'h1':case 'h2':case 'h3':chain.setHeading({level:Number(cmd[1]) as 1|2|3}).run();break;case 'bullet':chain.toggleBulletList().run();break;case 'number':chain.toggleOrderedList().run();break;case 'check':chain.toggleTaskList().run();break;case 'quote':chain.toggleBlockquote().run();break;case 'code':chain.toggleCodeBlock().run();break;case 'divider':chain.setHorizontalRule().run();break;case 'table':chain.insertTable({rows:3,cols:3,withHeaderRow:true}).run();break;case 'columns':{const blocks=docToBlocks(editor.getJSON()),pos=blockPositions(editor).find(b=>editor.state.selection.from>=b.pos&&editor.state.selection.from<=b.pos+b.node.nodeSize);if(pos){const fresh={id:crypto.randomUUID(),kind:'text',content:{text:''},version:0};try{replace(blocksToDoc(arrangeBlocks([...blocks,fresh],fresh.id,pos.id,true,1)))}catch(e){setFailed((e as Error).message)}}break}}
  setSlash(null);setMenu(null)}
- keyHandler.current=(e)=>{if(e.key==='Escape'){setMenu(null);setSlash(null);return true}if(slash){if(e.key==='ArrowDown'||e.key==='ArrowUp'){setChoice(c=>(c+(e.key==='ArrowDown'?1:-1)+Math.max(1,filtered.length))%Math.max(1,filtered.length));return true}if(e.key==='Enter'&&filtered[choice]){choose(filtered[choice][0]);return true}}return false};
+ keyHandler.current=(e)=>{if(e.key==='Escape'){setMenu(null);setSlash(null);return true}if(slash){if(e.key==='ArrowDown'||e.key==='ArrowUp'){setChoice(c=>(c+(e.key==='ArrowDown'?1:-1)+Math.max(1,filtered.length))%Math.max(1,filtered.length));return true}if(e.key==='Home'||e.key==='End'){setChoice(e.key==='Home'?0:Math.max(0,filtered.length-1));return true}if((e.key==='Enter'||e.key==='Tab')&&filtered[choice]){choose(filtered[choice][0]);return true}}return false};
+ useEffect(()=>{if(slash)document.querySelector('.editor-menu .selected')?.scrollIntoView({block:'nearest'})},[choice,slash?.q]);
  async function quote(){if(!editor)return;const q=selectionQuote(editor);if(!q)return;try{if(revision.current!==savedRevision.current){if(!await flush())return}const current=await rpc('workspace_get',{p_id:p.id});const b=current.blocks.find((b:SavedBlock)=>b.id===q.blockId);if(b)latest.current.onQuote(b,{...q,version:b.version})}catch(e){setFailed((e as Error).message)}}
  function blockAction(action:string){if(!editor||!menu)return;const b=focusBlock(menu.id);if(!b)return;
  if(action==='delete')editor.chain().deleteRange({from:b.pos,to:b.pos+b.node.nodeSize}).run();
@@ -76,7 +79,7 @@ export function PageEditor(p:Props){
  {menu&&!menu.add&&<><button role="menuitem" onClick={()=>blockAction('duplicate')}>복제</button><button role="menuitem" onClick={()=>blockAction('comment')}>댓글</button><button role="menuitem" onClick={()=>blockAction('delete')}>삭제</button><button role="menuitem" onClick={()=>blockAction('flatten')}>한 단으로 펼치기</button><hr/></>}
  {(slash?filtered:commands).map(([cmd,label],i)=><button key={cmd} role="menuitem" className={slash&&choice===i?'selected':''} onClick={()=>choose(cmd)}>{label}<small>/{cmd}</small></button>)}
  {!filtered.length&&slash&&<p>일치하는 블록이 없습니다.</p>}</div>}
- {editor.isActive('table')&&p.edit&&<div className="editor-table-tools"><button onClick={()=>editor.chain().focus().addRowAfter().run()}>행 추가</button><button onClick={()=>editor.chain().focus().addColumnAfter().run()}>열 추가</button><button onClick={()=>editor.chain().focus().deleteRow().run()}>행 삭제</button><button onClick={()=>editor.chain().focus().deleteColumn().run()}>열 삭제</button></div>}
+ {p.edit&&<PageTableTools editor={editor}/>}
  </div>
 }
 

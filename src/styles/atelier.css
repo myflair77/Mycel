@@ -465,3 +465,12 @@ button:disabled{cursor:default}
 .app .document-more-panel>button{display:block;width:100%;text-align:left;margin:2px 0;min-height:36px;padding:8px 10px;font-size:.85rem;border:0;background:transparent}
 .app .document-more-panel>button:hover{background:#7a91bb18}
 .app .page-document .document-title{margin:6px auto 4px}
+
+.app .editor-handles button{color:#abb2bf!important;opacity:.65;font-weight:400}
+.app .editor-handles button:hover,.app .editor-handles button:focus-visible,.app .editor-handles button:active{color:#677489!important;opacity:1}
+.app .table-axis-handle{position:fixed;z-index:40;width:18px;height:20px;min-height:0;padding:0;border:0;border-radius:4px;background:var(--surface,#fff);color:#a9b1bf;font-size:16px;line-height:20px;cursor:grab;touch-action:none}
+.app .table-axis-handle:hover,.app .table-axis-handle:focus-visible{background:#8191ab25;color:#5d6c83}
+.app .table-axis-handle:active{cursor:grabbing}
+.app .editor-table-tools{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0;font-size:.75rem}
+.app .editor-table-tools button,.app .editor-table-tools select{min-height:30px;padding:4px 7px;margin:0;font-size:inherit;width:auto}
+.app .table-action-menu{width:230px}.app .table-action-menu strong{display:block;padding:6px 10px;font-size:.85rem}
