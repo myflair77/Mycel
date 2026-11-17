@@ -497,3 +497,9 @@ button:disabled{cursor:default}
 .app .workspace-calendar .calendar-date{display:block;align-self:flex-start;font-size:.75rem;font-weight:500;line-height:1.3}
 .app .workspace-calendar>.holiday,.app .workspace-calendar .holiday .calendar-date,.app .workspace-calendar .calendar-holiday-name{color:#cc3f49}
 .app .workspace-calendar .holiday small:not(.calendar-holiday-name){color:var(--ink)}
+.app .personal-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:16px;flex-wrap:wrap}
+.app .personal-tabs{display:flex;gap:6px}
+.app .personal-tabs button{border:0;border-radius:10px;background:transparent;color:var(--muted);padding:10px 16px;font:inherit;font-weight:600;min-height:42px;cursor:pointer}
+.app .personal-tabs button[aria-selected="true"]{background:#e4ecff;color:#2f58a8}
+.app .personal-self-link{border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:.8rem;padding:7px 10px;min-height:34px;cursor:pointer}
+.app .personal-self-link:hover{color:var(--link);background:var(--soft)}
