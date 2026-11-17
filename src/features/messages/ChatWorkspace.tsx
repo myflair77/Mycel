@@ -62,7 +62,8 @@ export function ChatWorkspace({layoutPreference,onLayoutPreference,theme,onTheme
  const draftKey=(id:string)=>'weano-draft:'+session.user.id+':'+id;
  function writeBody(value:string){setBody(value);try{localStorage.setItem(draftKey(room),value)}catch{}}
  function selectRoom(id:string,push=true){onSection('chats');pendingFiles.current.set(room,selected);setRoom(id);onOpen();if(push&&layout==='phone')history.pushState({weanoRoom:id},'',location.pathname+'?room='+id)}
- function back(){if(layout==='phone')history.replaceState(null,'',location.pathname);setMenu(false);setDrawer(false);setSearchOpen(false);onBack();}
+ useEffect(()=>{document.querySelector('.app')?.classList.toggle('list-collapsed',collapsed&&section==='chats')});
+ function back(){setCollapsed(false);document.querySelector('.app')?.classList.remove('list-collapsed');if(layout==='phone')history.replaceState(null,'',location.pathname);setMenu(false);setDrawer(false);setSearchOpen(false);onBack();}
  function popup(){if(!room)return;const old=popupWindows.current.get(room);if(old&&!old.closed){old.focus();return}const opened=window.open(location.pathname+'?room='+room+'&popup=1','weano-room-'+room,'popup,width=480,height=760');if(opened){popupWindows.current.set(room,opened);opened.focus()}else setError('새 창이 차단되었습니다. 브라우저에서 팝업을 허용하거나 현재 창에서 대화해 주세요.');setMenu(false)}
  const overlay=useRef(false);overlay.current=menu||drawer||searchOpen||!!action||!!board||!!groupDialog||!!composerTools;
  useEffect(()=>{if((menu||drawer||searchOpen||!!action||!!board||!!groupDialog||!!composerTools)&&!history.state?.weanoOverlay)history.pushState({...history.state,weanoOverlay:true},'',location.href);else if(!(menu||drawer||searchOpen||!!action||!!board||!!groupDialog||!!composerTools)&&history.state?.weanoOverlay)history.back()},[menu,drawer,searchOpen,action,board,groupDialog,composerTools]);

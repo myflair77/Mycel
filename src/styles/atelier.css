@@ -492,3 +492,8 @@ button:disabled{cursor:default}
 .editor-block-comment:hover,.editor-block-comment:focus-visible{background:#e1ecfc!important;color:#3577d0!important}
 .app .table-axis-handle,.app .editor-handles button{color:#929dac!important;opacity:.85}
 .app .page-editor{max-width:none;margin-left:0;margin-right:0;padding-left:56px;padding-right:36px;box-sizing:border-box;width:100%}
+.app .workspace-calendar>.calendar-weekday{text-align:center;justify-self:stretch;padding:4px 0;font-size:.8rem}
+.app .workspace-calendar>button{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px}
+.app .workspace-calendar .calendar-date{display:block;align-self:flex-start;font-size:.75rem;font-weight:500;line-height:1.3}
+.app .workspace-calendar>.holiday,.app .workspace-calendar .holiday .calendar-date,.app .workspace-calendar .calendar-holiday-name{color:#cc3f49}
+.app .workspace-calendar .holiday small:not(.calendar-holiday-name){color:var(--ink)}
