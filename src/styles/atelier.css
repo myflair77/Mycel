@@ -543,3 +543,13 @@ button:disabled{cursor:default}
 .app .editor-cell-menu small{font-size:11px;padding:6px;line-height:1.5}
 
 .page-editor .editor-handles,.page-editor .editor-block-comment{position:absolute}
+
+/* Keep cell controls independent of the app's full-size button styles. */
+.app .workspace .editor-cell-trigger{display:flex!important;align-items:center!important;justify-content:center!important;width:20px!important;min-width:20px!important;max-width:20px!important;height:20px!important;min-height:20px!important;padding:0!important;border-radius:6px!important;box-sizing:border-box!important;line-height:1!important}
+.editor-cell-trigger svg{display:block;flex:none;pointer-events:none}
+.app .workspace .editor-cell-menu{width:224px;box-sizing:border-box;max-height:none;overflow:visible;padding:5px;font-size:13px}
+.app .workspace .editor-cell-menu button{min-height:28px;padding:4px 8px;font-size:12px;border:0;border-radius:5px;line-height:1.3}
+.app .workspace .editor-cell-menu .cell-menu-heading{display:flex;align-items:center;justify-content:space-between;padding-left:8px;color:var(--muted);font-size:11px}
+.app .workspace .editor-cell-menu .cell-menu-heading button{width:26px;height:26px;min-height:26px;justify-content:center;padding:0}
+.app .workspace .editor-cell-menu fieldset{margin:3px 0;padding:2px}
+.app .workspace .editor-cell-menu .cell-color-options button{height:26px;min-height:26px;padding:2px;justify-content:center}

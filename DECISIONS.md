@@ -78,3 +78,5 @@ Groups are separate from direct/self rooms. Maximum 50 active members. Current m
 
 
 2026-11-18: 노션 비교용 표에서 파란 셀 테두리, 오른쪽 셀 메뉴(글자색/배경색/내용 비우기), Tab 이동 확인. Mycel에 선택 셀 표시와 셀 메뉴, 선택 영역 정렬·병합·분할을 추가. 색상은 셀 속성으로 저장하며 내용 비우기는 셀의 병합/너비/서식 보존. 표 블록 핸들의 pointerdown 기본 선택과 버블링을 차단하고 드래그 중 hover 대상 고정. 참고: https://www.notion.com/help/columns-headings-and-dividers
+
+2026-11-18: 셀 메뉴 트리거를 20px 고정 크기와 중앙 SVG 점 세 개로 교정. 기본 메뉴를 224px 소형 패널로 정리하고 글자색/배경색은 색상 하위 화면으로 이동, 메뉴 내부 스크롤 제거.
