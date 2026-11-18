@@ -281,3 +281,5 @@
 - Bullet/task indentation adjusted inward relative to numbered markers.
 - Added API/Ollama step-by-step help and explicit subscription website copy/open/paste workflow. This is not automatic subscription inference or OAuth integration; hosted ChatGPT integration requires provider onboarding, and no provider credential/cookie extraction is used.
 - Validation: 137-test suite passed; 2 new list regressions passed (targeted 10 tests); production build passed. Browser regression pending.
+
+- Live Chrome regression passed: [] + space keeps text beside checkbox; Enter creates the next task; second item duplication affects only that item. Added API key format rejection before provider requests and suppressed browser login autofill on AI fields.

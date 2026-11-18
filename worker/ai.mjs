@@ -39,6 +39,7 @@ export async function aiApi(request,env){try{
  if(path==='/api/ai/connections'){
  const apiKey=typeof data.apiKey==='string'?data.apiKey.trim():saved?.apiKey;
  if(!apiKey||apiKey.length>4096||/[\r\n]/.test(apiKey))aiError(400,'올바른 API 키를 입력해 주세요.');
+ if(!(provider==='gemini'?/^AIza[\w-]{20,}$/:provider==='anthropic'?/^sk-ant-[\w-]{10,}$/:/^sk-[\w-]{10,}$/).test(apiKey))aiError(400,'API 키 형식이 아닙니다. 로그인 비밀번호 대신 해당 서비스에서 발급한 API 키를 입력해 주세요.');
  const result=await aiCall(provider,apiKey,'','','',true,AbortSignal.timeout(20000));
  const models=(result.data||result.models||[]).filter(m=>provider==='gemini'?m.supportedGenerationMethods?.includes('generateContent'):provider==='openai'?/^(gpt-|o[0-9])/.test(m.id)&&!/(audio|realtime|transcribe|tts|image)/.test(m.id):true).map(m=>({id:(m.id||m.name).replace(/^models\//,''),name:m.display_name||m.displayName||m.id||m.name}));
  if(!models.length)aiError(400,'사용 가능한 모델이 없습니다.');
