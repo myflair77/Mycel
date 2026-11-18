@@ -261,3 +261,14 @@
 2026-11-18: 노션 비교용 표에서 파란 셀 테두리, 오른쪽 셀 메뉴(글자색/배경색/내용 비우기), Tab 이동 확인. Mycel에 선택 셀 표시와 셀 메뉴, 선택 영역 정렬·병합·분할을 추가. 색상은 셀 속성으로 저장하며 내용 비우기는 셀의 병합/너비/서식 보존. 표 블록 핸들의 pointerdown 기본 선택과 버블링을 차단하고 드래그 중 hover 대상 고정. 참고: https://www.notion.com/help/columns-headings-and-dividers
 
 2026-11-18: 셀 메뉴 트리거를 20px 고정 크기와 중앙 SVG 점 세 개로 교정. 기본 메뉴를 224px 소형 패널로 정리하고 글자색/배경색은 색상 하위 화면으로 이동, 메뉴 내부 스크롤 제거.
+
+
+## 2026-11-18 AI and personal navigation
+- Implemented personal page tree using optional body.mycel_parent metadata, preserving permission and versioned save RPCs. No inherited permission changes.
+- Friends nested in conversation navigation; settings modal; responsive personal drawer.
+- User-scoped encrypted API credentials (OpenAI, Anthropic, Gemini) in R2. HKDF domain separation + AES-GCM bound to authenticated Supabase UUID/provider. No credentials returned to browser.
+- AI panel, model discovery, explicit context, draft editing/copy, guarded apply to page, creation of personal pages/events through existing RPCs. Ollama loopback connections stored per user/device.
+- Event meeting notes, browser SpeechRecognition transcription with consent, summary application and reviewed task-to-event registration. Original audio is not retained. Unsupported browsers show a text fallback; this is not system-audio capture.
+- Notion research: inline AI / permission-filtered search / interactive Agent / autonomous Custom Agents are distinct. This release excludes autonomous execution and subscription OAuth.
+- Local tests: 137 passed before final navigation changes; TypeScript and production build passed. Provider-paid requests and physical microphone recognition require user-configured credentials/device testing; not claimed verified.
+- Deployment verification pending.
