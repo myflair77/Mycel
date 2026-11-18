@@ -26,7 +26,9 @@ export function blocksToDoc(blocks:SavedBlock[]):JSONContent{
 export function plain(n:JSONContent):string{if(n.type==='text')return n.text??'';if(n.type==='hardBreak')return '\n';return (n.content??[]).map(plain).join(['bulletList','orderedList','taskList','blockquote','table','tableRow','listItem','taskItem','tableCell','tableHeader'].includes(n.type??'')?'\n':'')}
 export function docToBlocks(doc:JSONContent):SavedBlock[]{
  const out:SavedBlock[]=[];
- const add=(n:JSONContent,layout?:any)=>{const type=n.type,kind=type==='heading'?'heading':type==='table'?'table':type==='horizontalRule'?'divider':type==='blockquote'?'quote':type==='taskList'?'check':['bulletList','orderedList'].includes(type??'')?'list':'text';
+ const add=(n:JSONContent,layout?:any)=>{
+ if(['bulletList','orderedList','taskList'].includes(n.type??'')&&(n.content?.length??0)>1){n.content!.forEach((item,i)=>{const id=i===0?n.attrs?.id:item.attrs?.id;add({...n,attrs:{...n.attrs,id,...(n.type==='orderedList'?{start:(n.attrs?.start??1)+i}:{})},content:[i===0?item:{...item,attrs:{...item.attrs,id:null}}]},layout)});return}
+ const type=n.type,kind=type==='heading'?'heading':type==='table'?'table':type==='horizontalRule'?'divider':type==='blockquote'?'quote':type==='taskList'?'check':['bulletList','orderedList'].includes(type??'')?'list':'text';
  const content:any={text:plain(n),_rich:n};if(layout)content._layout=layout;if(kind==='table')content.rows=n.content?.map(r=>r.content?.map(plain));if(kind==='check')content.checked=n.content?.[0]?.attrs?.checked??false;
  out.push({id:n.attrs?.id,kind,content,version:0,position:out.length});};
  for(const n of doc.content??[]){if(n.type==='columns'){n.content?.forEach((c,i)=>c.content?.forEach(b=>add(b,{group:n.attrs?.id,column:i,width:c.attrs?.width??100/n.content!.length})))}else add(n)}return out;

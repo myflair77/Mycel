@@ -43,3 +43,9 @@ it('moves whole rows and columns preserving cell text and formatting',()=>{
  expect(moveTableRow({from:0,to:2,pos:1})(state,tr=>{state=state.apply(tr)})).toBe(true);expect(state.doc.firstChild?.textContent).toBe('CDEFAB');
  expect(moveTableColumn({from:0,to:1,pos:1})(state,tr=>{state=state.apply(tr)})).toBe(true);expect(state.doc.firstChild?.textContent).toBe('DCFEBA');expect(state.doc.firstChild?.firstChild?.firstChild?.attrs.background).toBe('#dbeafe');
 });
+
+it('exposes each bullet and task item as an independent handle target',async()=>{
+ const {blockPositions}=await import('../src/features/workspace/pageExtensions');
+ const doc=schema.nodes.doc.create(null,[schema.nodes.bulletList.create({id:'list'},[schema.nodes.listItem.create({id:'a'},p('one')),schema.nodes.listItem.create({id:'b'},p('two'))]),schema.nodes.taskList.create({id:'tasks'},[schema.nodes.taskItem.create({id:'c',checked:false},p('task'))])]);
+ const blocks=blockPositions({state:{doc}} as any);expect(blocks.map(b=>b.id)).toEqual(['list','b','tasks']);expect(blocks.map(b=>b.node.textContent)).toEqual(['one','two','task']);for(const b of blocks)expect(doc.nodeAt(b.pos)).toBe(b.node);
+});

@@ -571,3 +571,11 @@ button:disabled{cursor:default}
 .app .personal-sidebar > header button,.app .personal-sidebar > button:last-of-type{border:1px solid #e1e5ef;border-radius:9px;background:transparent;color:inherit;padding:9px 12px;font:inherit}
 .app .personal-sidebar > nav{flex:1;overflow:auto;min-height:80px}
 .app .personal-sidebar > *{flex-shrink:0}
+
+/* List markers: bullets and checks sit slightly inside numbered markers. */
+.page-editor .tiptap ul:not([data-type=taskList]){padding-left:1.85em}
+.page-editor .tiptap ul[data-type=taskList]{padding-left:.65em}
+.page-editor .tiptap li[data-type=taskItem]{display:flex;align-items:flex-start;gap:.55em;list-style:none}
+.page-editor .tiptap li[data-type=taskItem]>div{flex:1 1 auto;min-width:0;min-height:1.65em}
+.page-editor .tiptap li[data-type=taskItem]>label{flex:0 0 auto;line-height:inherit}
+.page-editor .tiptap li[data-type=taskItem]>div>p{min-height:1.65em;margin:0}

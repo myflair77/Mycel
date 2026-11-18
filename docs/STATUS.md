@@ -274,3 +274,10 @@
 - Deployment verification pending.
 
 - Production version 66 deployed successfully; authenticated UI verified personal page list, friends within conversations, settings modal and AI connections panel. Corrected a shared search-wrapper flex rule that stretched personal sidebar spacing. Real paid inference / microphone / Ollama runtime remain user-device checks.
+
+## 2026-11-18 list editing and AI onboarding
+- Fixed task-item NodeView data-type so checkbox and editable paragraph share one row.
+- Each top-level list item gets a handle target and independently saved block. Original list ID stays with first item; rich marks, checked state, order start and column metadata survive roundtrip. Existing pages are not rewritten until edited.
+- Bullet/task indentation adjusted inward relative to numbered markers.
+- Added API/Ollama step-by-step help and explicit subscription website copy/open/paste workflow. This is not automatic subscription inference or OAuth integration; hosted ChatGPT integration requires provider onboarding, and no provider credential/cookie extraction is used.
+- Validation: 137-test suite passed; 2 new list regressions passed (targeted 10 tests); production build passed. Browser regression pending.
