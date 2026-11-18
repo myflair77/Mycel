@@ -73,3 +73,5 @@
 - Apply 0030 before publishing the conversation-resource UI; do not report local database tests as production validation.
 
 - 구독 OAuth와 Responses 요청은 Windows 루프백 Mycel에서 처리한다. Claude 및 Gemini 소비자 CLI 중계는 제공하지 않는다.
+
+- AI Control 첫 단계는 사용자 세션의 workspace_list와 기존 페이지 열람 경로를 사용한다. 휴대폰의 나·대화는 세로 탐색을 유지하고 목록을 같은 제스처로 본문 위에 표시한다.

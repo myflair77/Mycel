@@ -563,7 +563,7 @@ button:disabled{cursor:default}
 
 .app.signed-in .personal-shell{grid-column:2/-1;grid-row:1;min-height:0}.app.signed-in[data-layout="phone"] .personal-shell{grid-column:1;grid-row:1}.app.signed-in[data-layout="phone"] .nav-items{grid-template-columns:repeat(4,1fr)}.app .mycel-settings-dialog:not([open]){display:none}.app .mycel-settings-dialog[open]{display:block;grid-column:auto}
 
-.chat-sidebar-backdrop{display:none}@media(max-width:600px){.app.signed-in[data-layout="phone"] .chat-main:not([hidden]){display:flex!important;grid-column:1;grid-row:1}.app.signed-in[data-layout="phone"]:not(.detail-open) .chat-list:not([hidden]){display:block;position:fixed;left:0;top:0;bottom:74px;width:min(88vw,360px);max-width:88vw;z-index:60;background:#f7f8fc;box-shadow:10px 0 30px #17213c22;animation:mycel-sidebar-in .18s ease}.app.signed-in[data-layout="phone"] .chat-sidebar-backdrop{display:block;position:fixed;inset:0 0 74px;border:0;background:#17213c55;z-index:59}.app.dark[data-layout="phone"]:not(.detail-open) .chat-list:not([hidden]){background:#202330}}@keyframes mycel-sidebar-in{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+.chat-sidebar-backdrop{display:none}
 
 /* Keep search controls compact in the vertical personal navigation. */
 .app .personal-sidebar > .search-input-wrap{flex:0 0 auto;width:100%;min-height:38px}
@@ -582,3 +582,46 @@ button:disabled{cursor:default}
 
 .personal-separator::after{content:"";position:absolute;inset:0 -8px;cursor:col-resize}
 .personal-separator:focus-visible{outline:2px solid var(--link)}
+
+
+/* The phone drawer occupies the content column, leaving the navigation rail exposed. */
+.app.signed-in[data-layout="phone"]:is([data-section="me"],[data-section="chats"]) {
+  --phone-rail: calc(48px + env(safe-area-inset-left,0px));
+  --panel-offset: 0%;
+  --panel-opacity: 1;
+  position: relative; isolation: isolate;
+  grid-template-columns:var(--phone-rail) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
+}
+.app.signed-in[data-layout="phone"].detail-open:is([data-section="me"],[data-section="chats"]) {--panel-offset:-102%;--panel-opacity:0}
+.app.signed-in[data-layout="phone"]:is([data-section="me"],[data-section="chats"]) .rail {
+  display:flex;grid-column:1;grid-row:1;height:100%;min-width:0;z-index:65;
+  flex-direction:column;justify-content:flex-start;align-items:stretch;box-sizing:border-box;
+  padding: max(6px,env(safe-area-inset-top)) 2px env(safe-area-inset-bottom) max(2px,env(safe-area-inset-left));
+  border:0;border-right:1px solid var(--line);touch-action:pan-y;
+}
+.app.signed-in[data-layout="phone"] .rail .nav-items {display:flex;flex-direction:column;justify-content:flex-start;flex:0 0 auto}
+.app.signed-in[data-layout="phone"] .rail .nav-items button {flex:0 0 auto;width:100%;min-width:0;padding-inline:1px}
+.app.signed-in[data-layout="phone"] .personal-shell,
+.app.signed-in[data-layout="phone"] .chat-main:not([hidden]) {grid-column:2;grid-row:1;min-width:0}
+.app.signed-in[data-layout="phone"] .chat-main:not([hidden]) {display:flex}
+.app.signed-in[data-layout="phone"] .chat-list:not([hidden]),
+.app.signed-in[data-layout="phone"] .personal-shell .personal-sidebar {
+  position:absolute;inset:0 auto 0 0;width:min(320px,calc(100% - 28px));max-width:none;
+  height:100%;box-sizing:border-box;z-index:61;overflow:auto;background:var(--paper);
+  touch-action:pan-y;transform:translateX(var(--panel-offset));visibility:visible;
+  transition:transform 220ms cubic-bezier(.2,.75,.25,1),visibility 0s;
+}
+.app.signed-in[data-layout="phone"] .chat-list:not([hidden]) {grid-column:2;grid-row:1;display:block}
+.app.signed-in[data-layout="phone"] :is(.personal-backdrop,.chat-sidebar-backdrop) {
+  display:block;position:absolute;inset:0;border:0;background:#17213c55;z-index:59;
+  opacity:var(--panel-opacity);transition:opacity 220ms ease,visibility 0s;touch-action:pan-y;
+}
+.app.signed-in[data-layout="phone"] .chat-sidebar-backdrop {grid-column:2;grid-row:1}
+.app.signed-in[data-layout="phone"].detail-open:not([data-panel-drag]) :is(.personal-backdrop,.chat-sidebar-backdrop,.personal-sidebar,.chat-list) {
+  visibility:hidden;pointer-events:none;transition-delay:0s,220ms;
+}
+.app.signed-in[data-layout="phone"][data-panel-drag] :is(.personal-backdrop,.chat-sidebar-backdrop,.personal-shell .personal-sidebar,.chat-list:not([hidden])) {transition:none}
+@media(prefers-reduced-motion:reduce){
+  .app.signed-in[data-layout="phone"] :is(.personal-backdrop,.chat-sidebar-backdrop,.personal-shell .personal-sidebar,.chat-list:not([hidden])) {transition:none!important}
+}

@@ -285,3 +285,5 @@
 - Live Chrome regression passed: [] + space keeps text beside checkbox; Enter creates the next task; second item duplication affects only that item. Added API key format rejection before provider requests and suppressed browser login autofill on AI fields.
 
 - Windows 로컬 Mycel용 ChatGPT 구독 연결 추가. Codex CLI 응답 검증과 Mycel OAuth 동의 검증을 구분한다.
+
+- AI 패널에서 내 페이지 제목 검색 후 결과를 선택해 기존 편집기로 이동한다. Windows Chrome 로컬에서 실제 페이지 열기와 휴대폰 레이아웃의 본문 고정을 확인했다. Android 실기기 확인은 남아 있다.
