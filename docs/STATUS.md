@@ -283,3 +283,5 @@
 - Validation: 137-test suite passed; 2 new list regressions passed (targeted 10 tests); production build passed. Browser regression pending.
 
 - Live Chrome regression passed: [] + space keeps text beside checkbox; Enter creates the next task; second item duplication affects only that item. Added API key format rejection before provider requests and suppressed browser login autofill on AI fields.
+
+- Windows 로컬 Mycel용 ChatGPT 구독 연결 추가. Codex CLI 응답 검증과 Mycel OAuth 동의 검증을 구분한다.

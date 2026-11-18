@@ -71,3 +71,5 @@
 - Conversation resources remain in their originating room. My library contains private originals and explicit links; independent copies exclude comments and revision history.
 - A Tiptap/ProseMirror document retains legacy block UUIDs and stores rich text alongside readable legacy content. Saves use optimistic revision checks and mutation receipts.
 - Apply 0030 before publishing the conversation-resource UI; do not report local database tests as production validation.
+
+- 구독 OAuth와 Responses 요청은 Windows 루프백 Mycel에서 처리한다. Claude 및 Gemini 소비자 CLI 중계는 제공하지 않는다.
