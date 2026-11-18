@@ -564,3 +564,10 @@ button:disabled{cursor:default}
 .app.signed-in .personal-shell{grid-column:2/-1;grid-row:1;min-height:0}.app.signed-in[data-layout="phone"] .personal-shell{grid-column:1;grid-row:1}.app.signed-in[data-layout="phone"] .nav-items{grid-template-columns:repeat(4,1fr)}.app .mycel-settings-dialog:not([open]){display:none}.app .mycel-settings-dialog[open]{display:block;grid-column:auto}
 
 .chat-sidebar-backdrop{display:none}@media(max-width:600px){.app.signed-in[data-layout="phone"] .chat-main:not([hidden]){display:flex!important;grid-column:1;grid-row:1}.app.signed-in[data-layout="phone"]:not(.detail-open) .chat-list:not([hidden]){display:block;position:fixed;left:0;top:0;bottom:74px;width:min(88vw,360px);max-width:88vw;z-index:60;background:#f7f8fc;box-shadow:10px 0 30px #17213c22;animation:mycel-sidebar-in .18s ease}.app.signed-in[data-layout="phone"] .chat-sidebar-backdrop{display:block;position:fixed;inset:0 0 74px;border:0;background:#17213c55;z-index:59}.app.dark[data-layout="phone"]:not(.detail-open) .chat-list:not([hidden]){background:#202330}}@keyframes mycel-sidebar-in{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+
+/* Keep search controls compact in the vertical personal navigation. */
+.app .personal-sidebar > .search-input-wrap{flex:0 0 auto;width:100%;min-height:38px}
+.app .personal-sidebar > .search-input-wrap input{width:100%;box-sizing:border-box;border:1px solid #e1e5ef;border-radius:8px;padding:9px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
+.app .personal-sidebar > header button,.app .personal-sidebar > button:last-of-type{border:1px solid #e1e5ef;border-radius:9px;background:transparent;color:inherit;padding:9px 12px;font:inherit}
+.app .personal-sidebar > nav{flex:1;overflow:auto;min-height:80px}
+.app .personal-sidebar > *{flex-shrink:0}

@@ -272,3 +272,5 @@
 - Notion research: inline AI / permission-filtered search / interactive Agent / autonomous Custom Agents are distinct. This release excludes autonomous execution and subscription OAuth.
 - Local tests: 137 passed before final navigation changes; TypeScript and production build passed. Provider-paid requests and physical microphone recognition require user-configured credentials/device testing; not claimed verified.
 - Deployment verification pending.
+
+- Production version 66 deployed successfully; authenticated UI verified personal page list, friends within conversations, settings modal and AI connections panel. Corrected a shared search-wrapper flex rule that stretched personal sidebar spacing. Real paid inference / microphone / Ollama runtime remain user-device checks.
