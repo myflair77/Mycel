@@ -20,7 +20,7 @@ export function PageEditor(p:Props){
  latest.current=p;const key='mycel-rich-page:'+p.userId+':'+p.id;
  const editor=useEditor({extensions:extensions(),content:uniqueIds(blocksToDoc(p.blocks)),editable:p.edit,
  editorProps:{attributes:{'aria-label':'페이지 본문','role':'textbox','aria-multiline':'true'},handleKeyDown:(_view,event)=>{if(event.isComposing)return false;return keyHandler.current(event)}},
- onUpdate:({editor})=>{revision.current++;setStatus('저장 대기');latest.current.onStatus(true);try{localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}))}catch{};schedule();inspect(editor)},
+ onUpdate:({editor,transaction})=>{if(!transaction.docChanged)return;revision.current++;setStatus('저장 대기');latest.current.onStatus(true);try{localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}))}catch{};schedule();inspect(editor)},
  onSelectionUpdate:({editor})=>inspect(editor)
  },[p.id]);
  const slashQuery=useRef('');
@@ -37,7 +37,7 @@ export function PageEditor(p:Props){
  finally{saving.current=false;if(!blocked.current&&revision.current!==savedRevision.current)schedule()}
  }
  useEffect(()=>{p.onBeforeLeave?.(async()=>{for(let n=0;saving.current&&n<400;n++)await new Promise(r=>setTimeout(r,50));if(saving.current)return false;if(revision.current===savedRevision.current&&!pending.current)return true;return flush()})},[editor,p.onBeforeLeave]);
- useEffect(()=>{if(!editor)return;editor.setEditable(p.edit);if(p.edit&&!pending.current){blocked.current=false;if(revision.current!==savedRevision.current)schedule()}if(!p.edit){blocked.current=true;if(revision.current!==savedRevision.current)setFailed('편집 권한이 변경되었습니다. 기기 임시 입력은 유지됩니다.')}},[p.edit,editor]);
+ useEffect(()=>{if(!editor)return;editor.setEditable(p.edit,false);if(p.edit&&!pending.current){blocked.current=false;if(revision.current!==savedRevision.current)schedule()}if(!p.edit){blocked.current=true;if(revision.current!==savedRevision.current)setFailed('편집 권한이 변경되었습니다. 기기 임시 입력은 유지됩니다.')}},[p.edit,editor]);
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current)},[key]);
  useEffect(()=>{if(!editor)return;try{const draft=JSON.parse(localStorage.getItem(key)??'null');setDraftAvailable(!!draft?.doc&&!editor.schema.nodeFromJSON(draft.doc).eq(editor.state.doc))}catch{setDraftAvailable(false)}},[key,editor,tick,p.version]);
  useEffect(()=>{const warn=(e:BeforeUnloadEvent)=>{if(revision.current!==savedRevision.current){e.preventDefault();e.returnValue=''}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[]);
