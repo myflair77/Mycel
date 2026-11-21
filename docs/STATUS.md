@@ -307,3 +307,6 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Google connector read_event does not expose etag/updated. This fixture used an explicit normalized content snapshot string as google_version, not an asserted ETag. This detects observed content changes but does NOT guarantee atomic compare-and-swap on Google; unattended concurrent writers remain unverified.
 - No recurring schedule created. Per-change Mycel approval remains required; unattended scheduled execution is not claimed verified.
 - Duplicate large calendar/note headings removed and checked on production UI.
+
+2026-11-21: 인증 대기 화면에 다른 이메일로 다시 가입·인증 메일 재발송·로그인 이동 추가. 기존 미인증 계정이나 인증된 계정의 이메일을 수정/삭제하지 않고 Supabase 공식 signUp/resend만 사용. 재시도는 새 이메일·비밀번호·사용자 ID 입력, 표시 이름·초대 문맥 유지. 이미 점유한 사용자 ID의 재사용은 제공하지 않음.
+검증: 실제 메일/계정 생성 없이 로컬 Auth mock으로 가입→인증 대기→새 이메일 재가입, 표시 이름/초대 유지, 이메일/비밀번호/ID 초기화, 미인증 로그인→재발송 확인. 실제 메일 수신 검증은 수행하지 않음.

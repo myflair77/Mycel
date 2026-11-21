@@ -645,3 +645,5 @@ button:disabled{cursor:default}
 .app.signed-in[data-section="friends"] .chat-main:not([hidden]){display:none}
 
 .workspace .resource-summary p{margin:0 0 8px;font-size:.85rem;color:var(--muted)}
+
+.signup-pending-actions{display:grid;gap:10px}.pending-signup-email{overflow-wrap:anywhere}.signup-pending-actions button{min-height:44px}
