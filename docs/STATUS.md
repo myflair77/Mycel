@@ -298,3 +298,12 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 2026-11-21: 주 탐색을 사람·공간·설정으로 정리. 기존 친구 화면을 독립 메뉴로 복원하고 대화 화면 제목만 공간으로 변경. 게시판/게시글 표시명은 노트로 통일. 내부 chats/friends/note 식별자, 데이터, 권한, PWA ID는 유지하며 과거 협업 공간 기능을 복원하지 않는다. 휴대폰은 하단 탐색 유지.
 
 2026-11-21: 캘린더 MCP의 Cloudflare 미지원 redirect:error를 manual로 수정. 3xx는 성공으로 처리하지 않고 재요청하지 않는다. 기존 capability·승인·버전 검사 유지. 일정/노트 상단 중복 큰 제목 제거. 운영 시험 일정 검증 진행 중.
+
+## 2026-11-21 Calendar production verification completed
+- Public version 77, source 06329c936b5b27bceac20ae9c494f5a1a59cb7d0: Cloudflare unsupported redirect:error replaced by manual; rejects redirects without forwarding credentials. TypeScript, production build and 145 tests passed.
+- User-authorized account pairing through actual Mycel calendar_pair succeeded. calendar_list and calendar_get_sync_status return both / primary. No fabricated authenticated headers or privileged database bypass.
+- One explicitly labelled fixture only: Mycel f77f0c5e-e9b5-4e6f-aa54-dc0e9eaa43c4; Google b5sv4gnud3i7s6sdfe73q7vcrg. Existing events were not changed. Fixture retained on both sides, final time 2026-11-22 09:20–09:25 Asia/Seoul; Google reminders off, transparent, no other guests.
+- Real flow: Mycel create approval -> version 1 -> same request retry returns version 1 -> create Google -> re-read both and record mapping -> Google edits title/time/description -> plan preview_update_in_mycel -> approved Mycel update version 2 -> re-read/record -> Mycel edit version 3 -> plan preview_update_in_google -> Google update -> re-read matching title/start/end/description/location -> record -> plan unchanged.
+- Google connector read_event does not expose etag/updated. This fixture used an explicit normalized content snapshot string as google_version, not an asserted ETag. This detects observed content changes but does NOT guarantee atomic compare-and-swap on Google; unattended concurrent writers remain unverified.
+- No recurring schedule created. Per-change Mycel approval remains required; unattended scheduled execution is not claimed verified.
+- Duplicate large calendar/note headings removed and checked on production UI.
