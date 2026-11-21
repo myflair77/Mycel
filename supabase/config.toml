@@ -1,2 +1,5 @@
 [functions.push-dispatch]
 verify_jwt = false
+
+[functions.signup-email]
+verify_jwt = false
