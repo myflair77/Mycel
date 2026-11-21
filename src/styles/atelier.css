@@ -444,7 +444,7 @@ button:disabled{cursor:default}
 .conversation-resource-tabs button{border:0;border-radius:8px;padding:8px 16px;background:transparent;color:inherit}
 .conversation-resource-tabs button[aria-selected=true]{background:#e0edff;color:#163e8a;font-weight:700}
 .conversation-resource-library{flex:1;min-height:0;overflow:auto}
-.chat-main:not([data-room-tab=chat])>:not(.topbar):not(.conversation-resource-tabs):not(.conversation-resource-library){display:none!important}
+.chat-main:not([data-room-tab=chat])>:not(.topbar):not(.conversation-resource-tabs):not(.conversation-resource-library):not(.resource-count-error){display:none!important}
 
 /* Save status stays in a compact row; recovery actions float over the page. */
 .app .page-editor .editor-status{min-height:20px;margin:0;padding:0;gap:10px;font-size:.72rem;line-height:20px;flex-wrap:wrap}
@@ -647,3 +647,81 @@ button:disabled{cursor:default}
 .workspace .resource-summary p{margin:0 0 8px;font-size:.85rem;color:var(--muted)}
 
 .signup-pending-actions{display:grid;gap:10px}.pending-signup-email{overflow-wrap:anywhere}.signup-pending-actions button{min-height:44px}
+
+/* Notes always open comments from the right, including phone layouts. */
+.app dialog.note-comment-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(400px,92vw);max-width:100vw;max-height:none;height:100dvh;border:0;border-left:1px solid var(--line);border-radius:0;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) 16px;background:var(--surface,#fff);color:var(--text);overflow:auto;overscroll-behavior:contain;box-shadow:-8px 0 28px #17243524;box-sizing:border-box}
+.app dialog.note-comment-drawer[open]{animation:note-comments-in .18s ease-out}
+.note-comment-drawer::backdrop{background:#17243530}
+.note-comment-drawer>header{position:sticky;top:-16px;background:var(--surface,#fff);z-index:1;min-height:48px}
+.app .note-comment-drawer>header button{min-width:44px;min-height:44px}
+@keyframes note-comments-in{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.app dialog.note-comment-drawer[open]{animation:none}}
+.conversation-resource-tabs [role=tab]{display:inline-flex;align-items:center;gap:6px}
+.resource-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#355ed0;color:#fff;font-size:.72rem;line-height:1;font-weight:700;flex-shrink:0}
+.resource-new{display:inline-block;margin-left:8px;color:var(--accent,#355ed0);font-size:.72rem;font-weight:600}
+.chat-main>.resource-count-error{display:block!important;font-size:.8rem;color:var(--muted);padding:4px 12px;margin:0}
+.app .page-document .document-title input{font-size:1.5rem;font-weight:700;line-height:1.35;min-height:58px;padding:10px 14px}
+@media(max-width:600px){.app .page-document .document-title input{font-size:1.3rem;min-height:52px}}
+
+.editor-toggle{position:relative;padding-left:24px;margin:4px 0}
+.app .page-editor .editor-toggle>.toggle-arrow{position:absolute;left:0;top:0;margin:0;padding:0;width:24px;min-width:24px;min-height:1.65em;height:1.65em;line-height:1.65;font-size:inherit;border:0;background:transparent;color:var(--muted);border-radius:4px;cursor:pointer;touch-action:manipulation}
+.editor-toggle>.toggle-arrow:hover{background:#568bea18}
+[data-toggle-title]{min-height:1.65em;line-height:1.65}
+[data-toggle-title]:empty:before{content:'토글 제목';color:var(--muted);pointer-events:none}
+[data-toggle-body]{padding:2px 0 4px 8px}
+.editor-toggle[data-open=false]>.toggle-content>[data-toggle-body]{display:none}
+
+.app dialog.note-comment-drawer[open]{display:flex;flex-direction:column;gap:0;overflow:hidden}
+.note-comment-drawer>header{position:static;flex-shrink:0;align-items:flex-start;padding-bottom:10px}
+.app .page-comments h2{font-size:1rem;line-height:1.4;margin:0 0 3px;font-weight:700}
+.page-comments h2 small{font-size:.8rem;color:var(--muted)}
+.comments-note-title{display:block;max-width:290px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:.75rem}
+.comments-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 10px;flex-shrink:0;font-size:.72rem;border-bottom:1px solid var(--line)}
+.comments-filter label{display:flex;align-items:center;gap:4px;white-space:nowrap;margin:0}
+.comments-filter select{min-width:0;max-width:50%;font-size:inherit}
+.comment-thread-list{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;padding:12px 2px}
+.comment-thread{margin:0 0 12px;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--surface,#fff)}
+.app .comment-thread .comment-target{display:block;min-height:0;margin:0 0 8px;padding:0 0 0 8px;width:100%;border:0;border-left:2px solid #b5bfd7;border-radius:0;background:transparent;text-align:left;font-size:.78rem;color:var(--muted)}
+.comment-target q{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-top:3px;overflow-wrap:anywhere}
+.app .page-comments .comment-entry{padding:6px 0;border:0;font-size:.85rem}
+.comment-entry.reply{margin-left:12px;padding-left:8px!important;border-left:1px solid var(--line)!important}
+.comment-author-line{display:flex;gap:6px;align-items:center;flex-wrap:wrap;line-height:1.4}
+.comment-author-line strong{font-size:.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comment-author-line time,.comment-author-line>small,.comment-footer small{font-size:.67rem;color:var(--muted)}
+.app .comment-entry p{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.comment-more{margin-left:auto;font-size:.75rem}
+.comment-more summary{list-style:none;cursor:pointer;padding:0 6px;min-width:24px;line-height:24px;text-align:center}
+.comment-more>div{display:flex;gap:2px;flex-wrap:wrap;padding:4px 0}
+.app .comment-more button,.app .comment-footer button{border:0;background:transparent;color:var(--muted);padding:2px 5px;min-height:24px;font-size:.72rem}
+.comment-footer{display:flex;align-items:center;gap:8px}
+.app .page-comments .comment-composer{border-top:1px solid var(--line);padding-top:10px;display:grid;grid-template-columns:1fr auto;gap:6px;flex-shrink:0}
+.app .comment-composer textarea{min-height:60px;max-height:140px;resize:vertical;width:100%;font-size:.85rem;padding:8px;grid-column:1/-1}
+.app .comment-composer>button{grid-column:2;padding:6px 12px;min-height:34px;font-size:.8rem}
+.comment-compose-context{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.75rem;color:var(--muted)}
+.comment-compose-context q{display:block;max-height:40px;overflow:hidden}
+.app .comment-compose-context button{padding:0;min-height:28px;width:28px}
+.comments-empty{font-size:.85rem;color:var(--muted)}
+.comment-history{max-height:30vh;overflow:auto;font-size:.8rem;border-top:1px solid var(--line)}
+
+.app .message-bubble .resource-message-link{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;border:0;background:transparent;color:inherit;padding:5px;min-width:140px;max-width:100%;overflow-wrap:anywhere}
+.resource-message-link small,.resource-message-link span{font-size:.72rem;color:var(--muted)}
+.resource-message-link strong{font-size:.95rem}
+.comment-error{font-size:.8rem;color:var(--danger,#a42d2d);margin:4px 0}
+
+.view-history-buttons{display:flex;gap:2px;flex-shrink:0}
+.app .view-history-buttons button{padding:0;min-width:28px;width:28px;min-height:36px;font-size:1.6rem;border:0;background:transparent}
+.view-history-buttons button:disabled{opacity:.28}
+@media(max-width:600px){.topbar{gap:3px}.app .view-history-buttons button{min-width:26px;width:26px}.topbar .peer-avatar{display:none}}
+
+.note-list-filters{margin:4px 0 10px;font-size:.8rem}.note-list-filters summary{cursor:pointer;padding:6px 0}.note-list-filters>div{display:flex;flex-wrap:wrap;gap:10px;padding:10px;background:var(--soft);border-radius:8px}
+.note-list-filters label{display:flex;flex-direction:column;gap:5px;font-size:.75rem}.note-list-filters input,.note-list-filters select{min-height:34px;font-size:.8rem;max-width:160px}.note-list-scroll{overflow:auto;width:100%;border:1px solid var(--line);border-radius:8px}
+.app .note-list-table{width:100%;border-collapse:collapse;min-width:720px;font-size:.85rem;table-layout:auto}
+.note-list-table th{text-align:left;background:var(--soft);white-space:nowrap;border-bottom:1px solid var(--line)}
+.app .note-list-table th button{padding:10px;min-height:38px;border:0;background:transparent;font-size:.8rem;color:var(--muted);font-weight:600}
+.note-list-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.note-list-table tr:last-child td{border-bottom:0}.note-list-table tbody tr:hover{background:#568bea09}
+.note-list-table td:nth-child(2){min-width:220px;max-width:400px;white-space:normal}
+.app .note-list-table .note-title-link{border:0;background:transparent;padding:2px 0;min-height:28px;font-size:.9rem;font-weight:600;text-align:left;color:var(--text);overflow-wrap:anywhere}
+.note-title-link:hover{text-decoration:underline}.note-permission{font-size:.75rem;border-radius:5px;background:var(--soft);padding:3px 6px}.note-list-table time{font-size:.75rem;color:var(--muted)}.note-list-count{display:block;margin-top:7px;font-size:.72rem;color:var(--muted)}
+
+.note-list-table .note-number{width:48px;min-width:48px;color:var(--muted);font-variant-numeric:tabular-nums}

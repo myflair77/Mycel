@@ -102,3 +102,11 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 2026-11-21: 인증 대기 화면에 다른 이메일로 다시 가입·인증 메일 재발송·로그인 이동 추가. 기존 미인증 계정이나 인증된 계정의 이메일을 수정/삭제하지 않고 Supabase 공식 signUp/resend만 사용. 재시도는 새 이메일·비밀번호·사용자 ID 입력, 표시 이름·초대 문맥 유지. 이미 점유한 사용자 ID의 재사용은 제공하지 않음.
 
 2026-11-21: 미인증 가입자의 이메일 재시도는 사용자 ID를 재할당하지 않고 기존 Auth 사용자 이메일을 변경한다. 기존 이메일+비밀번호 증명, 미인증 email-only 계정 제한, 확인 완료/비밀번호/이메일 동시 변경에 대한 DB 트랜잭션 guard, 발송/변경 결과 구분을 적용한다. 관리 키를 Sites나 브라우저로 옮기지 않고 Supabase Edge의 기본 비밀 환경에 한정한다. 기존 2026-11-21의 새 사용자 ID 재가입 방식을 대체한다. 운영 0033과 signup-email 서버 적용 완료. 실제 메일 수신 검증과 모의 서버/DB 검증은 구분하여 보고한다.
+
+## 2026-11-21 Resource confirmation and note sharing
+- Keep note comments as whole-note, block and selected-text targets; replies are threading, not a separate target kind.
+- Resource unread counts use per-user, per-room (or personal) monotonic version receipts. Open only the version actually rendered; a list/tab visit does not clear unread state. Preserve existing ACL and join-history checks by reusing workspace_list.
+- Copies shared into rooms are independent personal items with explicit shares ACL, so the selected read/comment/edit setting is effective without broadening room-manager access. Existing room-native permissions remain unchanged.
+- Store exact resource IDs in share messages instead of resolving by mutable/duplicate titles. Preserve original text and message identity during backfill.
+- App history records room, resource tab and item, with scroll snapshots. Flush note/page edits before navigation; keep local drafts and cancel navigation on save failure. Browser Back closes comment overlays first.
+- Note list numbering follows creation order; default display sorts newest first. Sorting/filtering does not renumber visible rows. Display label is 본문편집, without a space.

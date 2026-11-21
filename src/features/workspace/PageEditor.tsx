@@ -1,3 +1,4 @@
+import {insertToggle} from './pageToggle';
 import {pageHandlePosition} from './pageHandlePosition';
 import {PageCellTools} from './PageCellTools';
 import {CellSelection} from '@tiptap/pm/tables';
@@ -11,7 +12,7 @@ import {extensions,blockPositions,selectionQuote,commentKey} from './pageExtensi
 import {blocksToDoc,docToBlocks,uniqueIds,type SavedBlock} from './pageDocument';
 import {arrangeBlocks,locateQuote} from './pageInteractions';
 import {rpc} from './Workspace';
-type Props={id:string;userId:string;blocks:SavedBlock[];version:number;edit:boolean;canComment:boolean;comments:any[];onSaved:()=>Promise<void>;onQuote:(block:SavedBlock,q:any)=>void;onComment:(id:string)=>void;onStatus:(dirty:boolean)=>void};
+type Props={onBeforeLeave?:(save:()=>Promise<boolean>)=>void;id:string;userId:string;blocks:SavedBlock[];version:number;edit:boolean;canComment:boolean;comments:any[];onSaved:()=>Promise<void>;onQuote:(block:SavedBlock,q:any)=>void;onComment:(id:string)=>void;onStatus:(dirty:boolean)=>void};
 export function PageEditor(p:Props){
  const blockDragging=useRef(false);
  const [status,setStatus]=useState('저장됨'),[failed,setFailed]=useState(''),[tick,setTick]=useState(0),[menu,setMenu]=useState<{x:number;y:number;id:string;add?:boolean}|null>(null),[hover,setHover]=useState<{x:number;y:number;right:number;id:string}|null>(null),[slash,setSlash]=useState<{from:number;to:number;q:string;x:number;y:number}|null>(null),[choice,setChoice]=useState(0),[link,setLink]=useState<string|null>(null),[draftAvailable,setDraftAvailable]=useState(false);
@@ -24,7 +25,7 @@ export function PageEditor(p:Props){
  },[p.id]);
  const slashQuery=useRef('');
  const keyHandler=useRef<(e:KeyboardEvent)=>boolean>(()=>false);
- const commands=[['text','텍스트'],['h1','제목 1'],['h2','제목 2'],['h3','제목 3'],['bullet','글머리 목록'],['number','번호 목록'],['check','체크리스트'],['quote','인용'],['code','코드'],['divider','구분선'],['table','표'],['columns','2단 배치']] as const;
+ const commands=[['text','텍스트'],['h1','제목 1'],['h2','제목 2'],['h3','제목 3'],['bullet','글머리 목록'],['number','번호 목록'],['check','체크리스트'],['quote','인용'],['toggle','토글'],['code','코드'],['divider','구분선'],['table','표'],['columns','2단 배치']] as const;
  const filtered=commands.filter(c=>(c[0]+' '+c[1]).toLowerCase().includes(slash?.q.toLowerCase()??''));
  function inspect(e:any){setTick(t=>t+1);const {selection}=e.state;if(!selection.empty){setSlash(null);return}const $p=selection.$from;if(!$p.parent.isTextblock){setSlash(null);return}const before=$p.parent.textBetween(0,$p.parentOffset,'\n','\n'),m=before.match(/^\/([^\n/]*)$/);if(m){const c=e.view.coordsAtPos(selection.from);setSlash({from:$p.start(),to:selection.from,q:m[1],x:Math.min(c.left,window.innerWidth-280),y:Math.min(c.bottom+8,window.innerHeight-360)});const query=$p.start()+':'+m[1];if(slashQuery.current!==query){slashQuery.current=query;setChoice(0)}}else {slashQuery.current='';setSlash(null)}}
  function schedule(){if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>void flush(),900)}
@@ -35,6 +36,7 @@ export function PageEditor(p:Props){
  catch(e){blocked.current=true;setFailed((e as Error).message);setStatus('저장 실패 · 입력은 이 기기에 보관됨');return false}
  finally{saving.current=false;if(!blocked.current&&revision.current!==savedRevision.current)schedule()}
  }
+ useEffect(()=>{p.onBeforeLeave?.(async()=>{for(let n=0;saving.current&&n<400;n++)await new Promise(r=>setTimeout(r,50));if(saving.current)return false;if(revision.current===savedRevision.current&&!pending.current)return true;return flush()})},[editor,p.onBeforeLeave]);
  useEffect(()=>{if(!editor)return;editor.setEditable(p.edit);if(p.edit&&!pending.current){blocked.current=false;if(revision.current!==savedRevision.current)schedule()}if(!p.edit){blocked.current=true;if(revision.current!==savedRevision.current)setFailed('편집 권한이 변경되었습니다. 기기 임시 입력은 유지됩니다.')}},[p.edit,editor]);
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current)},[key]);
  useEffect(()=>{if(!editor)return;try{const draft=JSON.parse(localStorage.getItem(key)??'null');setDraftAvailable(!!draft?.doc&&!editor.schema.nodeFromJSON(draft.doc).eq(editor.state.doc))}catch{setDraftAvailable(false)}},[key,editor,tick,p.version]);
@@ -46,7 +48,7 @@ export function PageEditor(p:Props){
  function focusBlock(id:string){const b=editor&&blockPositions(editor).find(b=>b.id===id);if(b)editor!.commands.setTextSelection(Math.min(b.pos+(['listItem','taskItem'].includes(b.node.type.name)?2:1),editor!.state.doc.content.size));return b}
  function replace(doc:JSONContent){if(!editor)return;const parsed=editor.schema.nodeFromJSON(uniqueIds(doc));editor.view.dispatch(editor.state.tr.replaceWith(0,editor.state.doc.content.size,parsed.content).scrollIntoView());setMenu(null)}
  function choose(cmd:string){if(!editor)return;if(slash)editor.chain().focus().deleteRange({from:slash.from,to:slash.to}).run();else if(menu){const b=focusBlock(menu.id);if(menu.add&&b){editor.chain().insertContentAt(b.pos+b.node.nodeSize,(['listItem','taskItem'].includes(b.node.type.name)?{type:b.node.type.name,attrs:{id:crypto.randomUUID(),checked:false},content:[{type:'paragraph'}]}:{type:'paragraph',attrs:{id:crypto.randomUUID()}})).setTextSelection(b.pos+b.node.nodeSize+(['listItem','taskItem'].includes(b.node.type.name)?2:1)).run()}}
- const chain=editor.chain().focus();switch(cmd){case 'text':chain.clearNodes().setParagraph().run();break;case 'h1':case 'h2':case 'h3':chain.setHeading({level:Number(cmd[1]) as 1|2|3}).run();break;case 'bullet':chain.toggleBulletList().run();break;case 'number':chain.toggleOrderedList().run();break;case 'check':chain.toggleTaskList().run();break;case 'quote':chain.toggleBlockquote().run();break;case 'code':chain.toggleCodeBlock().run();break;case 'divider':chain.setHorizontalRule().run();break;case 'table':chain.insertTable({rows:3,cols:3,withHeaderRow:true}).run();break;case 'columns':{const blocks=docToBlocks(editor.getJSON()),pos=blockPositions(editor).find(b=>editor.state.selection.from>=b.pos&&editor.state.selection.from<=b.pos+b.node.nodeSize);if(pos){const fresh={id:crypto.randomUUID(),kind:'text',content:{text:''},version:0};try{replace(blocksToDoc(arrangeBlocks([...blocks,fresh],fresh.id,pos.id,true,1)))}catch(e){setFailed((e as Error).message)}}break}}
+ const chain=editor.chain().focus();switch(cmd){case 'toggle':insertToggle(editor);break;case 'text':chain.clearNodes().setParagraph().run();break;case 'h1':case 'h2':case 'h3':chain.setHeading({level:Number(cmd[1]) as 1|2|3}).run();break;case 'bullet':chain.toggleBulletList().run();break;case 'number':chain.toggleOrderedList().run();break;case 'check':chain.toggleTaskList().run();break;case 'quote':chain.toggleBlockquote().run();break;case 'code':chain.toggleCodeBlock().run();break;case 'divider':chain.setHorizontalRule().run();break;case 'table':chain.insertTable({rows:3,cols:3,withHeaderRow:true}).run();break;case 'columns':{const blocks=docToBlocks(editor.getJSON()),pos=blockPositions(editor).find(b=>editor.state.selection.from>=b.pos&&editor.state.selection.from<=b.pos+b.node.nodeSize);if(pos){const fresh={id:crypto.randomUUID(),kind:'text',content:{text:''},version:0};try{replace(blocksToDoc(arrangeBlocks([...blocks,fresh],fresh.id,pos.id,true,1)))}catch(e){setFailed((e as Error).message)}}break}}
  setSlash(null);setMenu(null)}
  keyHandler.current=(e)=>{if(e.key==='Escape'&&(menu||slash)){setMenu(null);setSlash(null);return true}if(slash){if(e.key==='ArrowDown'||e.key==='ArrowUp'){setChoice(c=>(c+(e.key==='ArrowDown'?1:-1)+Math.max(1,filtered.length))%Math.max(1,filtered.length));return true}if(e.key==='Home'||e.key==='End'){setChoice(e.key==='Home'?0:Math.max(0,filtered.length-1));return true}if((e.key==='Enter'||e.key==='Tab')&&filtered[choice]){choose(filtered[choice][0]);return true}}return false};
  useEffect(()=>{if(slash)document.querySelector('.editor-menu .selected')?.scrollIntoView({block:'nearest'})},[choice,slash?.q]);

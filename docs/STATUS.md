@@ -313,3 +313,15 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 
 2026-11-21: 인증 전 이메일만 변경하는 개선 구현. AuthPanel의 새 계정 재가입 대신 기존 이메일+가입 비밀번호 확인 후 이메일만 변경. 사용자 ID·UUID·프로필·초대 문맥 유지. Supabase Edge 함수 signup-email에서 Auth password 검증 및 Admin API 호출, 이메일 인증 자동 완료 금지. 0033에 service_role 전용 호출 제한과 Auth 트랜잭션 내 동시 인증/변경 방지 guard 추가.
 검증: TypeScript 통과, 전체 154 tests 통과(신규 9개 포함), Vite/Worker 빌드 통과. 운영 0033 SQL 적용 성공 및 signup-email Edge 함수 배포 확인(22:42 KST). 실제 서버의 잘못된 요청 거절과 호출 제한 확인; 기존 계정 변경/시험 메일 발송은 하지 않음. Admin 목록의 identities 생략을 고려해 단건 조회 후 자격 검증. 실제 메일 수신·새 인증 링크·최종 화면 검증은 별도 확인 필요. 컴퓨터 유즈 종료 후 프런트엔드 배포 진행. docs/SIGNUP_EMAIL_CHANGE.md 참고.
+
+## 2026-11-21 Notes, comments, resource activity and navigation
+- Three comment targets: whole note, block, selected text. Compact threaded drawer shows target, author, time and body; phone drawer opens on the right, accounts for visual viewport and closes before view navigation. Replies remain attached to their original thread.
+- Larger bold note title; persistent toggle blocks via + and /토글 with rich-text roundtrip and keyboard behavior.
+- Note list is a sortable/filterable table: creation-order number, title, creator, own permission, created/modified timestamps. Default is newest creation first. Numbers do not change with filtering/sorting; list sort/filter state survives opening a note and returning in the same session.
+- Sharing (original or independent copy) uses explicit read/comment/edit ACL labels: 열람만 허용, 열람·댓글 허용, 열람·댓글·본문편집 허용. Shared message metadata links directly to the exact note/event; legacy share messages gain references without changing body or ID.
+- 대화·일정·노트 tabs show unread message count / distinct new-or-modified item counts. User/scope/version receipts only acknowledge an opened visible item, not the whole tab. Own changes, revoked access, trash and join-history boundaries are covered by SQL tests.
+- View back/forward integrates browser history, resource IDs, scroll restoration and calendar/list state. Flush edits before leaving; stop on save failure instead of discarding drafts.
+- Production migrations 0034 and 0035 applied successfully through Supabase SQL Editor on 2026-11-21 23:18 KST. Existing content, accounts, files, comments and revision history retained. No recurring automation created.
+- Validation: npm run check, npm test (50 files / 168 tests), npm run build all passed. SQL tests cover account/scope isolation, late join visibility, revoked access, version receipts, all three copy permissions and duplicate retry. Chrome UI fixture: 392 CSS-pixel phone drawer aligned to right edge; native Back closes only drawer; title edit -> calendar -> Back retains saved title; note table/default descending creation sort verified.
+- Limits: UI fixture uses mock RPC, while permissions use real PostgreSQL-compatible PGlite migration tests. Physical Android keyboard/touch and real multi-device realtime delivery were not exercised. Build emits existing large-JS-chunk advisory, not an error.
+- Public release/GitHub publication follows this source verification.

@@ -1,3 +1,4 @@
+import {ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBackspace} from './pageToggle';
 import {selectedCells} from './tableCells';
 import {pageEnter,pageBackspace} from './pageEnter';
 import {Extension,Node as TipNode,mergeAttributes,type JSONContent,type Editor} from '@tiptap/core';
@@ -9,7 +10,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Placeholder from '@tiptap/extension-placeholder';
 export const commentKey=new PluginKey('pageComments');
-const types=['paragraph','heading','blockquote','bulletList','orderedList','listItem','taskList','taskItem','horizontalRule','codeBlock','table','tableRow','tableCell','tableHeader','columns','column'];
+const types=['paragraph','heading','blockquote','bulletList','orderedList','listItem','taskList','taskItem','horizontalRule','codeBlock','table','tableRow','tableCell','tableHeader','columns','column','toggleBlock','toggleTitle','toggleBody'];
 export const Identity=Extension.create({
  name:'pageIdentity',
  addGlobalAttributes(){return [{types,attributes:{id:{default:null,parseHTML:el=>el.getAttribute('data-block-id'),renderHTML:a=>a.id?{'data-block-id':a.id}:{}}}}]},
@@ -35,10 +36,10 @@ export const Column=TipNode.create({
  };return {dom,contentDOM,update(n){if(n.type!==current.type)return false;current=n;paint();return true},stopEvent:e=>handle.contains(e.target as globalThis.Node),ignoreMutation:m=>m.type==='attributes'&&(m.target===dom||m.target===handle)}}
  }
 });
-export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Backspace:()=>pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
+export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
 export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{color:{default:null,parseHTML:e=>e.style.color,renderHTML:a=>a.color?{style:'color:'+a.color}:{}},background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
 export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
-export function extensions(){return [ActiveCell,CellStyle,PageEnter,StarterKit.configure({heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
+export function extensions(){return [ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
 export function blockPositions(editor:Editor){
  const entries:{id:string;pos:number;node:any}[]=[];
  const add=(n:any,pos:number)=>{if(['bulletList','orderedList','taskList'].includes(n.type.name)){n.forEach((item:any,offset:number,index:number)=>entries.push({id:index===0?n.attrs.id:item.attrs.id,pos:pos+offset+1,node:item}))}else entries.push({id:n.attrs.id,pos,node:n})};
