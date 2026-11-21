@@ -18,13 +18,13 @@ function parts(node:Node,schema:Schema):{head:Node;tail:Node[]} | null {
 }
 function converted(node:Node,target:Conversion,schema:Schema,id:string):Node[]|null {
  const data=parts(node,schema);if(!data)return null;
- const {head,tail}=data;
+ const {head,tail}=data,appearance={blockText:node.attrs.blockText??null,blockBackground:node.attrs.blockBackground??null};
  const paragraph=schema.nodes.paragraph.create({id},head.content);
- if(target==='text'||/^h[123]$/.test(target))return [(target==='text'?schema.nodes.paragraph:schema.nodes.heading).create({id,...(target==='text'?{}:{level:Number(target[1])})},head.content),...tail];
- if(target.startsWith('toggle'))return [schema.nodes.toggleBlock.create({id,open:node.type.name==='toggleBlock'?node.attrs.open:true,level:Number(target.slice(6))||0},[schema.nodes.toggleTitle.create(null,head.content),schema.nodes.toggleBody.create(null,tail.length?tail:schema.nodes.paragraph.create())])];
- if(target==='quote')return [schema.nodes.blockquote.create({id},[schema.nodes.paragraph.create(null,head.content),...tail])];
+ if(target==='text'||/^h[123]$/.test(target))return [(target==='text'?schema.nodes.paragraph:schema.nodes.heading).create({id,...appearance,...(target==='text'?{}:{level:Number(target[1])})},head.content),...tail];
+ if(target.startsWith('toggle'))return [schema.nodes.toggleBlock.create({id,...appearance,open:node.type.name==='toggleBlock'?node.attrs.open:true,level:Number(target.slice(6))||0},[schema.nodes.toggleTitle.create(null,head.content),schema.nodes.toggleBody.create(null,tail.length?tail:schema.nodes.paragraph.create())])];
+ if(target==='quote')return [schema.nodes.blockquote.create({id,...appearance},[schema.nodes.paragraph.create(null,head.content),...tail])];
  const list=target==='check'?'taskList':target==='number'?'orderedList':'bulletList',item=target==='check'?'taskItem':'listItem';
- return [schema.nodes[list].create({id},schema.nodes[item].create(target==='check'?{checked:node.attrs.checked??false}:null,[paragraph.type.create(null,head.content),...tail]))];
+ return [schema.nodes[list].create({id},schema.nodes[item].create({...appearance,...(target==='check'?{checked:node.attrs.checked??false}:{})},[paragraph.type.create(null,head.content),...tail]))];
 }
 /** One transaction keeps undo atomic and only splits the selected list item. */
 export function convertBlock(state:EditorState,pos:number,target:Conversion,id:string,dispatch?:(tr:Transaction)=>void):boolean {

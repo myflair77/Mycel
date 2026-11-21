@@ -769,7 +769,7 @@ button:disabled{cursor:default}
 /* Toggle headings retain the same body size, only the title changes scale. */
 .editor-toggle[data-toggle-level="1"]>[class=toggle-content]>[data-toggle-title]{font-size:1.8em;font-weight:700;line-height:1.35}.editor-toggle[data-toggle-level="2"]>[class=toggle-content]>[data-toggle-title]{font-size:1.5em;font-weight:700;line-height:1.4}.editor-toggle[data-toggle-level="3"]>[class=toggle-content]>[data-toggle-title]{font-size:1.2em;font-weight:700;line-height:1.5}
 .app .editor-toggle[data-toggle-level="1"]>.toggle-arrow{height:2.43em}.app .editor-toggle[data-toggle-level="2"]>.toggle-arrow{height:2.1em}.app .editor-toggle[data-toggle-level="3"]>.toggle-arrow{height:1.8em}
-.editor-note-tabs{position:relative;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;background:var(--surface,#fff)}.note-tabs-toolbar{margin-bottom:12px}.note-tabs-bar{display:flex;align-items:center;gap:4px;overflow:auto;scrollbar-width:thin}.app .note-tabs-bar button{flex:none;border:0;background:transparent;color:var(--muted);font-size:.95em;font-weight:600;padding:5px 12px;min-height:34px;border-radius:24px}.app .note-tabs-bar button[aria-selected=true]{background:var(--soft);color:var(--text)}.note-tab-panels>[data-note-tab]{min-height:44px}.note-tab-panels>[data-note-tab]>p:first-child{margin-top:0}.note-tab-panels>[data-note-tab]>p:last-child{margin-bottom:0}
+.editor-note-tabs{position:relative;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;background:var(--surface,#fff)}.note-tabs-toolbar{margin-bottom:12px}.note-tabs-bar{display:flex;align-items:center;gap:4px;overflow:auto;scrollbar-width:thin}.app .note-tabs-bar button{flex:none;border:0;background:transparent;color:var(--muted);font-size:.95em;font-weight:600;padding:5px 12px;min-height:34px;border-radius:24px}.app .note-tabs-bar button[aria-selected=true]{background:var(--soft);color:var(--text)}.note-tab-panels>[data-note-tab]{min-height:0;display:flow-root}.note-tab-panels>[data-note-tab]>p:first-child{margin-top:0}.note-tab-panels>[data-note-tab]>p:last-child{margin-bottom:0}
 .note-tab-panels>[data-note-tab]>p:only-child.is-empty:before{content:'빈 탭입니다. 내부를 클릭해 내용을 입력하세요.';color:var(--muted);opacity:.65}
 .note-tabs-menu:not([hidden]){position:absolute;top:52px;right:10px;z-index:25;display:flex;flex-direction:column;min-width:180px;max-width:calc(100% - 20px);padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface,#fff);box-shadow:0 8px 30px #17243524}.app .note-tabs-menu button{border:0;background:transparent;text-align:left;min-height:34px;font-size:.9rem;padding:6px 10px}.note-tabs-menu button:hover{background:var(--soft)}.note-tabs-menu input{min-width:0;max-width:100%;font-size:16px}
 @media(max-width:600px){.app .page-document .document-heading .document-title{flex-basis:calc(100% - 54px)}.editor-note-tabs{padding:10px}.app .note-tabs-bar button{min-height:40px;padding:5px 10px}.app .composer .emoji-trigger{min-width:30px;padding:2px}}
@@ -786,3 +786,60 @@ button:disabled{cursor:default}
 
 .page-editor .page-block-menu-selected{background:rgba(80,126,218,.14)!important;border-radius:5px;outline:1px solid rgba(80,126,218,.08);outline-offset:1px}
 .page-editor .page-block-menu-selected td,.page-editor .page-block-menu-selected th{box-shadow:inset 0 0 0 9999px rgba(80,126,218,.09)}
+
+/* Synced content reads like an ordinary block; controls float above the active instance. */
+.note-synced-block{border-color:transparent;padding:4px 8px;background:transparent;margin:6px 0;border-radius:5px}
+.note-synced-block[data-sync-active="true"]{border-color:#ddbb99;box-shadow:0 0 0 1px #ddbb9922}
+.note-sync-toolbar{position:fixed;z-index:1010;display:flex;gap:4px;min-height:34px;padding:3px 5px;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--surface,#fff);box-shadow:0 3px 14px #18203215;font-size:.82rem;color:var(--muted,#707782)}
+.note-sync-toolbar[hidden],.note-sync-notice[hidden]{display:none!important}
+.note-sync-toolbar summary{display:flex;align-items:center;gap:5px;white-space:nowrap;padding:5px 7px;border:0;min-height:28px;list-style:none}
+.note-sync-toolbar summary::-webkit-details-marker{display:none}
+.note-sync-locations{min-width:0;flex:1}.note-sync-locations>summary{overflow:hidden;text-overflow:ellipsis;display:block}.note-sync-locations>summary::after{content:'⌄';margin-left:8px}
+.note-sync-toolbar small:empty{display:none}.note-sync-toolbar small{font-size:.72rem;white-space:nowrap;margin-left:0}
+.note-sync-copy{display:flex!important;align-items:center;justify-content:center;min-width:30px!important;min-height:28px!important;padding:4px!important;border:0!important;border-left:1px solid var(--line,#ddd)!important;border-radius:0!important;background:transparent!important;color:inherit!important}
+.note-sync-toolbar summary:hover,.note-sync-copy:hover{background:var(--soft,#f3f4f7)!important;border-radius:5px}
+.note-sync-toolbar .note-sync-menu{top:calc(100% + 6px);max-width:min(280px,calc(100vw - 24px));overflow:auto;overscroll-behavior:contain}
+.note-sync-toolbar .note-sync-menu button{color:var(--ink);white-space:normal;line-height:1.5;font-size:.85rem}
+.note-sync-notice{font-size:.85rem;color:var(--ink);background:#fff5df;border-radius:6px;padding:8px 10px;margin-bottom:6px}
+.note-sync-content .tiptap{min-height:26px!important;padding:0!important}
+
+/* Unified symbol picker: palette is a sibling of the scrolling grid. */
+.mycel-icon-slot,.mycel-icon{display:inline-flex;align-items:center;justify-content:center;vertical-align:-.12em;flex:none;line-height:1;width:1.15em;height:1.15em}
+.mycel-icon svg,.mycel-icon img{width:1em;height:1em;object-fit:contain;max-width:none}
+.note-tabs-bar button{gap:6px;display:inline-flex;align-items:center}
+.app dialog.mycel-emoji-picker{width:min(520px,calc(100vw - 20px));height:min(620px,calc(100dvh - 32px));max-height:calc(100dvh - 32px);padding:12px;overflow:visible;display:flex;flex-direction:column;gap:8px}
+.app dialog.mycel-emoji-picker:not([open]){display:none}
+.mycel-emoji-picker header{flex:none;gap:8px;margin:0}.symbol-tabs{display:flex;gap:4px;margin-right:auto}
+.app .symbol-tabs button{border:0;border-radius:0;background:none;padding:9px 10px;min-height:40px;color:var(--muted)}
+.app .symbol-tabs button[aria-selected=true]{border-bottom:2px solid currentColor;color:var(--text)}
+.app .symbol-remove{padding:8px;border:0;background:none}.symbol-tools{display:flex;gap:6px}.symbol-tools input{min-width:0;flex:1}.symbol-tools button{flex:none;min-width:40px;padding:6px}
+.mycel-emoji-picker .emoji-categories{flex:none;flex-wrap:nowrap;overflow-x:auto;margin:0;padding-bottom:4px}.emoji-categories button{white-space:nowrap}
+.symbol-extras{display:flex;align-items:center;justify-content:space-between;gap:8px}.symbol-extras select{max-width:150px;padding:4px;font-size:12px}
+.mycel-emoji-picker .emoji-grid{flex:1;min-height:100px;overflow:auto;align-content:start;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));margin:0;overscroll-behavior:contain}
+.app .mycel-emoji-picker .emoji-grid button{min-height:36px;height:36px;font-size:24px;padding:4px;display:flex;justify-content:center;align-items:center}
+.emoji-grid input[type=file]{grid-column:1/-1;max-width:100%}.icon-color-popover{position:absolute;right:12px;top:105px;z-index:2;width:min(260px,calc(100% - 24px));box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff);box-shadow:0 8px 24px #0002}
+.icon-color-popover small{display:block;margin-bottom:8px;color:var(--muted)}.icon-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.app .icon-swatches button{min-width:0;min-height:36px;padding:4px;border:2px solid transparent;background:transparent;border-radius:50%;font-size:24px;display:flex;align-items:center;justify-content:center}
+.app .icon-swatches button[aria-pressed=true]{border-color:var(--text)}.color-dot{display:block;width:23px;height:23px;border-radius:50%}
+.icon-color-popover label{display:flex;justify-content:space-between;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.icon-color-popover input[role=switch]{appearance:none;width:36px;height:22px;border:0;border-radius:22px;background:#bbb;position:relative;cursor:pointer;flex:none}.icon-color-popover input[role=switch]:before{content:'';position:absolute;width:18px;height:18px;background:white;top:2px;left:2px;border-radius:50%;transition:transform .15s}.icon-color-popover input[role=switch]:checked{background:var(--primary)}.icon-color-popover input[role=switch]:checked:before{transform:translateX(14px)}
+.mycel-emoji-picker [hidden]{display:none!important}
+@media(max-width:600px){.app dialog.mycel-emoji-picker{height:min(540px,calc(100dvh - 24px));padding:10px}.symbol-tabs button{font-size:14px}.symbol-extras{font-size:12px}}
+
+.editor-menu{box-sizing:border-box}.editor-submenu{z-index:1001;max-height:600px}.block-menu-label{display:inline-flex;align-items:center;gap:10px;min-width:0}.block-menu-label>.mycel-icon-slot{font-size:18px;flex:none}.editor-menu button[aria-expanded=true]{background:var(--soft,#edf0f6)}.block-color-sample{display:inline-flex;align-items:center;justify-content:center;width:24px;height:26px;border:1px solid #8883;border-radius:5px;font-weight:600;flex:none}.page-colored-block{border-radius:4px}.editor-menu hr{border:0;border-top:1px solid #8882;margin:6px}
+.app .icon-color-popover input[role=switch]{display:inline-block!important;opacity:1!important;width:36px!important;min-width:36px;height:22px!important;margin:0;padding:0;background:#aaa!important}.app .icon-color-popover input[role=switch]:checked{background:#547bcb!important}
+@media(max-width:560px){.editor-menu button{padding:6px;min-height:38px;font-size:13px}.block-menu-label{gap:6px}.block-menu-label>.mycel-icon-slot{font-size:16px}}
+
+.app .page-editor .editor-menu button{border:0;box-shadow:none;min-height:34px;padding:6px 10px;border-radius:5px;background:transparent;color:var(--ink);font-size:14px}.app .page-editor .editor-menu button:hover,.app .page-editor .editor-menu button[aria-expanded=true]{background:var(--soft,#edf0f6)}
+.app .note-tabs-menu button{display:flex;align-items:center;gap:10px;border:0;border-radius:5px;min-height:34px;padding:6px 10px;background:transparent;box-shadow:none}.note-tabs-menu{width:240px;max-width:100%;box-sizing:border-box}.note-tabs-menu button>.mycel-icon{font-size:18px}
+@media(max-width:560px){.app .page-editor .editor-menu button{font-size:13px;padding:6px;min-height:38px}}
+
+.emoji-inline-menu[hidden]{display:none}.emoji-inline-menu button{justify-content:flex-start;gap:10px;color:var(--ink,#242832);font:14px sans-serif}.emoji-inline-menu button>span:first-child{font-size:22px}.emoji-inline-menu button.selected{background:#e7edfa}
+
+/* Each side-by-side column owns a 48px block-control gutter. The divider sits before it. */
+@media(min-width:601px){
+ .page-editor .editor-columns{gap:64px}
+ .page-editor .editor-column-content{min-width:0;overflow-wrap:anywhere}
+ .page-editor .editor-column-resize{right:-16px;width:12px!important;background:transparent!important}
+ .page-editor .editor-column-resize::after{content:"";position:absolute;left:5px;top:0;bottom:0;width:1px;background:#8d97a766;pointer-events:none}
+ .page-editor .editor-column-resize:hover::after,.page-editor .editor-column-resize:focus-visible::after{background:#4b82da}
+}

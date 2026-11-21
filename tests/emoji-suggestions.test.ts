@@ -1,0 +1,3 @@
+import {it,expect} from 'vitest';import {emojiTrigger,emojiSuggestions,loadEmojiCatalog} from '../src/components/emojiCatalog';
+it('recognizes Korean and English emoji queries without matching time or URLs',()=>{expect(emojiTrigger('문장 :fire')).toEqual({offset:3,query:'fire'});expect(emojiTrigger(':웃음')).toEqual({offset:0,query:'웃음'});expect(emojiTrigger('12:30')).toBeNull();expect(emojiTrigger('https://example.com')).toBeNull();expect(emojiTrigger('문장 끝')).toBeNull()});
+it('finds actual Unicode emoji by English shortcode and Korean tags',async()=>{const data=await loadEmojiCatalog();expect(emojiSuggestions(data,'fire')[0].unicode).toBe('🔥');expect(emojiSuggestions(data,'웃음').length).toBeGreaterThan(0);expect(emojiSuggestions(data,'no_such_emoji_xyz')).toEqual([])});

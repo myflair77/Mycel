@@ -23,7 +23,7 @@ export function blocksToDoc(blocks:SavedBlock[]):JSONContent{
  out.push({type:'columns',attrs:{id:l.group},content:cols.map(c=>({type:'column',attrs:{width:members.find(x=>x.content._layout.column===c)!.content._layout.width},content:members.filter(x=>x.content._layout.column===c).map(legacyNode)}))});
  }return {type:'doc',content:out.length?out:[{...para(),attrs:{id:crypto.randomUUID()}}]};
 }
-export function plain(n:JSONContent):string{if(n.type==='noteFile')return (n.attrs?.name??'파일')+' '+(n.attrs?.caption??'');if(n.type==='syncedBlock')return '동기화 블록';if(n.type==='childNote')return '하위 노트';if(n.type==='text')return n.text??'';if(n.type==='hardBreak')return '\n';return (n.content??[]).map(plain).join(['noteTabs','noteTab','toggleBlock','toggleBody','bulletList','orderedList','taskList','blockquote','table','tableRow','listItem','taskItem','tableCell','tableHeader'].includes(n.type??'')?'\n':'')}
+export function plain(n:JSONContent):string{if(n.type==='inlineIcon')return '['+(n.attrs?.value?.split(':')[1]??'아이콘')+']';if(n.type==='noteFile')return (n.attrs?.name??'파일')+' '+(n.attrs?.caption??'');if(n.type==='syncedBlock')return '동기화 블록';if(n.type==='childNote')return '하위 노트';if(n.type==='text')return n.text??'';if(n.type==='hardBreak')return '\n';return (n.content??[]).map(plain).join(['noteTabs','noteTab','toggleBlock','toggleBody','bulletList','orderedList','taskList','blockquote','table','tableRow','listItem','taskItem','tableCell','tableHeader'].includes(n.type??'')?'\n':'')}
 export function docToBlocks(doc:JSONContent):SavedBlock[]{
  const out:SavedBlock[]=[];
  const add=(n:JSONContent,layout?:any)=>{

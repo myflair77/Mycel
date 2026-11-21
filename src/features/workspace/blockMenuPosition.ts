@@ -16,3 +16,10 @@ export function blockMenuPosition(block:Rect,anchorY:number,viewport:Rect,size:{
  const y=anchorY<(top+bottom)/2?bottom-compact:top;
  return {left:x,top:y,width,maxHeight:compact,placement:'edge'};
 }
+
+export function blockSubmenuPosition(parent:Rect,anchorY:number,viewport:Rect,size:{width:number;height:number}){
+ const pad=8,gap=6,width=Math.min(size.width,viewport.right-viewport.left-16),height=Math.min(size.height,viewport.bottom-viewport.top-16);
+ const right=parent.right+gap,left=parent.left-gap-width;
+ const x=right+width<=viewport.right-pad?right:left>=viewport.left+pad?left:viewport.right-pad-width;
+ return {left:Math.max(viewport.left+pad,x),top:Math.max(viewport.top+pad,Math.min(anchorY,viewport.bottom-pad-height)),width,maxHeight:height};
+}

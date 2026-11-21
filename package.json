@@ -23,6 +23,8 @@
     "@tiptap/pm": "^3.34.0",
     "@tiptap/react": "^3.34.0",
     "@tiptap/starter-kit": "^3.34.0",
+    "emojibase-data": "^18.0.0",
+    "lucide": "^1.77.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

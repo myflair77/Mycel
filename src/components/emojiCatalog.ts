@@ -1,0 +1,5 @@
+export type EmojiEntry={unicode:string;label:string;group?:number;order?:number;tags?:string[];skins?:EmojiEntry[];search:string;aliases:string[]};
+let pending:Promise<EmojiEntry[]>|undefined;
+export const loadEmojiCatalog=()=>pending??=Promise.all([import('emojibase-data/ko/compact.json'),import('emojibase-data/en/shortcodes/emojibase.json')]).then(([data,codes])=>(data.default as Omit<EmojiEntry,'search'|'aliases'>[]).filter(e=>e.group!==undefined).sort((a,b)=>(a.order??0)-(b.order??0)).map(e=>{const raw=(codes.default as Record<string,string|string[]>)[(e as unknown as {hexcode:string}).hexcode],aliases=raw?(Array.isArray(raw)?raw:[raw]):[];return {...e,aliases,search:[e.unicode,e.label,...(e.tags??[]),...aliases].join(' ').toLowerCase()}}));
+export function emojiTrigger(before:string){const m=/(?:^|[\s(])(:([\p{L}\p{N}_+\-]{1,40}):?)$/u.exec(before);return m?{offset:before.length-m[1].length,query:m[2].toLowerCase()}:null}
+export function emojiSuggestions(entries:EmojiEntry[],query:string,limit=8){return entries.filter(e=>e.search.includes(query)).sort((a,b)=>Number(b.aliases.includes(query))-Number(a.aliases.includes(query))).slice(0,limit)}

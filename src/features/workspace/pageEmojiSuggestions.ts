@@ -1,0 +1,20 @@
+import {Extension} from '@tiptap/core';import {Plugin,PluginKey} from '@tiptap/pm/state';import type {EditorView} from '@tiptap/pm/view';
+import {emojiTrigger,emojiSuggestions,loadEmojiCatalog,type EmojiEntry} from '../../components/emojiCatalog';
+export const EmojiSuggestions=Extension.create({name:'emojiSuggestions',priority:1200,
+ addProseMirrorPlugins(){let keydown:((event:KeyboardEvent)=>boolean)|undefined;return [new Plugin({key:new PluginKey('inlineEmojiSuggestions'),props:{handleKeyDown:(_view,event)=>keydown?.(event)??false},view(initialView){
+  let view:EditorView=initialView,all:EmojiEntry[]|null=null,rows:EmojiEntry[]=[],queryKey='',dismissed='',index=0,destroyed=false,loading=false,range:{from:number;to:number}|null=null;
+  const popup=document.createElement('div');popup.className='editor-menu emoji-inline-menu';popup.setAttribute('role','listbox');popup.setAttribute('aria-label','이모지 추천');popup.hidden=true;document.body.append(popup);
+  const close=()=>{popup.hidden=true;range=null;rows=[]};
+  const pick=(row:EmojiEntry)=>{if(!range||!view.editable)return;const {from,to}=range;close();view.dispatch(view.state.tr.insertText(row.unicode,from,to).scrollIntoView());view.focus()};
+  function update(){if(destroyed)return;const {$from,empty}=view.state.selection;if(!view.editable||!empty||!$from.parent.isTextblock||$from.parent.type.spec.code){close();return}
+   const trigger=emojiTrigger($from.parent.textBetween(0,$from.parentOffset,'\n','\ufffc'));if(!trigger){queryKey='';dismissed='';close();return}const key=$from.start()+trigger.offset+':'+trigger.query;
+   if(key===dismissed){close();return}if(queryKey!==key){queryKey=key;index=0}range={from:$from.start()+trigger.offset,to:$from.pos};
+   if(!all){if(!loading){loading=true;void loadEmojiCatalog().then(data=>{all=data;if(!destroyed)update()}).catch(()=>{loading=false;close()})}return}
+   rows=emojiSuggestions(all,trigger.query);if(!rows.length){close();return}index=Math.min(index,rows.length-1);popup.replaceChildren();rows.forEach((row,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','option');b.setAttribute('aria-selected',String(i===index));if(i===index)b.className='selected';const emoji=document.createElement('span');emoji.textContent=row.unicode;const label=document.createElement('span');label.textContent=row.label;b.append(emoji,label);b.onmousedown=e=>e.preventDefault();b.onclick=()=>pick(row);popup.append(b)});popup.hidden=false;
+   const c=view.coordsAtPos($from.pos),v=window.visualViewport,x=v?.offsetLeft??0,y=v?.offsetTop??0,w=v?.width??innerWidth,h=v?.height??innerHeight;popup.style.width=Math.min(300,w-16)+'px';popup.style.maxHeight=Math.min(320,h-16)+'px';const height=popup.offsetHeight;popup.style.left=Math.max(x+8,Math.min(c.left,x+w-popup.offsetWidth-8))+'px';popup.style.top=Math.max(y+8,c.bottom+8+height<=y+h-8?c.bottom+8:c.top-height-8)+'px';
+  }
+  keydown=event=>{if(event.isComposing||popup.hidden)return false;if(event.key==='Escape'){dismissed=queryKey;close();return true}if(event.key==='ArrowDown'||event.key==='ArrowUp'){index=(index+(event.key==='ArrowDown'?1:-1)+rows.length)%rows.length;update();popup.children[index]?.scrollIntoView({block:'nearest'});return true}if((event.key==='Enter'||event.key==='Tab')&&rows[index]){pick(rows[index]);return true}return false};
+  const outside=(e:PointerEvent)=>{if(!popup.contains(e.target as Node)){dismissed=queryKey;close()}};document.addEventListener('pointerdown',outside);const reposition=()=>{if(!popup.hidden)update()};window.addEventListener('resize',reposition);window.visualViewport?.addEventListener('resize',reposition);document.addEventListener('scroll',reposition,true);
+  return {update(next){view=next;update()},destroy(){destroyed=true;keydown=undefined;popup.remove();document.removeEventListener('pointerdown',outside);window.removeEventListener('resize',reposition);window.visualViewport?.removeEventListener('resize',reposition);document.removeEventListener('scroll',reposition,true)}};
+ }})]}
+});
