@@ -21,3 +21,22 @@ it('authorizes, verifies chunks, commits once, downloads exact bytes and expires
  const bytes=new Uint8Array(await(await call()).arrayBuffer());expect(bytes.length).toBe(a.size);expect(bytes[0]).toBe(7);expect(bytes.at(-1)).toBe(9);
  a.expires_at=new Date(Date.now()-1).toISOString();expect((await call()).status).toBe(410);
 });
+
+it('uploads note files with note permissions, preserves exact bytes and excludes them from chat expiry',async()=>{
+ const id='10000000-0000-0000-0000-000000000001';const a:any={id,note_id:'20000000-0000-0000-0000-000000000001',sender_id:'alice',name:'test.bin',mime:'application/octet-stream',size:CHUNK+13,path:'alice/'+id};const objects=new Map<string,any>();let committed=false;
+ const env={R2_RECEIPT_KEY:'ab'.repeat(32),BUCKET:{async put(k:string,v:any,o:any={}){if(objects.has(k)&&o.onlyIf)return null;const bytes=typeof v==='string'?new TextEncoder().encode(v):v;objects.set(k,{bytes,customMetadata:o.customMetadata});return{}},async head(k:string){const o=objects.get(k);return o?{size:o.bytes.length,customMetadata:o.customMetadata}:null},async get(k:string){const o=objects.get(k);return o?{json:async()=>JSON.parse(new TextDecoder().decode(o.bytes)),body:new Blob([o.bytes]).stream()}:null},async list(){return {objects:[...objects].map(([key,o])=>({key,size:o.bytes.length,customMetadata:o.customMetadata}))}},async delete(keys:string[]){keys.forEach(k=>objects.delete(k))}}};
+ vi.stubGlobal('fetch',vi.fn(async(url:string,options:any)=>{if(url.includes('get_note_file')){expect(JSON.parse(options.body).p_note).toBe(a.note_id);return options.headers.Authorization==='Bearer valid'?Response.json(a):Response.json({error:'denied'},{status:403})}if(url.includes('prepare_note_file'))return Response.json(a);if(url.includes('finish_note_file')){const b=JSON.parse(options.body);expect(b.p_receipt).toBe(await mac(env.R2_RECEIPT_KEY,id+':'+a.size+':'+b.p_key));a.r2_key=b.p_key;committed=true;return Response.json({id:'message'})}throw Error(url)}));
+ const call=(suffix='',method='GET',body:any=null,headers:any={})=>fileApi(new Request('https://test.local/api/note-files/'+id+suffix+(suffix.includes('?')?'&':'?')+'note='+a.note_id,{method,headers:{Authorization:'Bearer valid',...headers},body}),env);
+ expect((await call('','GET',null,{Authorization:'Bearer other'})).status).toBe(403);
+ expect((await call('/start','POST',null,{Origin:'https://evil.local'})).status).toBe(403);
+ const start=await(await call('/start','POST')).json();let h={'X-Upload-Ticket':start.ticket};
+ const first=new Uint8Array(CHUNK).fill(7),last=new Uint8Array(13).fill(9);
+ await call('/part?index=0','PUT',first,h);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,{'X-Upload-Ticket':'bad'})).status).toBe(403);expect(objects.size).toBe(1);expect((await call('/cancel','POST',null,h)).status).toBe(200);expect(objects.size).toBe(1);expect((await call('/part?index=0','PUT',first,h)).status).toBe(409);h={'X-Upload-Ticket':(await(await call('/start','POST')).json()).ticket};
+ const p1=await(await call('/part?index=0','PUT',first,h)).json(),p2=await(await call('/part?index=1','PUT',last,h)).json();
+ expect((await call('/part?index=1','PUT',new Uint8Array(14),h)).status).toBe(413);
+ expect((await call('/part?index=1','PUT',new Uint8Array(13).fill(1),h)).status).toBe(409);
+ expect((await call('/finish','POST',JSON.stringify({parts:[p1]}),h)).status).toBe(400);
+ expect((await call('/finish','POST',JSON.stringify({parts:[p1,p2]}),h)).status).toBe(200);expect(committed).toBe(true);const count=objects.size;expect((await call('/cancel','POST',null,h)).status).toBe(409);expect(objects.size).toBe(count);
+ const bytes=new Uint8Array(await(await call()).arrayBuffer());expect(bytes.length).toBe(a.size);expect(bytes[0]).toBe(7);expect(bytes.at(-1)).toBe(9);
+ expect(a.r2_key.startsWith('notes/')).toBe(true);expect(a.expires_at).toBeUndefined();expect((await call()).status).toBe(200);
+});

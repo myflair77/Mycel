@@ -1,4 +1,8 @@
-import {ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBackspace,toggleIndent,toggleOutdent} from './pageToggle';
+import {SyncedBlock} from './pageSyncedBlock';
+import {NoteFile} from './pageNoteFile';
+import {ChildNote} from './pageChildNote';
+import {NoteTabs,NoteTab} from './pageTabs';
+import {ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBeforeInput,toggleBackspace,toggleIndent,toggleOutdent} from './pageToggle';
 import {selectedCells} from './tableCells';
 import {pageEnter,pageBackspace} from './pageEnter';
 import {Extension,Node as TipNode,mergeAttributes,type JSONContent,type Editor} from '@tiptap/core';
@@ -10,13 +14,16 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Placeholder from '@tiptap/extension-placeholder';
 export const commentKey=new PluginKey('pageComments');
-const types=['paragraph','heading','blockquote','bulletList','orderedList','listItem','taskList','taskItem','horizontalRule','codeBlock','table','tableRow','tableCell','tableHeader','columns','column','toggleBlock','toggleTitle','toggleBody'];
+export const blockMenuKey=new PluginKey('pageBlockMenu');
+export const BlockMenuSelection=Extension.create({name:'blockMenuSelection',addProseMirrorPlugins(){return [new Plugin({key:blockMenuKey,state:{init:()=>DecorationSet.empty,apply(tr,old){const range=tr.getMeta(blockMenuKey);return range!==undefined?(range?DecorationSet.create(tr.doc,[Decoration.node(range.from,range.to,{class:'page-block-menu-selected'})]):DecorationSet.empty):old.map(tr.mapping,tr.doc)}},props:{decorations:state=>blockMenuKey.getState(state)}})]}});
+
+const types=['paragraph','heading','blockquote','bulletList','orderedList','listItem','taskList','taskItem','horizontalRule','codeBlock','table','tableRow','tableCell','tableHeader','columns','column','toggleBlock','toggleTitle','toggleBody','noteTabs','noteTab','childNote','noteFile','syncedBlock'];
 export const Identity=Extension.create({
  name:'pageIdentity',
  addGlobalAttributes(){return [{types,attributes:{id:{default:null,parseHTML:el=>el.getAttribute('data-block-id'),renderHTML:a=>a.id?{'data-block-id':a.id}:{}}}}]},
  addProseMirrorPlugins(){return [new Plugin({appendTransaction(transactions,_old,state){if(!transactions.some(t=>t.docChanged))return null;const seen=new Set<string>(),tr=state.tr;state.doc.descendants((n,p)=>{if(!types.includes(n.type.name))return;let id=n.attrs.id;if(!id||seen.has(id)){id=crypto.randomUUID();tr.setNodeMarkup(p,undefined,{...n.attrs,id})}seen.add(id)});return tr.docChanged?tr:null}})]}
 });
-export const Comments=Extension.create({name:'pageComments',addProseMirrorPlugins(){return [new Plugin({key:commentKey,state:{init:()=>DecorationSet.empty,apply(tr,old){const spans=tr.getMeta(commentKey);return spans?DecorationSet.create(tr.doc,spans.map((s:any)=>Decoration.inline(s.from,s.to,{'class':'page-comment-mark','data-comment-id':s.id}))):old.map(tr.mapping,tr.doc)}},props:{decorations:state=>commentKey.getState(state)}})]}});
+export const Comments=Extension.create({name:'pageComments',addProseMirrorPlugins(){return [new Plugin({key:commentKey,state:{init:()=>DecorationSet.empty,apply(tr,old){const spans=tr.getMeta(commentKey);return spans?DecorationSet.create(tr.doc,spans.map((s:any)=>s.block?Decoration.node(s.from,s.to,{'class':'page-block-comment-mark','data-comment-id':s.id}):Decoration.inline(s.from,s.to,{'class':'page-comment-mark','data-comment-id':s.id}))):old.map(tr.mapping,tr.doc)}},props:{decorations:state=>commentKey.getState(state)}})]}});
 export const Columns=TipNode.create({name:'columns',group:'block',content:'column{2,4}',isolating:true,parseHTML:()=>[{tag:'div[data-columns]'}],renderHTML:({HTMLAttributes})=>['div',mergeAttributes(HTMLAttributes,{'data-columns':'','class':'editor-columns'}),0]});
 export const Column=TipNode.create({
  name:'column',content:'block+',isolating:true,
@@ -36,10 +43,10 @@ export const Column=TipNode.create({
  };return {dom,contentDOM,update(n){if(n.type!==current.type)return false;current=n;paint();return true},stopEvent:e=>handle.contains(e.target as globalThis.Node),ignoreMutation:m=>m.type==='attributes'&&(m.target===dom||m.target===handle)}}
  }
 });
-export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Tab:()=>toggleIndent(this.editor.state,tr=>this.editor.view.dispatch(tr)),'Shift-Tab':()=>toggleOutdent(this.editor.state,tr=>this.editor.view.dispatch(tr)),Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
+export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addProseMirrorPlugins(){return [new Plugin({props:{handleDOMEvents:{beforeinput:(view,event)=>toggleBeforeInput(view,event as InputEvent)}}})]},addKeyboardShortcuts(){return {Tab:()=>toggleIndent(this.editor.state,tr=>this.editor.view.dispatch(tr)),'Shift-Tab':()=>toggleOutdent(this.editor.state,tr=>this.editor.view.dispatch(tr)),Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
 export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{color:{default:null,parseHTML:e=>e.style.color,renderHTML:a=>a.color?{style:'color:'+a.color}:{}},background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
 export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
-export function extensions(){return [ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({trailingNode:{node:'paragraph'},heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='toggleTitle'?'토글':node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
+export function extensions(withSync=true){return [...(withSync?[SyncedBlock]:[]),NoteFile,ChildNote,NoteTabs,NoteTab,ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({trailingNode:{node:'paragraph'},heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='toggleTitle'?'토글':node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments,BlockMenuSelection]}
 export function blockPositions(editor:Editor){
  const entries:{id:string;pos:number;node:any}[]=[];
  const add=(n:any,pos:number)=>{if(['bulletList','orderedList','taskList'].includes(n.type.name)){n.forEach((item:any,offset:number,index:number)=>entries.push({id:index===0?n.attrs.id:item.attrs.id,pos:pos+offset+1,node:item}))}else entries.push({id:n.attrs.id,pos,node:n})};

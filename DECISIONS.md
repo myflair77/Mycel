@@ -117,3 +117,15 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Replace the separate note-filter bar with per-column funnel controls, including title and stable creation-order number ranges. Each column supports sorting and clearing its own filter; latest-created default and persistent per-list choices remain.
 - Compared the open Notion desktop test page: Enter on an expanded toggle title creates a first child; on a collapsed title it creates a sibling toggle. Mycel preserves rich text and child content on split, supports > + Space, nested toggles via slash, Tab into a preceding toggle, Shift-Tab out, and Backspace to unwrap. Empty title Enter exits an empty toggle. Toggle controls align with its title rather than its first body paragraph.
 - Separate the high-priority toggle input rule from the node schema ordering. Paragraph remains the default block, with explicit paragraph trailing-node configuration to prevent an invalid empty toggle on editor initialization.
+
+
+## 2026-11-22 · Note presentation and toggle Enter
+- Display all granted note capabilities; a capability filter includes higher permission levels. Hide creation-date list column without changing numbering/default creation sort. Keep creation/modified timestamps beside the document title.
+- A selected comment is persistent UI state with explicit thread/entry emphasis and local-scroller centering; do not navigate the document just to select a comment.
+- User overrides Notion-style closed-toggle continuation: closed title Enter exits into a paragraph; open title Enter enters the toggle body. Handle cancelable mobile beforeinput insertParagraph as well as hardware Enter, without intercepting IME composition or line breaks.
+
+## 2026-11-22 노트의 연결과 블록 전환
+- 하위 노트는 루트 공유 권한을 상속한다. 첨부는 채팅 만료 정책과 분리해 영구 보존한다.
+- 동기화 블록은 본문을 복제하지 않고 별도 버전 자료를 참조한다. 원본 및 표시 노트 권한을 모두 만족해야 열람·편집 가능하다. 원본 기록과 수정 이력은 자동 삭제하지 않는다.
+- 블록 전환은 기존 텍스트 서식과 하위 내용을 보존하며 한 번의 실행 취소로 복원한다. 목록 한 항목의 전환은 앞뒤 목록과 번호를 보존한다. 표·파일을 텍스트로 파괴적으로 바꾸는 동작은 제공하지 않는다.
+- 점 6개 메뉴의 선택 강조는 화면 장식으로만 적용하며 노트 내용·이력에 저장하지 않는다.

@@ -339,3 +339,24 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - No DB migration or access-policy change. Existing messages, files, calendar integration, note permissions, comments and histories are retained.
 - Physical Galaxy device verification remains outstanding; local browser checks do not certify Android hardware behavior. Public deployment and GitHub push are the remaining release steps for this follow-up.
 - Final validation: npm run check passed; npm test passed 182 tests / 51 files. The default Windows build output directory failed with EPERM on build/icons; the same Vite production build and build-r2 worker bundling succeeded in a clean temporary output directory, the generated Worker was copied back, while copying unchanged icon files into the locked default build directory was denied. Public deployment will rebuild the pushed source remotely if local archive packaging remains unavailable.
+
+
+## 2026-11-22 · Note readability and phone toggle input
+- Comment body/author/timestamps enlarged. Selecting a quoted comment or comment entry centers it within the comment scroller and retains thread/entry emphasis; supports keyboard selection and reduced motion.
+- Note list shows cumulative read/comment/body-edit capabilities; permission filters match included capabilities. Creation date column removed; stable creation-order numbering and newest-created default remain. Note title has two-line creation/updated metadata, right aligned and wrapping on phones.
+- Main navigation order: 공간 → 사람 → 설정.
+- Closed toggle title Enter now creates an ordinary sibling paragraph (explicit user preference); open title Enter enters its body. Android beforeinput insertParagraph uses the same command without a keydown; composition/noncancelable events are not intercepted. Collapse places a hidden-body caret at the title end. Arrow uses an 8×10 triangle in a 16px icon; empty body gray, populated body text color.
+- Chrome 390×844 fixture QA: slash toggle insertion, open/closed mobile-style beforeinput, inner text retention, external paragraph placement; modified note → 일정/대화/목록 with delayed saves and content retained. Comment selection emphasis verified visually. Physical Galaxy/IME not available; viewport/input-event simulation is not a real-device pass.
+- 185 tests and type check passed before final packaging. No DB migrations, account, content or permission-policy changes.
+
+## 2026-11-22 — 노트 확장 및 전환 메뉴
+- 하위 노트 /노트, 상위 노트 권한 상속, 트리 목록과 경로 탐색. 하위 노트 이동은 서버 API만 제공하며 UI는 후속.
+- /이미지·/파일, 붙여넣기·드롭 업로드, 영구 보존 첨부와 복제 노트 접근 권한.
+- 전체·블록·선택 문장 댓글을 플로팅 창으로 통일. 블록 전체 댓글 대상 표시.
+- /탭 및 토글 제목 1·2·3, 빈 토글은 윤곽 삼각형, 내용이 있으면 채운 삼각형.
+- /동기화, 복사하여 동기화, 원본/대상 양쪽 권한 검사, 버전 충돌 방지, 영구 수정 이력, 동기화 해제.
+- 점 6개 메뉴의 전환 하위 메뉴: 텍스트·제목·목록·체크박스·인용·토글. 현재 형식 체크, 내용 손실 위험이 있는 전환 비활성화. 메뉴가 열린 블록 전체에 파란 선택 표시.
+- 운영 Supabase에 0036·0037·0038 적용: Aside SQL Editor에서 각각 Success. No rows returned 확인. 기존 데이터 삭제 없음.
+- 자동 검사: TypeScript 성공, Vitest 54개 파일 / 196개 테스트 성공. 로컬 UI에서 댓글, 하위 노트, 탭, 토글 Enter, 동기화 전파·해제, 전환·선택 표시 확인.
+- 휴대폰 크기와 beforeinput은 시뮬레이션 검증. 실제 Galaxy 키보드 및 운영 첨부 업로드 검증은 아직 완료되지 않음.
+- 위 항목이 이전 초안의 DB 미적용·오른쪽 댓글 패널 기록을 대체함. 배포 결과는 완료 후 기록.
