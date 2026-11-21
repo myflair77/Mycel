@@ -30,6 +30,7 @@ export const toggleBackspace:Command=(state,dispatch)=>{
 export const toggleOutdent:Command=(state,dispatch)=>{
  const {$from,$to}=state.selection;let bodyDepth=$from.depth;while(bodyDepth>0&&$from.node(bodyDepth).type.name!=='toggleBody')bodyDepth--;
  if(bodyDepth===0||$to.pos>$from.end(bodyDepth))return false;
+ if($from.depth!==bodyDepth+1&&!($from.depth===bodyDepth+2&&$from.parent.type.name==='toggleTitle'))return false;
  const blockDepth=bodyDepth+1,child=$from.node(blockDepth),childPos=$from.before(blockDepth),togglePos=$from.before(bodyDepth-1),toggle=$from.node(bodyDepth-1),body=$from.node(bodyDepth);
  const rest=body.content.cut(0,childPos-$from.start(bodyDepth)).append(body.content.cut(childPos-$from.start(bodyDepth)+child.nodeSize));
  const next=toggle.copy(Fragment.fromArray([toggle.firstChild!,body.copy(rest.size?rest:Fragment.from(state.schema.nodes.paragraph.create()))]));

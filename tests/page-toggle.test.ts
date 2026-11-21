@@ -39,3 +39,4 @@ it('converts a paragraph without losing its content and supports undo transactio
  expect(insertToggle(editor)).toBe(true);expect(state.doc.firstChild!.type.name).toBe('toggleBlock');expect(state.doc.firstChild!.firstChild!.textContent).toBe('Existing title');expect(state.doc.child(1).textContent).toBe('Following');expect(state.selection.from).toBe(2);
 });
 it('keeps paragraph as the default block so editor initialization and ordinary Enter cannot create invalid toggles',()=>{expect(schema.topNodeType.contentMatch.defaultType?.name).toBe('paragraph');schema.topNodeType.createAndFill()!.check()});
+it('Shift-Tab in a nested list does not extract the entire list from its toggle',()=>{const t=toggle();let pos=0;t.descendants((node,offset)=>{if(node.type.name==='paragraph'&&node.textContent==='List')pos=offset+2});let state=stateAt([t],pos);expect(toggleOutdent(state)).toBe(false)});
