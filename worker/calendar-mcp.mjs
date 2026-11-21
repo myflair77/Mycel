@@ -45,9 +45,13 @@ export async function calendarMcp(request,env){
      const credential=await mac(env.CALENDAR_MCP_SECRET,'mycel/calendar/v1/'+caller);
      const pairing=name==='calendar_pair';
      stage='database_request';
-     const response=await fetch(SB+'/rest/v1/rpc/'+(pairing?'calendar_pair':'calendar_connector'),{
-       method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},redirect:'error',signal:AbortSignal.timeout(15000),
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),15000);
+     let response;
+     try{response=await fetch(SB+'/rest/v1/rpc/'+(pairing?'calendar_pair':'calendar_connector'),{
+       method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},redirect:'error',signal:controller.signal,
        body:JSON.stringify(pairing?{p_code:args.code,p_secret:credential}:{p_tool:name,p_args:args,p_secret:credential})});
+     }finally{clearTimeout(timeout)}
      if(!response.ok)throw Error('계정 연결, 입력과 최신 일정 버전을 확인하세요.');
      stage='database_response';
      const value=await response.json();

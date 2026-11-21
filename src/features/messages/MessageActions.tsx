@@ -24,7 +24,7 @@ export function MessageActions({message,userId,isSelf,canNotice=true,rooms,starr
  {message.attachment_id&&<><button onClick={()=>setMode('view')}>사진·파일 보기</button><button disabled={busy||!available} onClick={()=>void run(save)}>다운로드{expired?' · 만료':''}</button></>}
  <button disabled={busy||!available} onClick={()=>setMode('share')}>공유·복사·다운로드</button><button disabled={busy||!available} onClick={()=>setMode('forward')}>다른 대화로 전달</button>{!isSelf&&<button disabled={busy||!available} onClick={()=>void run(async()=>{const room=await rpc('open_self_chat',{});await forward(room)})}>나와의 대화로 보내기</button>}
  <button disabled={busy} onClick={()=>void run(()=>flag('starred',!starred))}>{starred?'중요 표시 해제':'중요 표시'}</button>
- {canNotice&&<button disabled={busy||!available} onClick={()=>{onPost(message,true);onClose()}}>공지로 등록</button>}<button disabled={busy||!available} onClick={()=>{onPost(message,false);onClose()}}>게시글로 작성</button>
+ {canNotice&&<button disabled={busy||!available} onClick={()=>{onPost(message,true);onClose()}}>공지로 등록</button>}<button disabled={busy||!available} onClick={()=>{onPost(message,false);onClose()}}>노트로 작성</button>
  {canEdit&&!message.attachment_id&&!message.post_id&&<button onClick={()=>setMode('edit')}>수정</button>}</>}
  <button onClick={()=>setMode('info')}>상세 정보</button><button className="danger" onClick={()=>setMode('delete')}>삭제·숨기기</button></div>}
  {mode==='share'&&<ExternalShare text={message.body} attachment={attachment}/>}
