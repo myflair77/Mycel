@@ -1,3 +1,4 @@
+import {blockMenuPosition} from './blockMenuPosition';
 import {conversionTypes,convertBlock,blockType,type Conversion} from './pageConversion';
 import {SYNC_PREFIX} from './pageSyncedBlock';
 import {uploadNoteFile} from './noteFiles';
@@ -12,7 +13,7 @@ import {CellSelection} from '@tiptap/pm/tables';
 import {PageTableTools,Grip} from './PageTableTools';
 import {useEditor,EditorContent} from '@tiptap/react';
 import {BubbleMenu} from '@tiptap/react/menus';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {TextSelection} from '@tiptap/pm/state';
 import type {JSONContent} from '@tiptap/core';
 import {extensions,blockPositions,selectionQuote,commentKey,blockMenuKey} from './pageExtensions';
@@ -23,6 +24,8 @@ type Props={childrenNotes?:{id:string;title:string;icon?:string;trashed?:boolean
 export function PageEditor(p:Props){
  const blockDragging=useRef(false),uploading=useRef(false),childCommitting=useRef(false);
  const [status,setStatus]=useState('저장됨'),[failed,setFailed]=useState(''),[tick,setTick]=useState(0),[menu,setMenu]=useState<{x:number;y:number;id:string;add?:boolean;convert?:boolean}|null>(null),[hover,setHover]=useState<{x:number;y:number;right:number;id:string}|null>(null),[slash,setSlash]=useState<{from:number;to:number;q:string;x:number;y:number}|null>(null),[choice,setChoice]=useState(0),[link,setLink]=useState<string|null>(null),[draftAvailable,setDraftAvailable]=useState(false);
+ const menuElement=useRef<HTMLDivElement>(null);
+ const [menuPosition,setMenuPosition]=useState<ReturnType<typeof blockMenuPosition>|null>(null);
  const wrapper=useRef<HTMLDivElement>(null),latest=useRef(p),base=useRef(p.version),revision=useRef(0),savedRevision=useRef(0),saving=useRef(false),inFlight=useRef<Promise<boolean>|null>(null),pending=useRef<{doc:JSONContent;mutation:string;version:number;revision:number}|null>(null),timer=useRef<ReturnType<typeof setTimeout>|null>(null),blocked=useRef(false);
  latest.current=p;const key='mycel-rich-page:'+p.userId+':'+p.id;
  const editor=useEditor({extensions:extensions(),content:uniqueIds(blocksToDoc(p.blocks)),editable:p.edit,
@@ -54,6 +57,22 @@ export function PageEditor(p:Props){
  useEffect(()=>{if(!editor)return;const go=(ev:Event)=>{const c=(ev as CustomEvent).detail;if(c.page!==p.id)return;const b=latest.current.blocks.find(b=>b.id===c.block_id),pos=blockPositions(editor).find(b=>b.id===c.block_id);if(!b||!pos)return;const range=c.anchor?locateQuote(b.content.text??'',c.anchor,b.version):null;editor.commands.setTextSelection(range?{from:pos.pos+1+range[0],to:pos.pos+1+range[1]}:pos.pos+1);editor.commands.focus();editor.commands.scrollIntoView()};window.addEventListener('mycel-page-quote',go);return()=>window.removeEventListener('mycel-page-quote',go)},[editor]);
  useEffect(()=>{const close=(e:PointerEvent)=>{if(!(e.target as HTMLElement).closest('.editor-menu,.editor-handles'))setMenu(null)};document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close)},[]);
  useEffect(()=>{if(!editor)return;const b=menu&&!menu.add?blockPositions(editor).find(b=>b.id===menu.id):null;editor.view.dispatch(editor.state.tr.setMeta(blockMenuKey,b?{from:b.pos,to:b.pos+b.node.nodeSize}:null).setMeta('addToHistory',false))},[editor,menu?.id,menu?.add]);
+ useLayoutEffect(()=>{
+ if(!menu||!editor||!menuElement.current){setMenuPosition(null);return}
+ const popup=menuElement.current;let frame=0;
+ const refresh=()=>{
+  const b=blockPositions(editor).find(b=>b.id===menu.id),node=b&&editor.view.nodeDOM(b.pos);if(!(node instanceof HTMLElement))return;
+  const rect=node.getBoundingClientRect(),view=window.visualViewport;
+  const viewport={left:view?.offsetLeft??0,top:view?.offsetTop??0,right:(view?.offsetLeft??0)+(view?.width??window.innerWidth),bottom:(view?.offsetTop??0)+(view?.height??window.innerHeight)};
+  const handle=wrapper.current?.querySelector<HTMLElement>('.editor-handles');
+  const next=blockMenuPosition(rect,handle?.getBoundingClientRect().top??rect.top,viewport,{width:260,height:Math.min(350,popup.scrollHeight+2)});
+  setMenuPosition(old=>old&&Object.keys(next).every(k=>old[k as keyof typeof old]===next[k as keyof typeof next])?old:next);
+ };
+ const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(refresh)};
+ refresh();const observer=new ResizeObserver(schedule);observer.observe(popup);observer.observe(editor.view.dom);
+ document.addEventListener('scroll',schedule,true);window.addEventListener('resize',schedule);window.visualViewport?.addEventListener('resize',schedule);window.visualViewport?.addEventListener('scroll',schedule);
+ return()=>{cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener('scroll',schedule,true);window.removeEventListener('resize',schedule);window.visualViewport?.removeEventListener('resize',schedule);window.visualViewport?.removeEventListener('scroll',schedule)};
+ },[editor,menu?.id,menu?.add,menu?.convert]);
  function focusBlock(id:string){const b=editor&&blockPositions(editor).find(b=>b.id===id);if(b)editor!.commands.setTextSelection(Math.min(b.pos+(['listItem','taskItem'].includes(b.node.type.name)?2:1),editor!.state.doc.content.size));return b}
  function replace(doc:JSONContent){if(!editor)return;const parsed=editor.schema.nodeFromJSON(uniqueIds(doc));editor.view.dispatch(editor.state.tr.replaceWith(0,editor.state.doc.content.size,parsed.content).scrollIntoView());setMenu(null)}
  function choose(cmd:string){if(!editor)return;if(slash)editor.chain().focus().deleteRange({from:slash.from,to:slash.to}).run();else if(menu){const b=focusBlock(menu.id);if(menu.add&&b){editor.chain().insertContentAt(b.pos+b.node.nodeSize,(['listItem','taskItem'].includes(b.node.type.name)?{type:b.node.type.name,attrs:{id:crypto.randomUUID(),checked:false},content:[{type:'paragraph'}]}:{type:'paragraph',attrs:{id:crypto.randomUUID()}})).setTextSelection(b.pos+b.node.nodeSize+(['listItem','taskItem'].includes(b.node.type.name)?2:1)).run()}}
@@ -161,7 +180,7 @@ export function PageEditor(p:Props){
  {p.edit&&<BubbleMenu editor={editor} shouldShow={({state})=>!state.selection.empty&&!(state.selection instanceof CellSelection)} options={{placement:'top'}}><div className="editor-selection-tools" onMouseDown={e=>e.preventDefault()}>{[['B','굵게','toggleBold'],['I','기울임','toggleItalic'],['U','밑줄','toggleUnderline'],['S','취소선','toggleStrike'],['&lt;/&gt;','코드','toggleCode']].map(([t,label,command])=><button key={command} aria-label={label} onClick={()=>{(editor.chain().focus() as any)[command]().run()}}>{t==='&lt;/&gt;'?'코드':t}</button>)}<button onClick={()=>setLink(editor.getAttributes('link').href??'')}>링크</button>{p.canComment&&<button disabled={!selectionQuote(editor)} onClick={()=>void quote()}>댓글</button>}</div></BubbleMenu>}
  {!p.edit&&p.canComment&&<BubbleMenu editor={editor}><button onClick={()=>void quote()}>선택 문장에 댓글</button></BubbleMenu>}
  {link!==null&&<form className="editor-link editor-menu" onSubmit={e=>{e.preventDefault();if(!link.trim())editor.chain().focus().unsetLink().run();else if(/^(https?:\/\/|mailto:)/i.test(link))editor.chain().focus().setLink({href:link}).run();else return;setLink(null)}}><input aria-label="링크 주소" placeholder="https://" value={link} onChange={e=>setLink(e.target.value)}/><button>적용</button><button type="button" onClick={()=>setLink(null)}>취소</button></form>}
- {(menu||slash)&&<div role="menu" aria-label={menu?.convert?"전환":"블록 메뉴"} className="editor-menu" onKeyDown={menuKey} style={{left:Math.min(menu?.x??slash!.x,window.innerWidth-280),top:Math.min(menu?.y??slash!.y,window.innerHeight-360)}} onMouseDown={e=>e.preventDefault()}>
+ {(menu||slash)&&<div role="menu" aria-label={menu?.convert?"전환":"블록 메뉴"} className="editor-menu" ref={menuElement} data-placement={menu?menuPosition?.placement:undefined} onKeyDown={menuKey} style={menu?{left:menuPosition?.left??0,top:menuPosition?.top??0,width:menuPosition?.width??260,maxHeight:menuPosition?.maxHeight??350,visibility:menuPosition?'visible':'hidden'}:{left:Math.max(8,Math.min(slash!.x,window.innerWidth-280)),top:Math.max(8,Math.min(slash!.y,window.innerHeight-360))}} onMouseDown={e=>e.preventDefault()}>
  {menu&&!menu.add&&!menu.convert&&<><button role="menuitem" aria-haspopup="menu" aria-expanded="false" onClick={()=>setMenu({...menu,convert:true})}>전환 <span aria-hidden="true">›</span></button><button role="menuitem" onClick={()=>blockAction('duplicate')}>복제</button><button role="menuitem" onClick={()=>blockAction('comment')}>댓글</button><button role="menuitem" onClick={()=>blockAction('delete')}>삭제</button><button role="menuitem" onClick={()=>blockAction('flatten')}>한 단으로 펼치기</button></>}
  {menu?.convert&&<><button role="menuitem" onClick={()=>setMenu({...menu,convert:false})}>‹ 블록 메뉴</button><div className="editor-menu-caption">전환</div>{conversionTypes.map(([type,label])=>{const b=blockPositions(editor).find(b=>b.id===menu.id),current=b&&blockType(b.node,editor.state.doc.resolve(b.pos).parent)===type,available=!!b&&convertBlock(editor.state,b.pos,type,b.id);return <button key={type} role="menuitemradio" aria-checked={!!current} disabled={!available} title={available?label:'내용을 유지할 수 없는 전환입니다.'} onClick={()=>convertTo(type)}>{label}{current&&<span aria-hidden="true">✓</span>}</button>})}<hr/><button role="menuitem" disabled={blockPositions(editor).find(b=>b.id===menu.id)?.node.type.name==='syncedBlock'} onClick={()=>blockAction('sync')}>동기화 블록</button></>}
  {(slash||menu?.add)&&(slash?filtered:commands).map(([cmd,label],i)=><button key={cmd} role="menuitem" aria-current={slash&&choice===i?'true':undefined} className={slash&&choice===i?'selected':''} onClick={()=>choose(cmd)}>{label}<small>/{cmd}</small></button>)}
