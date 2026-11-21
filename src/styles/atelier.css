@@ -625,3 +625,11 @@ button:disabled{cursor:default}
 @media(prefers-reduced-motion:reduce){
   .app.signed-in[data-layout="phone"] :is(.personal-backdrop,.chat-sidebar-backdrop,.personal-shell .personal-sidebar,.chat-list:not([hidden])) {transition:none!important}
 }
+
+/* Phone navigation occupies the bottom row; the drawer overlays its content row. */
+.app.signed-in[data-layout="phone"][data-section="chats"]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+.app.signed-in[data-layout="phone"][data-section="chats"] .rail{grid-column:1;grid-row:2;height:auto;flex-direction:row;padding:4px 8px max(4px,env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line)}
+.app.signed-in[data-layout="phone"] .rail .mark{display:none}
+.app.signed-in[data-layout="phone"] .rail .nav-items{flex:1;flex-direction:row;justify-content:space-around}
+.app.signed-in[data-layout="phone"] .rail .nav-items button{flex:1;width:auto;min-height:52px}
+.app.signed-in[data-layout="phone"] .chat-main:not([hidden]),.app.signed-in[data-layout="phone"] .chat-list:not([hidden]),.app.signed-in[data-layout="phone"] .chat-sidebar-backdrop{grid-column:1;grid-row:1}

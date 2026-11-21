@@ -87,3 +87,6 @@ Use the existing Supabase user identity for every server AI request, never a cli
 AI cannot invoke arbitrary tools or change sharing. It proposes text; explicit user actions call existing version-checked, permission-checked save/create RPCs. Page application checks unchanged document snapshot; meeting application checks unchanged event body. Personal hierarchy metadata never grants access. Meetings and transcripts follow event retention/ACL/history; no audio blob retention. Public hosted subscription OAuth requires provider setup and remains unavailable, clearly labelled in settings. No unattended agents.
 
 2026-11-18: Lists are editable item blocks, retaining the original wrapper ID on the first item for existing references. Task NodeView explicitly supplies data-type. Subscription website handoff is clearly separate from API/Ollama inference; users copy context intentionally and paste back responses. No claims of automatic web-subscription authentication.
+
+Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Mycel 일정 API는 회의록을 제외한 일정 필드만 제공한다.
+2026-11-21: 사용자 지시에 따라 Mycel 자체 AI 제거, ChatGPT 예약용 캘린더 MCP 유지. 개인 자료 접근은 나와의 대화로 통합. 휴대폰 탐색은 하단 대화·설정.

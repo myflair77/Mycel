@@ -8,18 +8,18 @@ function gesture(opened:boolean) {
   const setOpened=vi.fn();
   const handlers=usePhoneDrawer(true,opened,setOpened);
   const values=new Map<string,string>();
-  const node={dataset:{section:'chats'},removeAttribute:vi.fn(),
+  const node={getBoundingClientRect:()=>({left:0}),dataset:{section:'chats'},removeAttribute:vi.fn(),
     style:{setProperty:(key:string,value:string)=>values.set(key,value),removeProperty:(key:string)=>values.delete(key)},
     querySelector:(selector:string)=>({getBoundingClientRect:()=>selector==='.rail'?{right:48}:{width:280}})};
   const event=(x:number,y=100)=>({currentTarget:node,target:new Target(),touches:[{clientX:x,clientY:y}],changedTouches:[{clientX:x,clientY:y}]}) as unknown as Parameters<typeof handlers.onTouchStart>[0];
   return {handlers,event,values,setOpened};
 }
 describe('phone navigation gestures',()=>{
-  it('follows a drag from the rail and opens on release',()=>{
+  it('follows a drag from the content edge and opens on release',()=>{
     const {handlers,event,values,setOpened}=gesture(false);
-    handlers.onTouchStart(event(48));handlers.onTouchMove(event(188));
+    handlers.onTouchStart(event(20));handlers.onTouchMove(event(160));
     expect(values.get('--panel-offset')).toBe('-50%');
-    handlers.onTouchEnd(event(188));expect(setOpened).toHaveBeenCalledWith(true);
+    handlers.onTouchEnd(event(160));expect(setOpened).toHaveBeenCalledWith(true);
     expect(values.size).toBe(0);
   });
   it('tracks the open drawer leftward and closes on release',()=>{
@@ -35,3 +35,4 @@ describe('phone navigation gestures',()=>{
     expect(setOpened).not.toHaveBeenCalled();
   });
 });
+

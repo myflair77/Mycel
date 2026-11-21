@@ -18,7 +18,7 @@ export function usePhoneDrawer(enabled:boolean, opened:boolean, setOpened:(value
         e.target.closest('dialog,.mycel-ai-panel,input,textarea,select,[contenteditable=true]'))return;
       const rail=node.querySelector('.rail')?.getBoundingClientRect();
       const touch=e.touches[0];
-      if(!rail || (!opened && touch.clientX>rail.right+32))return;
+      if(!rail || (!opened && touch.clientX>node.getBoundingClientRect().left+32))return;
       const panel=node.querySelector(node.dataset.section==='me'?'.personal-sidebar':'.chat-list');
       if(panel)gesture.current={x:touch.clientX,y:touch.clientY,width:panel.getBoundingClientRect().width,active:false,opened};
     },
