@@ -24,7 +24,7 @@ const mycelCalendarTools = calendarSpecs.map(([name,description,properties,requi
 export async function calendarMcp(request,env){
  const respond=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
  if(request.method!=='POST')return respond({},405);
- let id=null;
+ let id=null,stage='request';
  try{
    const message=await request.json();
    id=message.id??null;
@@ -41,19 +41,23 @@ export async function calendarMcp(request,env){
        return respond({jsonrpc:'2.0',id,error:{code:-32602,message:'잘못된 도구 또는 인자입니다.'}});
      if(name==='calendar_plan_change')return respond({jsonrpc:'2.0',id,result:{content:[{type:'text',text:planCalendarChange(args)}]}});
      if(!/^[a-f0-9]{64}$/i.test(env.CALENDAR_MCP_SECRET??''))throw Error('연결 서버 설정이 필요합니다.');
+     stage='credential';
      const credential=await mac(env.CALENDAR_MCP_SECRET,'mycel/calendar/v1/'+caller);
      const pairing=name==='calendar_pair';
+     stage='database_request';
      const response=await fetch(SB+'/rest/v1/rpc/'+(pairing?'calendar_pair':'calendar_connector'),{
        method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},redirect:'error',signal:AbortSignal.timeout(15000),
        body:JSON.stringify(pairing?{p_code:args.code,p_secret:credential}:{p_tool:name,p_args:args,p_secret:credential})});
      if(!response.ok)throw Error('계정 연결, 입력과 최신 일정 버전을 확인하세요.');
+     stage='database_response';
      const value=await response.json();
      if(pairing && value!==true)throw Error('연결 코드가 만료되었거나 올바르지 않습니다.');
      result={content:[{type:'text',text:JSON.stringify(value)}]};
    }else return respond({jsonrpc:'2.0',id,error:{code:-32601,message:'Unknown method'}});
    return respond({jsonrpc:'2.0',id,result});
  }catch(error){
-   return respond({jsonrpc:'2.0',id,result:{isError:true,content:[{type:'text',text:['연결 서버 설정이 필요합니다.','계정 연결, 입력과 최신 일정 버전을 확인하세요.','연결 코드가 만료되었거나 올바르지 않습니다.'].includes(error.message)?error.message:'캘린더 요청을 완료하지 못했습니다.'}]}});
+   console.error('calendar_mcp_failure',{stage,type:error?.name??'Error'});
+   return respond({jsonrpc:'2.0',id,result:{isError:true,content:[{type:'text',text:['연결 서버 설정이 필요합니다.','계정 연결, 입력과 최신 일정 버전을 확인하세요.','연결 코드가 만료되었거나 올바르지 않습니다.'].includes(error.message)?error.message:'캘린더 요청을 완료하지 못했습니다. ('+stage+')'}]}});
  }
 }
 
