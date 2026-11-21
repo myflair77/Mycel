@@ -843,3 +843,11 @@ button:disabled{cursor:default}
  .page-editor .editor-column-resize::after{content:"";position:absolute;left:5px;top:0;bottom:0;width:1px;background:#8d97a766;pointer-events:none}
  .page-editor .editor-column-resize:hover::after,.page-editor .editor-column-resize:focus-visible::after{background:#4b82da}
 }
+
+/* Editing focus is transient decoration, never part of stored note content. */
+.page-editor .page-block-editing{outline:1px solid #6699e866;outline-offset:3px;border-radius:3px}
+.page-editor .note-synced-block{border-color:transparent;box-shadow:none;outline:none}
+.page-editor .note-synced-block[data-sync-active="true"]{border-color:#d7b44e99;box-shadow:0 0 0 1px #d7b44e18}
+
+.app .auth-panel .signup-email-help{margin:-8px 0 0;font-size:.82rem;line-height:1.6;color:var(--muted)}
+.signup-email-help strong,.signup-email-help span{display:block}.signup-email-help strong{font-weight:500;color:var(--ink)}
