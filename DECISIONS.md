@@ -90,3 +90,5 @@ AI cannot invoke arbitrary tools or change sharing. It proposes text; explicit u
 
 Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Mycel 일정 API는 회의록을 제외한 일정 필드만 제공한다.
 2026-11-21: 사용자 지시에 따라 Mycel 자체 AI 제거, ChatGPT 예약용 캘린더 MCP 유지. 개인 자료 접근은 나와의 대화로 통합. 휴대폰 탐색은 하단 대화·설정.
+
+2026-11-21: 블록 조작 핸들은 같은 열에서 공통 왼쪽 여백을 사용한다. 제목·목록·인용·표의 내부 들여쓰기는 핸들 위치에 영향을 주지 않는다. 다단은 각 열을 기준으로 한다.

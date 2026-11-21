@@ -633,3 +633,7 @@ button:disabled{cursor:default}
 .app.signed-in[data-layout="phone"] .rail .nav-items{flex:1;flex-direction:row;justify-content:space-around}
 .app.signed-in[data-layout="phone"] .rail .nav-items button{flex:1;width:auto;min-height:52px}
 .app.signed-in[data-layout="phone"] .chat-main:not([hidden]),.app.signed-in[data-layout="phone"] .chat-list:not([hidden]),.app.signed-in[data-layout="phone"] .chat-sidebar-backdrop{grid-column:1;grid-row:1}
+
+/* A single fixed-size gutter for every block type. App button spacing must not leak in. */
+.app .page-editor .editor-handles{gap:0;margin:0;padding:0;width:46px;box-sizing:border-box}
+.app .page-editor .editor-handles>button{flex:0 0 23px;width:23px;min-width:23px;max-width:23px;height:24px!important;margin:0!important;box-sizing:border-box;align-self:center}

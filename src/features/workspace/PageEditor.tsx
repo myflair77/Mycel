@@ -1,3 +1,4 @@
+import {pageHandlePosition} from './pageHandlePosition';
 import {PageCellTools} from './PageCellTools';
 import {CellSelection} from '@tiptap/pm/tables';
 import {PageTableTools,Grip} from './PageTableTools';
@@ -57,7 +58,32 @@ export function PageEditor(p:Props){
  if(action==='flatten'){const bs=docToBlocks(editor.getJSON()),group=bs.find(b=>b.id===menu.id)?.content._layout?.group;replace(blocksToDoc(bs.map(b=>{if(b.content._layout?.group!==group)return b;const content={...b.content};delete content._layout;return {...b,content}})))}
  setMenu(null)
  }
- function track(e:React.PointerEvent){if(blockDragging.current)return;if(!editor||(!p.edit&&!p.canComment)||menu)return;const target=e.target as HTMLElement;const found=blockPositions(editor).find(b=>{const dom=editor.view.nodeDOM(b.pos);return dom instanceof HTMLElement&&dom.contains(target)});if(!found)return;const block=editor.view.nodeDOM(found.pos) as HTMLElement;const id=found.id;const r=block.getBoundingClientRect();const first=block.querySelector('p,h1,h2,h3,pre')??block;const fr=first.getBoundingClientRect(),style=getComputedStyle(first),line=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.5;const origin=wrapper.current!.getBoundingClientRect();setHover({id,x:r.left-origin.left-48,right:Math.min(r.right+4,window.innerWidth-32)-origin.left,y:fr.top-origin.top+parseFloat(style.paddingTop||'0')+(line-24)/2})}
+ function track(e:React.PointerEvent){
+  if(blockDragging.current||!editor||(!p.edit&&!p.canComment)||menu||!wrapper.current)return;
+  const target=e.target as HTMLElement;
+  const found=blockPositions(editor).find(b=>{const dom=editor.view.nodeDOM(b.pos);return dom instanceof HTMLElement&&dom.contains(target)});
+  if(!found)return;
+  const block=editor.view.nodeDOM(found.pos) as HTMLElement;
+  setHover({id:found.id,...pageHandlePosition(block,editor.view.dom,wrapper.current)});
+ }
+ // Keep the active gutter aligned after wrapping, font changes or column resizing.
+ useEffect(()=>{
+  if(!editor||!wrapper.current)return;
+  const refresh=()=>setHover(current=>{
+   if(!current||blockDragging.current||!wrapper.current)return current;
+   const found=blockPositions(editor).find(b=>b.id===current.id);
+   const block=found&&editor.view.nodeDOM(found.pos);
+   if(!(block instanceof HTMLElement))return null;
+   const next=pageHandlePosition(block,editor.view.dom,wrapper.current);
+   return next.x===current.x&&next.y===current.y&&next.right===current.right?current:{id:current.id,...next};
+  });
+  const observer=new ResizeObserver(refresh);
+  observer.observe(wrapper.current);observer.observe(editor.view.dom);
+  editor.view.dom.querySelectorAll('.editor-column-content').forEach(el=>observer.observe(el));
+  window.addEventListener('resize',refresh);refresh();
+  return()=>{observer.disconnect();window.removeEventListener('resize',refresh)};
+ },[editor,tick]);
+
  function startDrag(e:React.PointerEvent){if(!editor||!hover||!p.edit)return;e.preventDefault();e.stopPropagation();blockDragging.current=true;const id=hover.id,startX=e.clientX,startY=e.clientY,handle=e.currentTarget as HTMLElement;handle.setPointerCapture(e.pointerId);let ghost:HTMLElement|null=null,line:HTMLElement|null=null,target:any=null,frame=0,lastY=startY,lastX=startX,moved=false;
  const selected=blockPositions(editor).filter(b=>b.pos>=editor.state.selection.from&&b.pos+b.node.nodeSize<=editor.state.selection.to).map(b=>b.id);const moving=selected.includes(id)?selected:[id];
  const elements=()=>blockPositions(editor).map(b=>({b,el:editor.view.nodeDOM(b.pos) as HTMLElement})).filter(x=>x.el&&!moving.includes(x.b.id));
