@@ -49,9 +49,10 @@ export async function calendarMcp(request,env){
      const timeout=setTimeout(()=>controller.abort(),15000);
      let response;
      try{response=await fetch(SB+'/rest/v1/rpc/'+(pairing?'calendar_pair':'calendar_connector'),{
-       method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},redirect:'error',signal:controller.signal,
+       method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},redirect:'manual',signal:controller.signal,
        body:JSON.stringify(pairing?{p_code:args.code,p_secret:credential}:{p_tool:name,p_args:args,p_secret:credential})});
      }finally{clearTimeout(timeout)}
+     stage='database_response';
      if(!response.ok)throw Error('계정 연결, 입력과 최신 일정 버전을 확인하세요.');
      stage='database_response';
      const value=await response.json();

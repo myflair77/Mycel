@@ -643,3 +643,5 @@ button:disabled{cursor:default}
 .app.signed-in[data-layout="phone"][data-section="friends"] .rail{display:flex;grid-column:1;grid-row:2;height:auto;flex-direction:row;padding:4px 8px max(4px,env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line)}
 .app.signed-in[data-layout="phone"][data-section="friends"] .chat-list:not([hidden]){position:relative;inset:auto;grid-column:1;grid-row:1;width:100%;height:100%;transform:none;visibility:visible;pointer-events:auto;transition:none}
 .app.signed-in[data-section="friends"] .chat-main:not([hidden]){display:none}
+
+.workspace .resource-summary p{margin:0 0 8px;font-size:.85rem;color:var(--muted)}
