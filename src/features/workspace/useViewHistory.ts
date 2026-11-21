@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
-import {appendView,initialView,viewUrl,saveBeforeNavigation,type ResourceView,type ViewEntry} from './viewHistory';
+import {createNavigationRequest,appendView,initialView,viewUrl,saveBeforeNavigation,type ResourceView,type ViewEntry} from './viewHistory';
 export function useViewHistory(onChange:(view:ResourceView)=>void){
+ const [transitioning,setTransitioning]=useState(false),[navigationError,setNavigationError]=useState('');
  const [entry,setEntry]=useState(()=>({view:initialView(location.search),index:0}));
  const entries=useRef<ViewEntry[]>([{view:entry.view,scroll:0,bottom:true}]),current=useRef(0),session=useRef(crypto.randomUUID()),callback=useRef(onChange),busy=useRef(false),skipPop=useRef(false),restoring=useRef(false);callback.current=onChange;
  const scrollElement=()=>document.querySelector<HTMLElement>(entries.current[current.current].view.tab==='chat'?'.message-list':'.conversation-resource-library');
@@ -13,7 +14,13 @@ export function useViewHistory(onChange:(view:ResourceView)=>void){
  if(busy.current){skipPop.current=true;history.go(previous-target.index);return}busy.current=true;try{if(!await saveBeforeNavigation()){skipPop.current=true;history.go(previous-target.index);return}apply(target.index)}finally{busy.current=false}};
  const scroll=(e:Event)=>{if(e.target===scrollElement())capture()};window.addEventListener('popstate',pop);document.addEventListener('scroll',scroll,true);return()=>{window.removeEventListener('popstate',pop);document.removeEventListener('scroll',scroll,true)};
  },[]);
- async function navigate(view:ResourceView){if(busy.current||JSON.stringify(view)===JSON.stringify(entry.view))return;busy.current=true;try{if(!await saveBeforeNavigation())return;capture();entries.current=appendView(entries.current,current.current,view);const index=entries.current.length-1;history.pushState(state(index),'',viewUrl(view));apply(index)}finally{busy.current=false}}
+ const requestRef=useRef<ReturnType<typeof createNavigationRequest<ResourceView>>|null>(null);
+ const prepareRef=useRef(async()=>true),commitRef=useRef((view:ResourceView)=>{});
+ prepareRef.current=async()=>{setTransitioning(true);setNavigationError('');busy.current=true;return saveBeforeNavigation()};
+ commitRef.current=(view)=>{if(JSON.stringify(view)===JSON.stringify(entries.current[current.current].view))return;capture();entries.current=appendView(entries.current,current.current,view);const index=entries.current.length-1;history.pushState(state(index),'',viewUrl(view));apply(index)};
+ if(!requestRef.current)requestRef.current=createNavigationRequest<ResourceView>(()=>prepareRef.current(),view=>commitRef.current(view),()=>setNavigationError('변경 내용을 저장하지 못했습니다. 입력은 이 기기에 보관됩니다. 연결과 저장 오류를 확인한 뒤 다시 선택해 주세요.'));
+ async function navigate(view:ResourceView){if(!busy.current&&JSON.stringify(view)===JSON.stringify(entries.current[current.current].view))return;try{await requestRef.current!(view)}finally{busy.current=false;setTransitioning(false)}}
+
  function step(delta:number){if(closeOverlay()||busy.current)return;if(current.current+delta<0||current.current+delta>=entries.current.length)return;capture();history.go(delta)}
- return {finishRestoration:()=>{restoring.current=false},view:entry.view,index:entry.index,navigate,back:()=>step(-1),forward:()=>step(1),canBack:entry.index>0,canForward:entry.index<entries.current.length-1,snapshot:entries.current[entry.index]};
+ return {transitioning,navigationError,finishRestoration:()=>{restoring.current=false},view:entry.view,index:entry.index,navigate,back:()=>step(-1),forward:()=>step(1),canBack:entry.index>0,canForward:entry.index<entries.current.length-1,snapshot:entries.current[entry.index]};
 }

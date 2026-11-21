@@ -713,8 +713,7 @@ button:disabled{cursor:default}
 .view-history-buttons button:disabled{opacity:.28}
 @media(max-width:600px){.topbar{gap:3px}.app .view-history-buttons button{min-width:26px;width:26px}.topbar .peer-avatar{display:none}}
 
-.note-list-filters{margin:4px 0 10px;font-size:.8rem}.note-list-filters summary{cursor:pointer;padding:6px 0}.note-list-filters>div{display:flex;flex-wrap:wrap;gap:10px;padding:10px;background:var(--soft);border-radius:8px}
-.note-list-filters label{display:flex;flex-direction:column;gap:5px;font-size:.75rem}.note-list-filters input,.note-list-filters select{min-height:34px;font-size:.8rem;max-width:160px}.note-list-scroll{overflow:auto;width:100%;border:1px solid var(--line);border-radius:8px}
+.note-list-scroll{overflow:auto;width:100%;border:1px solid var(--line);border-radius:8px}
 .app .note-list-table{width:100%;border-collapse:collapse;min-width:720px;font-size:.85rem;table-layout:auto}
 .note-list-table th{text-align:left;background:var(--soft);white-space:nowrap;border-bottom:1px solid var(--line)}
 .app .note-list-table th button{padding:10px;min-height:38px;border:0;background:transparent;font-size:.8rem;color:var(--muted);font-weight:600}
@@ -725,3 +724,17 @@ button:disabled{cursor:default}
 .note-title-link:hover{text-decoration:underline}.note-permission{font-size:.75rem;border-radius:5px;background:var(--soft);padding:3px 6px}.note-list-table time{font-size:.75rem;color:var(--muted)}.note-list-count{display:block;margin-top:7px;font-size:.72rem;color:var(--muted)}
 
 .note-list-table .note-number{width:48px;min-width:48px;color:var(--muted);font-variant-numeric:tabular-nums}
+.note-column-heading{display:flex;align-items:center;gap:0}
+.app .note-list-table th .note-filter-trigger{display:inline-flex;align-items:center;justify-content:center;padding:5px;min-width:28px;width:28px;min-height:32px;margin-right:5px;border-radius:5px}
+.app .note-list-table th .note-filter-trigger:hover,.app .note-list-table th .note-filter-trigger.is-active{color:var(--primary,#3765cf);background:#568bea18}
+.note-column-filter{position:fixed;z-index:1600;box-sizing:border-box;width:280px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel,#fff);color:var(--text);box-shadow:0 8px 28px #0002;font-size:.8rem}
+.note-column-filter strong{display:block;margin-bottom:10px}.note-column-filter label{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+.app .note-column-filter input,.app .note-column-filter select{box-sizing:border-box;width:100%;min-width:0;min-height:36px;padding:7px;font-size:.85rem}
+.note-filter-sort,.note-filter-actions{display:flex;gap:6px;justify-content:space-between}.note-filter-actions{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.app .note-column-filter button{font-size:.75rem;padding:6px 9px;min-height:34px;border-radius:6px}.note-filter-sort button[aria-pressed=true]{background:#568bea18;color:var(--primary,#3765cf)}
+.app .page-editor .editor-toggle>.toggle-arrow{display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.toggle-arrow svg{transition:transform 140ms ease}.editor-toggle[data-open=true]>.toggle-arrow svg{transform:rotate(90deg)}
+[data-toggle-title]{min-height:1.65em}[data-toggle-title].is-empty:before{content:'토글';float:left;height:0;pointer-events:none;color:var(--muted);opacity:.65}
+[data-toggle-body]{padding:2px 0 4px 0}
+.editor-toggle[data-empty=true]>.toggle-content>[data-toggle-body]>p.is-empty:before{content:'빈 토글입니다. 클릭하여 내용을 입력하세요.';color:var(--muted);opacity:.6}
+@media(prefers-reduced-motion:reduce){.toggle-arrow svg{transition:none}}

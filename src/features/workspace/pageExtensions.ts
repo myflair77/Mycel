@@ -1,4 +1,4 @@
-import {ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBackspace} from './pageToggle';
+import {ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBackspace,toggleIndent,toggleOutdent} from './pageToggle';
 import {selectedCells} from './tableCells';
 import {pageEnter,pageBackspace} from './pageEnter';
 import {Extension,Node as TipNode,mergeAttributes,type JSONContent,type Editor} from '@tiptap/core';
@@ -36,14 +36,13 @@ export const Column=TipNode.create({
  };return {dom,contentDOM,update(n){if(n.type!==current.type)return false;current=n;paint();return true},stopEvent:e=>handle.contains(e.target as globalThis.Node),ignoreMutation:m=>m.type==='attributes'&&(m.target===dom||m.target===handle)}}
  }
 });
-export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
+export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addKeyboardShortcuts(){return {Tab:()=>toggleIndent(this.editor.state,tr=>this.editor.view.dispatch(tr)),'Shift-Tab':()=>toggleOutdent(this.editor.state,tr=>this.editor.view.dispatch(tr)),Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
 export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{color:{default:null,parseHTML:e=>e.style.color,renderHTML:a=>a.color?{style:'color:'+a.color}:{}},background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
 export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
-export function extensions(){return [ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
+export function extensions(){return [ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({trailingNode:{node:'paragraph'},heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='toggleTitle'?'토글':node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments]}
 export function blockPositions(editor:Editor){
  const entries:{id:string;pos:number;node:any}[]=[];
  const add=(n:any,pos:number)=>{if(['bulletList','orderedList','taskList'].includes(n.type.name)){n.forEach((item:any,offset:number,index:number)=>entries.push({id:index===0?n.attrs.id:item.attrs.id,pos:pos+offset+1,node:item}))}else entries.push({id:n.attrs.id,pos,node:n})};
  editor.state.doc.forEach((n,pos)=>{if(n.type.name==='columns'){n.forEach((col,offset)=>col.forEach((b,bo)=>add(b,pos+offset+bo+2)))}else add(n,pos)});return entries
 }
 export function selectionQuote(editor:Editor){const {from,to}=editor.state.selection;if(from===to)return null;const b=blockPositions(editor).find(b=>from>b.pos&&to<=b.pos+b.node.nodeSize-1);if(!b||!b.node.isTextblock)return null;const text=b.node.textBetween(0,b.node.content.size,'\n','\n'),start=from-b.pos-1,end=to-b.pos-1;return {blockId:b.id,quote:text.slice(start,end),start:Array.from(text.slice(0,start)).length,end:Array.from(text.slice(0,end)).length}}
-

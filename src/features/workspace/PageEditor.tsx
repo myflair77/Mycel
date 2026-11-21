@@ -1,3 +1,4 @@
+import {savePageForNavigation} from './pageNavigation';
 import {insertToggle} from './pageToggle';
 import {pageHandlePosition} from './pageHandlePosition';
 import {PageCellTools} from './PageCellTools';
@@ -12,15 +13,15 @@ import {extensions,blockPositions,selectionQuote,commentKey} from './pageExtensi
 import {blocksToDoc,docToBlocks,uniqueIds,type SavedBlock} from './pageDocument';
 import {arrangeBlocks,locateQuote} from './pageInteractions';
 import {rpc} from './Workspace';
-type Props={onBeforeLeave?:(save:()=>Promise<boolean>)=>void;id:string;userId:string;blocks:SavedBlock[];version:number;edit:boolean;canComment:boolean;comments:any[];onSaved:()=>Promise<void>;onQuote:(block:SavedBlock,q:any)=>void;onComment:(id:string)=>void;onStatus:(dirty:boolean)=>void};
+type Props={onBeforeLeave?:(save:()=>Promise<boolean>)=>void;id:string;userId:string;blocks:SavedBlock[];version:number;edit:boolean;canComment:boolean;comments:any[];onSaved:(version:number)=>Promise<void>;onQuote:(block:SavedBlock,q:any)=>void;onComment:(id:string)=>void;onStatus:(dirty:boolean)=>void};
 export function PageEditor(p:Props){
  const blockDragging=useRef(false);
  const [status,setStatus]=useState('저장됨'),[failed,setFailed]=useState(''),[tick,setTick]=useState(0),[menu,setMenu]=useState<{x:number;y:number;id:string;add?:boolean}|null>(null),[hover,setHover]=useState<{x:number;y:number;right:number;id:string}|null>(null),[slash,setSlash]=useState<{from:number;to:number;q:string;x:number;y:number}|null>(null),[choice,setChoice]=useState(0),[link,setLink]=useState<string|null>(null),[draftAvailable,setDraftAvailable]=useState(false);
- const wrapper=useRef<HTMLDivElement>(null),latest=useRef(p),base=useRef(p.version),revision=useRef(0),savedRevision=useRef(0),saving=useRef(false),pending=useRef<{doc:JSONContent;mutation:string;version:number;revision:number}|null>(null),timer=useRef<ReturnType<typeof setTimeout>|null>(null),blocked=useRef(false);
+ const wrapper=useRef<HTMLDivElement>(null),latest=useRef(p),base=useRef(p.version),revision=useRef(0),savedRevision=useRef(0),saving=useRef(false),inFlight=useRef<Promise<boolean>|null>(null),pending=useRef<{doc:JSONContent;mutation:string;version:number;revision:number}|null>(null),timer=useRef<ReturnType<typeof setTimeout>|null>(null),blocked=useRef(false);
  latest.current=p;const key='mycel-rich-page:'+p.userId+':'+p.id;
  const editor=useEditor({extensions:extensions(),content:uniqueIds(blocksToDoc(p.blocks)),editable:p.edit,
  editorProps:{attributes:{'aria-label':'페이지 본문','role':'textbox','aria-multiline':'true'},handleKeyDown:(_view,event)=>{if(event.isComposing)return false;return keyHandler.current(event)}},
- onUpdate:({editor,transaction})=>{if(!transaction.docChanged)return;revision.current++;setStatus('저장 대기');latest.current.onStatus(true);try{localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}))}catch{};schedule();inspect(editor)},
+ onUpdate:({editor,transaction})=>{if(!transaction.docChanged||!latest.current.edit)return;revision.current++;setStatus('저장 대기');latest.current.onStatus(true);try{localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}))}catch{};schedule();inspect(editor)},
  onSelectionUpdate:({editor})=>inspect(editor)
  },[p.id]);
  const slashQuery=useRef('');
@@ -29,14 +30,15 @@ export function PageEditor(p:Props){
  const filtered=commands.filter(c=>(c[0]+' '+c[1]).toLowerCase().includes(slash?.q.toLowerCase()??''));
  function inspect(e:any){setTick(t=>t+1);const {selection}=e.state;if(!selection.empty){setSlash(null);return}const $p=selection.$from;if(!$p.parent.isTextblock){setSlash(null);return}const before=$p.parent.textBetween(0,$p.parentOffset,'\n','\n'),m=before.match(/^\/([^\n/]*)$/);if(m){const c=e.view.coordsAtPos(selection.from);setSlash({from:$p.start(),to:selection.from,q:m[1],x:Math.min(c.left,window.innerWidth-280),y:Math.min(c.bottom+8,window.innerHeight-360)});const query=$p.start()+':'+m[1];if(slashQuery.current!==query){slashQuery.current=query;setChoice(0)}}else {slashQuery.current='';setSlash(null)}}
  function schedule(){if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>void flush(),900)}
- async function flush():Promise<boolean>{
+ function flush():Promise<boolean>{if(inFlight.current)return inFlight.current;const promise=performFlush();inFlight.current=promise;void promise.finally(()=>{if(inFlight.current===promise)inFlight.current=null});return promise}
+ async function performFlush():Promise<boolean>{
  if(!editor||!latest.current.edit||blocked.current)return false;if(saving.current)return false;if(revision.current===savedRevision.current&&!pending.current)return true;
  saving.current=true;setStatus('저장 중');const sent=pending.current??{doc:editor.getJSON(),mutation:crypto.randomUUID(),version:base.current,revision:revision.current};pending.current=sent;
- try{const v=await rpc('page_document_save',{p_id:p.id,p_version:sent.version,p_mutation:sent.mutation,p_blocks:docToBlocks(sent.doc)});base.current=Number(v);savedRevision.current=sent.revision;pending.current=null;setFailed('');setStatus(revision.current===sent.revision?'저장됨':'저장 대기');if(revision.current===sent.revision){localStorage.removeItem(key);setDraftAvailable(false);latest.current.onStatus(false)}await latest.current.onSaved();return true}
+ try{const v=await rpc('page_document_save',{p_id:p.id,p_version:sent.version,p_mutation:sent.mutation,p_blocks:docToBlocks(sent.doc)});base.current=Number(v);savedRevision.current=sent.revision;pending.current=null;setFailed('');setStatus(revision.current===sent.revision?'저장됨':'저장 대기');if(revision.current===sent.revision){localStorage.removeItem(key);setDraftAvailable(false);latest.current.onStatus(false)}await latest.current.onSaved(Number(v));return true}
  catch(e){blocked.current=true;setFailed((e as Error).message);setStatus('저장 실패 · 입력은 이 기기에 보관됨');return false}
  finally{saving.current=false;if(!blocked.current&&revision.current!==savedRevision.current)schedule()}
  }
- useEffect(()=>{p.onBeforeLeave?.(async()=>{for(let n=0;saving.current&&n<400;n++)await new Promise(r=>setTimeout(r,50));if(saving.current)return false;if(revision.current===savedRevision.current&&!pending.current)return true;return flush()})},[editor,p.onBeforeLeave]);
+ useEffect(()=>{p.onBeforeLeave?.(async()=>{if(timer.current)clearTimeout(timer.current);return savePageForNavigation({dirty:()=>revision.current!==savedRevision.current||!!pending.current,canEdit:()=>latest.current.edit,retry:()=>{blocked.current=false},preserve:()=>{if(editor)localStorage.setItem(key,JSON.stringify({doc:editor.getJSON(),version:base.current}));setDraftAvailable(true)},save:flush})})},[editor,p.onBeforeLeave]);
  useEffect(()=>{if(!editor)return;editor.setEditable(p.edit,false);if(p.edit&&!pending.current){blocked.current=false;if(revision.current!==savedRevision.current)schedule()}if(!p.edit){blocked.current=true;if(revision.current!==savedRevision.current)setFailed('편집 권한이 변경되었습니다. 기기 임시 입력은 유지됩니다.')}},[p.edit,editor]);
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current)},[key]);
  useEffect(()=>{if(!editor)return;try{const draft=JSON.parse(localStorage.getItem(key)??'null');setDraftAvailable(!!draft?.doc&&!editor.schema.nodeFromJSON(draft.doc).eq(editor.state.doc))}catch{setDraftAvailable(false)}},[key,editor,tick,p.version]);
@@ -100,7 +102,7 @@ export function PageEditor(p:Props){
  if(!editor)return null;
  return <div className="page-editor" ref={wrapper} onKeyDownCapture={e=>{if(!e.nativeEvent.isComposing&&keyHandler.current(e.nativeEvent)){e.preventDefault();e.stopPropagation()}}} onPointerMove={track} onPointerDown={track} onClick={e=>{const mark=(e.target as HTMLElement).closest<HTMLElement>('[data-comment-id]');if(mark)window.dispatchEvent(new CustomEvent('mycel-open-comment',{detail:mark.dataset.commentId}))}}>
  <div className="editor-status"><span role="status">{status}</span>{p.edit&&draftAvailable&&<details><summary>복구할 임시 내용 있음</summary><div className="editor-recovery-popover"><p>현재 페이지와 다른 임시 입력이 이 기기에 남아 있습니다.</p><button onClick={()=>{try{const draft=JSON.parse(localStorage.getItem(key)??'null');if(draft?.doc){base.current=draft.version;blocked.current=false;pending.current=null;replace(draft.doc);setDraftAvailable(false)}}catch{setFailed('임시 내용을 불러오지 못했습니다.')}}}>임시 입력 복구</button><button onClick={()=>{if(confirm('기기의 임시 입력을 삭제하고 현재 내용을 유지할까요?')){localStorage.removeItem(key);setDraftAvailable(false)}}}>현재 내용 유지 · 임시 입력 삭제</button></div></details>}</div>
- {failed&&<div className="editor-warning" role="alert">{failed}<button onClick={()=>{blocked.current=false;void flush()}}>저장 재시도</button></div>}
+ {failed&&<div className="editor-warning" role="alert">{failed}{p.edit&&<button onClick={()=>{blocked.current=false;void flush()}}>저장 재시도</button>}</div>}
  <EditorContent editor={editor}/>
  {p.canComment&&hover&&<button className="editor-block-comment" aria-label="블록에 댓글 달기" title="댓글 달기" style={{left:hover.right,top:hover.y}} onPointerMove={e=>e.stopPropagation()} onPointerDown={e=>{e.preventDefault();e.stopPropagation()}} onClick={async e=>{e.stopPropagation();if(revision.current!==savedRevision.current&&!await flush())return;latest.current.onComment(hover.id)}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 0 1 18 0Z"/><path d="M8 11h8m-4-4v8"/></svg></button>}
  {p.edit&&hover&&<div className="editor-handles" style={{left:hover.x,top:hover.y}} onPointerMove={e=>e.stopPropagation()}><button aria-label="블록 추가" onClick={e=>{const r=e.currentTarget.getBoundingClientRect();setMenu({id:hover.id,x:r.left,y:r.bottom,add:true})}}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M8 2v12M2 8h12"/></svg></button><button aria-label="블록 이동 및 메뉴" title="드래그하여 이동 · 클릭하여 메뉴" onPointerDown={startDrag} style={{touchAction:'none'}}><Grip/></button></div>}
@@ -114,4 +116,3 @@ export function PageEditor(p:Props){
  {p.edit&&<><PageTableTools editor={editor}/><PageCellTools editor={editor}/></>}
  </div>
 }
-

@@ -110,3 +110,10 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Store exact resource IDs in share messages instead of resolving by mutable/duplicate titles. Preserve original text and message identity during backfill.
 - App history records room, resource tab and item, with scroll snapshots. Flush note/page edits before navigation; keep local drafts and cancel navigation on save failure. Browser Back closes comment overlays first.
 - Note list numbering follows creation order; default display sorts newest first. Sorting/filtering does not renumber visible rows. Display label is 본문편집, without a space.
+
+## 2026-11-21 Note navigation, column filters and toggle editing
+- Navigation coalesces requests made during an in-flight save; the final selected destination wins. Editor flush shares its promise and drains newer input before leaving. Title saves use the version returned by this client's document save. RPC requests are bounded to 15 seconds.
+- Permission loss never authorizes a write. Preserve an unsaved draft locally and allow navigation when edit permission has been revoked; an actual save failure while edit permission remains still blocks navigation. Read-only transactions are not marked dirty.
+- Replace the separate note-filter bar with per-column funnel controls, including title and stable creation-order number ranges. Each column supports sorting and clearing its own filter; latest-created default and persistent per-list choices remain.
+- Compared the open Notion desktop test page: Enter on an expanded toggle title creates a first child; on a collapsed title it creates a sibling toggle. Mycel preserves rich text and child content on split, supports > + Space, nested toggles via slash, Tab into a preceding toggle, Shift-Tab out, and Backspace to unwrap. Empty title Enter exits an empty toggle. Toggle controls align with its title rather than its first body paragraph.
+- Separate the high-priority toggle input rule from the node schema ordering. Paragraph remains the default block, with explicit paragraph trailing-node configuration to prevent an invalid empty toggle on editor initialization.
