@@ -1,0 +1,16 @@
+import React,{useState} from 'react';import{createRoot}from'react-dom/client';
+import '../src/styles/app.css';import '../src/styles/atelier.css';
+import {useDevicePush} from '../src/features/notifications/useDevicePush';
+import {PushOnboarding} from '../src/features/notifications/PushOnboarding';
+import {PushSettings} from '../src/features/notifications/PushSettings';
+import {FontSizeControl,useFontScale} from '../src/components/FontSizeControl';
+import {supabase} from '../src/services/supabase';
+const params=new URLSearchParams(location.search),userId=params.get('user')||'fixture-user';
+let permission:NotificationPermission=(params.get('permission')||'default') as NotificationPermission,choice='granted',fail=false,requests=0,registrations=0,sub:any=null;
+Object.defineProperty(window,'Notification',{configurable:true,value:{get permission(){return permission},requestPermission:async()=>{requests++;permission=choice as NotificationPermission;return permission}}});
+Object.defineProperty(navigator,'standalone',{configurable:true,value:params.get('installed')!=='false'});
+Object.defineProperty(window,'PushManager',{configurable:true,value:class{}});
+const reg={active:{postMessage:(_message:unknown,ports:MessagePort[])=>ports[0].postMessage({ok:true})},pushManager:{getSubscription:async()=>sub,subscribe:async()=>sub={endpoint:'https://push.example/fixture',toJSON:()=>({keys:{p256dh:'fixture-key',auth:'fixture-auth'}}),unsubscribe:async()=>{sub=null;return true}}}};
+Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{register:async()=>reg,ready:Promise.resolve(reg),getRegistration:async()=>reg}});
+(supabase as any).rpc=async(name:string)=>{if(name==='register_push'){registrations++;if(fail)return{error:new Error('검증용 서버 연결 실패')};return{data:'fixture-device'}}if(name==='get_push_public_key')return{data:'AQID'};return{data:null}};
+function App(){const [layout,setLayout]=useState(params.get('layout')||'desktop');useFontScale(layout);const push=useDevicePush(userId,'',false);return <div className="app signed-in detail-open" data-layout={layout} data-section="chats"><PushOnboarding push={push}/><nav className="rail">Mycel</nav><aside className="list chat-list"><h2>공간</h2><p>알림 안내 검증</p></aside><main className="chat-main" data-room-tab="chat"><header className="topbar"><strong className="peer-name">알림 설정</strong><FontSizeControl/></header><div style={{overflow:'auto',padding:16}}><label>검증 화면 <select aria-label="검증 화면" value={layout} onChange={e=>setLayout(e.target.value)}><option value="desktop">데스크톱</option><option value="tablet">태블릿</option><option value="phone">휴대폰</option></select></label><p id="font-sample" style={{fontSize:'calc(16px * var(--font-scale,1))'}}>기본 글자 크기 확인</p><label>권한 응답 <select aria-label="권한 응답" onChange={e=>choice=e.target.value}><option>granted</option><option>denied</option><option>default</option></select></label><label><input type="checkbox" onChange={e=>fail=e.target.checked}/>등록 실패 재현</label><button onClick={()=>{permission='granted';window.dispatchEvent(new Event('focus'))}}>권한을 허용으로 변경</button><output aria-label="호출 횟수">{requests} / {registrations}</output><PushSettings push={push}/></div></main></div>};createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

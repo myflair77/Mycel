@@ -51,7 +51,7 @@ async function cleanup(request,env){
  if(request.method!=='POST'||!env.R2_RECEIPT_KEY||request.headers.get('X-Retention-Key')!==env.R2_RECEIPT_KEY)return json({error:'Access denied'},403);
  const rpc=async(name,body)=>{const r=await fetch(SB+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:PK,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('Retention RPC failed');return r};
  try{const rows=await(await rpc('r2_cleanup_list',{p_mac:await mac(env.R2_RECEIPT_KEY,'retention-scan')})).json();let deleted=0;
- for(const a of rows){if(!new RegExp('^files/'+a.id+'/[a-f0-9-]{36}/manifest.json$').test(a.r2_key))continue;
+ for(const a of rows){if(!new RegExp('^(?:files|notes)/'+a.id+'/[a-f0-9-]{36}/manifest.json$').test(a.r2_key))continue;
  const prefix=a.r2_key.slice(0,-'/manifest.json'.length),keys=Array.from({length:Math.ceil(Number(a.size)/CHUNK)},(_,i)=>prefix+'/'+i);keys.push(a.r2_key,prefix+'/terminal');await env.BUCKET.delete(keys);
  await rpc('r2_cleanup_done',{p_id:a.id,p_mac:await mac(env.R2_RECEIPT_KEY,'deleted:'+a.id)});deleted++}
  return json({deleted,pendingMore:rows.length===50});}catch{return json({error:'Retention cleanup failed; will retry'},503)}

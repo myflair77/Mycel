@@ -2,7 +2,7 @@ import {it,expect} from 'vitest';
 import {getSchema} from '@tiptap/core';
 import {TableMap} from '@tiptap/pm/tables';
 import {extensions} from '../src/features/workspace/pageExtensions';
-import {changeTableAxis,tableBand} from '../src/features/workspace/tableAxis';
+import {changeTableAxis,tableBand,tableAxisCells,tableAxisIsHeader,setTableAxisHeader} from '../src/features/workspace/tableAxis';
 import {blocksToDoc,docToBlocks} from '../src/features/workspace/pageDocument';
 const s=getSchema(extensions());
 const cell=(text:string,attrs={})=>s.nodes.tableCell.create({background:'#dbeafe',align:'right',...attrs},s.nodes.paragraph.create(null,s.text(text,[s.marks.bold.create()])));
@@ -33,3 +33,17 @@ for(const axis of ['row','column'] as const){
  });
  it(axis+' dropping inside the merged band is a no-op',()=>{const t=table();expect(changeTableAxis(t,axis,0,1).table).toBe(t)});
 }
+
+for(const axis of ['row','column'] as const)it(axis+' header toggle affects the merged band only and preserves content, widths and styling',()=>{
+ const original=table(),selected=new Set(tableAxisCells(original,axis,1));
+ const header=setTableAxisHeader(original,axis,1,true);
+ expect(tableAxisIsHeader(header,axis,1)).toBe(true);expect(TableMap.get(header).problems).toBeNull();
+ for(const pos of new Set(TableMap.get(original).map)){
+  const before=original.nodeAt(pos)!,after=header.nodeAt(pos)!;
+  expect(after.type.name).toBe(selected.has(pos)?'tableHeader':before.type.name);
+  expect(after.attrs).toEqual(before.attrs);expect(after.content.toJSON()).toEqual(before.content.toJSON());
+ }
+ expect(setTableAxisHeader(header,axis,1,false).toJSON()).toEqual(original.toJSON());
+ const restored=s.nodeFromJSON(blocksToDoc(docToBlocks(s.nodes.doc.create(null,header).toJSON())));
+ expect(tableAxisIsHeader(restored.firstChild!,axis,1)).toBe(true);
+});

@@ -19,11 +19,12 @@ import {supabase,initialAuthFlow} from './services/supabase';
 import './styles/app.css';
 import './styles/atelier.css';
 function App(){
- useFontScale();
+
  useEffect(()=>{if('serviceWorker' in navigator)void navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{});},[]);
  const [inviteToken,setInviteToken]=useState<string|null>(readInvite),[serverInvite,setServerInvite]=useState(false);
  const [accountFlow,setAccountFlow]=useState<AccountFlow|null>(initialAuthFlow as AccountFlow|null);
  const {preference,setPreference,layout}=useLayout();
+ useFontScale(layout);
  const [authMode,setAuthMode]=useState<'login'|'signup'>('login');
  const [theme,setTheme]=useSaved<'light'|'dark'|'system'>('weano-theme',(()=>{try{return localStorage.getItem('weano-dark')==='true'?'dark':'system'}catch{return 'system'}})());const [systemDark,setSystemDark]=useState(()=>matchMedia('(prefers-color-scheme: dark)').matches);useEffect(()=>{const media=matchMedia('(prefers-color-scheme: dark)');const update=()=>setSystemDark(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update)},[]);const dark=theme==='dark'||(theme==='system'&&systemDark); const [section,setSection]=useState<Section>('chats');const [requests,setRequests]=useState(0);const [detail,setDetail]=useState(false),[session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(Boolean(supabase));
  useEffect(()=>{if(!supabase)return;let active=true;

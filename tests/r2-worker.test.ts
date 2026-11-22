@@ -40,3 +40,12 @@ it('uploads note files with note permissions, preserves exact bytes and excludes
  const bytes=new Uint8Array(await(await call()).arrayBuffer());expect(bytes.length).toBe(a.size);expect(bytes[0]).toBe(7);expect(bytes.at(-1)).toBe(9);
  expect(a.r2_key.startsWith('notes/')).toBe(true);expect(a.expires_at).toBeUndefined();expect((await call()).status).toBe(200);
 });
+
+it('cleans queued note file chunks with signed cleanup and retries failed storage deletes',async()=>{
+ const id='10000000-0000-0000-0000-000000000001',prefix='notes/'+id+'/20000000-0000-0000-0000-000000000001';let done=0,fail=true;const removed:string[]=[];
+ const env={R2_RECEIPT_KEY:'ab'.repeat(32),BUCKET:{async delete(keys:string[]){if(fail)throw Error('offline');removed.push(...keys)}}};
+ vi.stubGlobal('fetch',vi.fn(async(url:string,o:any)=>{const body=JSON.parse(o.body);if(url.endsWith('r2_cleanup_list')){expect(body.p_mac).toBe(await mac(env.R2_RECEIPT_KEY,'retention-scan'));return Response.json([{id,r2_key:prefix+'/manifest.json',size:CHUNK+1}])}if(url.endsWith('r2_cleanup_done')){expect(body.p_mac).toBe(await mac(env.R2_RECEIPT_KEY,'deleted:'+id));done++;return Response.json(null)}throw Error(url)}));
+ const req=()=>new Request('https://test.local/api/retention/run',{method:'POST',headers:{'X-Retention-Key':env.R2_RECEIPT_KEY}});
+ expect((await fileApi(new Request('https://test.local/api/retention/run',{method:'POST'}),env)).status).toBe(403);
+ expect((await fileApi(req(),env)).status).toBe(503);expect(done).toBe(0);fail=false;expect((await fileApi(req(),env)).status).toBe(200);expect(done).toBe(1);expect(removed).toEqual([prefix+'/0',prefix+'/1',prefix+'/manifest.json',prefix+'/terminal']);
+});

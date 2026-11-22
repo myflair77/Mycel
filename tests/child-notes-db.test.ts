@@ -53,6 +53,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0040_note_mentions.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0041_mention_notifications.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0042_date_reminders.sql',import.meta.url),'utf8').replace("select cron.schedule('mycel-date-reminders','* * * * *','select public.process_date_reminders()');",''));
+ await db.exec(readFileSync(new URL('../migrations/0043_note_trash_retention.sql',import.meta.url),'utf8').replace("select cron.schedule('mycel-note-trash-retention','*/5 * * * *','select public.purge_expired_notes()');",''));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -218,4 +219,41 @@ it('never schedules a reminder for a forged other user and does not deliver afte
 });
 it('finds a synchronized date and includes its reminder kind in queued pushes',async()=>{
  await asUser(a);const note=crypto.randomUUID(),sync=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID();await db.query("select create_space_item($1,'note','Sync date','{}',null)",[note]);const doc=await get(note,null);await db.query('select note_sync_create($1,$2,$3,$4,$5)',[note,sync,doc.item.version,[{id:block,kind:'text',content:{text:'sync',_rich:{type:'syncedBlock',attrs:{id:block,syncId:sync}}}}],{type:'doc',content:[{type:'paragraph'}]}]);await db.query('select note_sync_save($1,$2,1,$3,$4)',[note,sync,crypto.randomUUID(),{type:'doc',content:[dateBlock(crypto.randomUUID(),mid)[0].content._rich]}]);const [row]=await scheduleRows(mid);await db.query("insert into push_devices(id,user_id,endpoint,p256dh,auth)values(gen_random_uuid(),$1,'https://fcm.googleapis.com/date-test','key','auth')",[a]);await db.query("update note_date_reminders set due_at=now()-interval '1 second'where id=$1",[row.id]);await db.exec('set role service_role');await db.query('select process_date_reminders()');const jobs=(await db.query<any>('select claim_push_jobs()v')).rows[0].v;expect(jobs.find((j:any)=>j.mention_id===row.id)).toMatchObject({notification_kind:'date',user_id:a,skip:false});await asUser(a);expect((await db.query<any>('select note_mention_open($1)v',[row.id])).rows[0].v).toMatchObject({block_id:block,mention_id:mid});
+});
+it('permanently deletes only authorized trashed notes, including descendants, and rejects stale confirmations',async()=>{
+ await asUser(a);const root=crypto.randomUUID(),child=crypto.randomUUID(),live=crypto.randomUUID();
+ for(const id of [root,live])await db.query("select create_space_item($1,'note','trash test','{}',null)",[id]);
+ const d=await get(root,null);await db.query('select workspace_child_create($1,$2,$3,$4)',[root,child,d.item.version,childBlocks(child)]);
+ await expect(db.query('select workspace_delete_preview($1)',[[live]])).rejects.toThrow(/휴지통/);
+ await db.query('select workspace_trash($1,$2,true)',[root,(await get(root,null)).item.version]);
+ const preview=async()=> (await db.query<any>('select workspace_delete_preview($1) v',[[root]])).rows[0].v;
+ const list=await preview();expect(list).toHaveLength(2);expect((await get(root,null)).item.trashed_at).toBeTruthy();
+ await asUser(b);await expect(db.query('select workspace_delete_preview($1)',[[root]])).rejects.toThrow(/권한/);
+ await expect(db.query('select purge_expired_notes()')).rejects.toThrow(/permission/);
+ await asUser(a);await db.query('select workspace_trash($1,$2,false)',[root,(await get(root,null)).item.version]);expect((await get(child,null)).item.trashed_at).toBeNull();
+ await expect(db.query('select workspace_delete_notes($1)',[JSON.stringify(list)])).rejects.toThrow();
+ await db.query('select workspace_trash($1,$2,true)',[root,(await get(root,null)).item.version]);
+ await expect(db.query('select workspace_delete_notes($1)',[JSON.stringify(list)])).rejects.toThrow(/변경/);
+ const fresh=await preview();expect((await db.query<any>('select workspace_delete_notes($1) n',[JSON.stringify(fresh)])).rows[0].n).toBe(2);
+ await db.exec('reset role');expect((await db.query<any>('select count(*)::int n from workspace_history where item_id=any($1)',[[root,child]])).rows[0].n).toBe(0);expect((await db.query<any>('select count(*)::int n from workspace_items where id=$1',[live])).rows[0].n).toBe(1);
+});
+
+it('expires notes after 30 days, preserves newer children and active notes, and retains independently shared files',async()=>{
+ await asUser(a);const expired=crypto.randomUUID(),fresh=crypto.randomUUID(),active=crypto.randomUUID(),copy=crypto.randomUUID();
+ for(const id of [expired,fresh,active,copy])await db.query("select create_space_item($1,'note','retention test','{}',null)",[id]);
+ for(const id of [expired,fresh])await db.query('select workspace_trash($1,$2,true)',[id,(await get(id,null)).item.version]);
+ await db.exec('reset role');const shared=crypto.randomUUID(),unique=crypto.randomUUID(),sync=crypto.randomUUID();
+ for(const file of [shared,unique])await db.query("insert into note_files(id,owner_id,name,size,mime,r2_key) values($1,$2,'image',20,'image/png',$3)",[file,a,'notes/'+file+'/'+crypto.randomUUID()+'/manifest.json']);
+ await db.query('insert into note_file_links values($1,$2),($1,$3),($4,$2)',[expired,shared,unique,copy]);
+ await db.query("insert into note_sync_blocks(id,source_note,content,created_by) values($1,$2,'{}',$3)",[sync,expired,a]);await db.query("insert into note_sync_revisions(sync_id,version,mutation,content,actor) values($1,1,gen_random_uuid(),'{}',$2)",[sync,a]);await db.query('insert into note_sync_links values($1,$2),($3,$2)',[expired,sync,copy]);
+ await db.query("update workspace_items set trashed_at=now()-interval '30 days 1 second' where id=$1",[expired]);await db.query("update workspace_items set trashed_at=now()-interval '29 days 23 hours' where id=$1",[fresh]);
+ await db.exec('set role service_role');expect((await db.query<any>('select purge_expired_notes() n')).rows[0].n).toBe(1);expect((await db.query<any>('select purge_expired_notes() n')).rows[0].n).toBe(0);
+ await db.exec('reset role');expect((await db.query<any>('select count(*)::int n from workspace_items where id=any($1)',[[fresh,active,copy]])).rows[0].n).toBe(3);
+ expect((await db.query<any>('select id from note_files where id=any($1)',[[shared,unique]])).rows.map(r=>r.id)).toEqual([shared]);expect((await db.query<any>('select id from note_file_deletions where id=$1',[unique])).rows).toHaveLength(1);
+});
+
+it('does not expire a parent before its newer trashed descendants and resets expiry on restore/retrash',async()=>{
+ await asUser(a);const root=crypto.randomUUID(),child=crypto.randomUUID();await db.query("select create_space_item($1,'note','parent retention','{}',null)",[root]);await db.query('select workspace_child_create($1,$2,$3,$4)',[root,child,(await get(root,null)).item.version,childBlocks(child)]);await db.query('select workspace_trash($1,$2,true)',[root,(await get(root,null)).item.version]);
+ await db.exec('reset role');await db.query("update workspace_items set trashed_at=now()-interval '31 days' where id=$1",[root]);await db.exec('set role service_role');expect((await db.query<any>('select purge_expired_notes() n')).rows[0].n).toBe(0);
+ await asUser(a);await db.query('select workspace_trash($1,$2,false)',[root,(await get(root,null)).item.version]);await db.query('select workspace_trash($1,$2,true)',[root,(await get(root,null)).item.version]);expect(Date.parse((await get(root,null)).item.trashed_at)).toBeGreaterThan(Date.now()-5000);
 });

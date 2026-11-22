@@ -38,3 +38,21 @@ export function changeTableAxis(table:Node,axis:Axis,index:number,target?:number
  if(TableMap.get(next).problems)throw new Error('Table change would break merged cells');
  return {table:next,index:destination,count:moving.length};
 }
+
+/** Cells in a selected row/column, expanded to keep merged cells intact. */
+export function tableAxisCells(table:Node,axis:Axis,index:number){
+ const map=TableMap.get(table),band=tableBand(table,axis,index),cells=new Set<number>();
+ for(let row=0;row<map.height;row++)for(let col=0;col<map.width;col++){
+  const coordinate=axis==='row'?row:col;if(coordinate>=band.start&&coordinate<band.end)cells.add(map.map[row*map.width+col]);
+ }
+ return [...cells];
+}
+export function tableAxisIsHeader(table:Node,axis:Axis,index:number){return tableAxisCells(table,axis,index).every(pos=>table.nodeAt(pos)?.type.name==='tableHeader')}
+export function setTableAxisHeader(table:Node,axis:Axis,index:number,enabled:boolean){
+ const selected=new Set(tableAxisCells(table,axis,index)),rows:Node[]=[];
+ table.forEach((row,offset)=>{const cells:Node[]=[];row.forEach((cell,cellOffset)=>{
+  const type=cell.type.schema.nodes[enabled?'tableHeader':'tableCell'];
+  cells.push(selected.has(offset+cellOffset+1)?type.create(cell.attrs,cell.content,cell.marks):cell);
+ });rows.push(row.copy(Fragment.from(cells)))});
+ return table.copy(Fragment.from(rows));
+}
