@@ -223,3 +223,4 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Final icon size: 16x10px inside the 18x12px controls.
 
 - Table tools use half-size offsets: -6px on top/left borders. Preserve 18x12px controls, 16x10px icons, 2px gap and existing grip dimensions.
+- Final table controls dimensions 20x12px, icons 18x10px, gap 2px; horizontal offsets 48px/26px.
