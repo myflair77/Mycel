@@ -575,3 +575,8 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Move sort/filter controls above cells: 16x8px buttons, 15x7px SVGs, 2px gap; transparent background/thin border retained. Invisible hit area is 18x20px. Reserve a stable strip above the table.
 - Remove header width restrictions, translations and width-tracking mutations; normal full-width centered text restored. Browser measured dimensions/gap, zero center offset, controls above cells, and working sort menu.
 - v106 deployed successfully: 8b2eb3d233ba5c169bd97525a5982fc16ed85637; appgdep_6b02fc2b415c819196bc0f32b2ac46dd. GitHub pushed. TypeScript/build passed. Local packaging failure handled by successful remote build.
+
+## 2026-11-22 align table header controls
+- Sort/filter buttons are 18x12px, matching the column grip height and table-relative top offset (-14px). Keep 15x7px icons and 2px inter-button gap. Invisible hit region no longer intrudes into the header.
+- Browser measured 12px heights for both controls, top positions within 0.02px rounding tolerance, and restored full-width titles.
+- Final requested icon dimensions updated to 16x10px; buttons remain 18x12px with 2px gap.

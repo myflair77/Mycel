@@ -218,3 +218,6 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Refinement: keep 8px cell padding; reserve controls through paragraph max-width, not asymmetric cell padding. Center against full cell until the right boundary is reached, then shift left up to half the reserved width. This supersedes the initial 44px-padding approach above.
 
 - Supersede header text shifting: render 16x8 sort/filter buttons above header cells with 15x7 icons and 2px spacing. Header text uses its entire ordinary content box, with no control gutter or transform.
+
+- Match sort/filter top positioning to the table border (not collapsed cell border), as used by column grips. Visible buttons 18x12px, 2px above table border like grips.
+- Final icon size: 16x10px inside the 18x12px controls.
