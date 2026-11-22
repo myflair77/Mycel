@@ -13,13 +13,20 @@ export function startTabDrag(event:PointerEvent,bar:HTMLElement,commit:(from:str
  };
  const move=(e:PointerEvent)=>{if(e.pointerId!==pointer)return;x=e.clientX;y=e.clientY;if(!dragging){if(Math.abs(y-startY)>10&&Math.abs(y-startY)>Math.abs(x-start)){finish(false);return}if(Math.abs(x-start)<7)return;dragging=true;bar.dataset.tabDragging='true';source.style.opacity='.25';ghost=source.cloneNode(true) as HTMLElement;ghost.removeAttribute('id');ghost.removeAttribute('role');ghost.setAttribute('aria-hidden','true');ghost.className='tab-drag-ghost';Object.assign(ghost.style,{position:'fixed',left:'0',top:'0',width:rect.width+'px',height:rect.height+'px',pointerEvents:'none',zIndex:'4000',opacity:'.95'});document.body.append(ghost);source.setPointerCapture(pointer);preview()}e.preventDefault()};
  const suppress=(e:MouseEvent)=>{e.preventDefault();e.stopImmediatePropagation()};
- function finish(save:boolean){if(ended)return;ended=true;cancelAnimationFrame(frame);ghost?.remove();items.forEach(el=>{el.style.transform='';el.style.opacity=''});delete bar.dataset.tabDragging;
+ function finish(save:boolean){if(ended)return;ended=true;cancelAnimationFrame(frame);
+  // Retain the visible preview positions, including the tab under the pointer.
+  const before=new Map(items.map(el=>[el.dataset.reorderId!,el===source&&ghost?ghost.getBoundingClientRect().left:el.getBoundingClientRect().left]));
+  ghost?.remove();items.forEach(el=>{el.style.transform='';el.style.opacity=''});delete bar.dataset.tabDragging;
   window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);window.removeEventListener('keydown',escape);window.removeEventListener('blur',cancel);
   if(dragging){bar.addEventListener('click',suppress,true);setTimeout(()=>bar.removeEventListener('click',suppress,true),0)}
   if(save&&dragging)target=destination();
-  if(save&&dragging&&target!==from&&bar.isConnected){const before=new Map(items.map(el=>[el.dataset.reorderId!,el.getBoundingClientRect().left]));commit(items[from].dataset.reorderId!,items[target].dataset.reorderId!);requestAnimationFrame(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;bar.querySelectorAll<HTMLElement>('[data-reorder-id]').forEach(el=>{const old=before.get(el.dataset.reorderId!);if(old!==undefined)el.animate([{transform:'translateX('+(old-el.getBoundingClientRect().left)+'px)'},{transform:'translateX(0)'}],{duration:160,easing:'ease-out'})})})}
+  if(save&&dragging&&target!==from&&bar.isConnected)commit(items[from].dataset.reorderId!,items[target].dataset.reorderId!);
+  if(dragging)animateTabPositions(bar,before);
  }
  const up=(e:PointerEvent)=>{if(e.pointerId===pointer)finish(true)},cancel=()=>finish(false),escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();finish(false)}};
  window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancel);window.addEventListener('keydown',escape);window.addEventListener('blur',cancel);
  return cancel;
 }
+
+/** Continue from the visible position instead of jumping back to the old order. */
+export function animateTabPositions(bar:HTMLElement,before:Map<string,number>){requestAnimationFrame(()=>{if(!bar.isConnected||matchMedia('(prefers-reduced-motion: reduce)').matches)return;bar.querySelectorAll<HTMLElement>('[data-reorder-id]').forEach(el=>{const old=before.get(el.dataset.reorderId!);if(old===undefined)return;const delta=old-el.getBoundingClientRect().left;if(Math.abs(delta)<.5)return;el.animate([{transform:'translateX('+delta+'px)'},{transform:'translateX(0)'}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'})})})}
