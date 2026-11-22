@@ -1,7 +1,7 @@
 import type {Node, Schema} from '@tiptap/pm/model';
 import {Fragment} from '@tiptap/pm/model';
 import {TextSelection,type EditorState,type Transaction} from '@tiptap/pm/state';
-export const conversionTypes=[['text','텍스트'],['h1','제목 1'],['h2','제목 2'],['h3','제목 3'],['bullet','글머리 목록'],['number','번호 목록'],['check','체크박스'],['quote','인용'],['toggle','토글 목록'],['toggle1','토글 제목 1'],['toggle2','토글 제목 2'],['toggle3','토글 제목 3']] as const;
+export const conversionTypes=[['text','텍스트'],['h1','제목 1'],['h2','제목 2'],['h3','제목 3'],['bullet','글머리 목록'],['number','번호 목록'],['check','체크박스'],['quote','인용'],['callout','콜아웃'],['toggle','토글 목록'],['toggle1','토글 제목 1'],['toggle2','토글 제목 2'],['toggle3','토글 제목 3']] as const;
 export type Conversion=(typeof conversionTypes)[number][0];
 export function blockType(node:Node,parent?:Node):string {
  const name=node.type.name;
@@ -13,7 +13,7 @@ export function blockType(node:Node,parent?:Node):string {
 function parts(node:Node,schema:Schema):{head:Node;tail:Node[]} | null {
  if(node.isTextblock)return {head:node,tail:[]};
  if(node.type.name==='toggleBlock')return {head:node.firstChild!,tail:Array.from(node.lastChild!.content.content)};
- if(['listItem','taskItem','blockquote'].includes(node.type.name)&&node.firstChild?.isTextblock)return {head:node.firstChild,tail:Array.from(node.content.content).slice(1)};
+ if(['listItem','taskItem','blockquote','callout'].includes(node.type.name)&&node.firstChild?.isTextblock)return {head:node.firstChild,tail:Array.from(node.content.content).slice(1)};
  return null;
 }
 function converted(node:Node,target:Conversion,schema:Schema,id:string):Node[]|null {
@@ -22,6 +22,7 @@ function converted(node:Node,target:Conversion,schema:Schema,id:string):Node[]|n
  const paragraph=schema.nodes.paragraph.create({id},head.content);
  if(target==='text'||/^h[123]$/.test(target))return [(target==='text'?schema.nodes.paragraph:schema.nodes.heading).create({id,...appearance,...(target==='text'?{}:{level:Number(target[1])})},head.content),...tail];
  if(target.startsWith('toggle'))return [schema.nodes.toggleBlock.create({id,...appearance,open:node.type.name==='toggleBlock'?node.attrs.open:true,level:Number(target.slice(6))||0},[schema.nodes.toggleTitle.create(null,head.content),schema.nodes.toggleBody.create(null,tail.length?tail:schema.nodes.paragraph.create())])];
+ if(target==='callout')return [schema.nodes.callout.create({id,...appearance,icon:node.type.name==='callout'?node.attrs.icon:'💡'},[schema.nodes.paragraph.create(null,head.content),...tail])];
  if(target==='quote')return [schema.nodes.blockquote.create({id,...appearance},[schema.nodes.paragraph.create(null,head.content),...tail])];
  const list=target==='check'?'taskList':target==='number'?'orderedList':'bulletList',item=target==='check'?'taskItem':'listItem';
  return [schema.nodes[list].create({id},schema.nodes[item].create({...appearance,...(target==='check'?{checked:node.attrs.checked??false}:{})},[paragraph.type.create(null,head.content),...tail]))];

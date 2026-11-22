@@ -49,6 +49,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0036_child_notes.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0037_note_files.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0038_synced_blocks.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0039_block_actions.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -105,4 +106,29 @@ it('shares synchronized content with dual permissions, idempotency, permanent hi
  await asUser(a);await db.query("select public.workspace_share($1,$2,'read',true)",[source,room]);await asUser(b);await expect(db.query('select public.note_sync_get($1,$2)',[target,sync])).rejects.toThrow(/권한/);
  await asUser(a);await expect(db.query('select public.note_sync_save($1,$2,2,$3,$4)',[target,sync,crypto.randomUUID(),{type:'doc',content:[{type:'syncedBlock',attrs:{syncId:sync}}]}])).rejects.toThrow(/다른 동기화/);
  const copy=crypto.randomUUID();await db.query('select public.workspace_copy($1,$2,null)',[source,copy]);expect((await db.query<any>('select public.note_sync_get($1,$2) s',[copy,sync])).rows[0].s.content).toEqual(doc('Changed'));
+});
+
+it('stamps real block edits and moves atomically with file links, durable identity and replay protection',async()=>{
+ await asUser(a);const source=crypto.randomUUID(),target=crypto.randomUUID(),block=crypto.randomUUID(),file=crypto.randomUUID(),mutation=crypto.randomUUID();
+ for(const id of [source,target])await db.query("select public.create_space_item($1,'note','Move test','{}',null)",[id]);
+ await db.query("select public.prepare_note_file($1,$2,'photo.png',10,'image/png')",[source,file]);
+ const blocks=[{id:block,kind:'text',content:{text:'photo',_rich:{type:'noteFile',attrs:{id:block,fileId:file,mime:'image/png'}}}}];
+ await db.query('select public.page_document_save($1,1,$2,$3)',[source,crypto.randomUUID(),blocks]);
+ const info=async()=> (await db.query<any>('select public.page_block_info($1) i',[block])).rows[0].i;
+ const first=await info();expect(first.editor).toBe('alice');expect(first.edited_at).toBeTruthy();
+ await db.query('select public.page_document_save($1,2,$2,$3)',[source,crypto.randomUUID(),blocks]);expect((await info()).edited_at).toEqual(first.edited_at);
+ await asUser(b);await expect(db.query('select public.page_block_info($1)',[block])).rejects.toThrow(/권한/);
+ await expect(db.query('select public.page_block_move($1,$2,$3,3,1,$4)',[source,target,block,mutation])).rejects.toThrow(/권한/);
+ await asUser(a);await expect(db.query('select public.page_block_move($1,$2,$3,2,1,$4)',[source,target,block,mutation])).rejects.toThrow(/다른 수정/);
+ expect((await get(source,null)).blocks).toHaveLength(1);expect((await get(target,null)).blocks).toHaveLength(0);
+ const move=()=>db.query('select public.page_block_move($1,$2,$3,3,1,$4)',[source,target,block,mutation]);await move();await move();
+ expect((await get(source,null)).blocks).toHaveLength(0);expect((await get(target,null)).blocks[0].id).toBe(block);expect((await info()).note_id).toBe(target);expect((await info()).edited_at).toEqual(first.edited_at);
+ expect((await db.query<any>('select public.get_note_file($1,$2) f',[target,file])).rows[0].f.id).toBe(file);
+ blocks[0].content._rich.attrs={...blocks[0].content._rich.attrs,width:60} as any;await db.query('select public.page_document_save($1,2,$2,$3)',[target,crypto.randomUUID(),blocks]);expect((await info()).edited_at).not.toEqual(first.edited_at);
+});
+it('does not broaden comment audiences during a block move',async()=>{
+ await asUser(a);const source=crypto.randomUUID(),target=crypto.randomUUID(),block=crypto.randomUUID();for(const id of [source,target])await db.query("select public.create_space_item($1,'note','Comment move','{}',null)",[id]);
+ await db.query('select public.page_document_save($1,1,$2,$3)',[source,crypto.randomUUID(),[{id:block,kind:'text',content:{text:'Commented'}}]]);
+ await db.query('select public.workspace_comment($1,null,$2,$3,0,null,$4,false,false)',[source,crypto.randomUUID(),'Private comment',block]);
+ const src=await get(source,null);await expect(db.query('select public.page_block_move($1,$2,$3,$4,1,$5)',[source,target,block,src.item.version,crypto.randomUUID()])).rejects.toThrow(/공개 범위/);expect((await get(source,null)).blocks).toHaveLength(1);expect((await get(target,null)).blocks).toHaveLength(0);
 });

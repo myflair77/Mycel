@@ -1,0 +1,3 @@
+export type ImageCrop={left:number;top:number;right:number;bottom:number};
+export function normalizeCrop(value:any):ImageCrop {const n=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(90,v)):0;const left=n(value?.left),top=n(value?.top);return {left,top,right:Math.min(n(value?.right),90-left),bottom:Math.min(n(value?.bottom),90-top)}}
+export function cropStyles(crop:ImageCrop,width:number,height:number){const c=normalizeCrop(crop),w=100-c.left-c.right,h=100-c.top-c.bottom;return {aspectRatio:String(Math.max(1,width)*w/(Math.max(1,height)*h)),width:10000/w+'%',left:-c.left*100/w+'%',top:-c.top*100/h+'%'}}

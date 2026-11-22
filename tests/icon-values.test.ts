@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {getSchema} from '@tiptap/core';
 import {EditorState} from '@tiptap/pm/state';
-import {iconColors,parseIcon,iconPreference,isUploadedIcon} from '../src/components/iconValue';
+import {iconColors,parseIcon,iconPreference,isUploadedIcon,loadFilledIconCatalog} from '../src/components/iconValue';
 import {extensions} from '../src/features/workspace/pageExtensions';
 import {symbolContent} from '../src/features/workspace/pageInlineIcon';
 import {changeTabs} from '../src/features/workspace/pageTabs';
@@ -26,4 +26,10 @@ describe('symbol persistence and safety',()=>{
   const schema=getSchema(extensions()),doc=uniqueIds({type:'doc',content:[{type:'noteTabs',content:[{type:'noteTab',content:[{type:'paragraph',content:[{type:'text',text:'유지할 내용'}]}]}]}]});
   let state=EditorState.create({schema,doc:schema.nodeFromJSON(doc)});const id=state.doc.firstChild!.firstChild!.attrs.id,value='icon:ArrowDownNarrowWide:purple';state=state.apply(changeTabs(state,0,{type:'icon',id,value})!);expect(state.doc.firstChild!.firstChild!.attrs.icon).toBe(value);expect(state.doc.textContent).toBe('유지할 내용');
  });
+});
+
+it('supports filled icons alongside existing outline tokens',async()=>{
+ const icons=await loadFilledIconCatalog();expect(icons.SolidHeart.icon[4]).toBeTruthy();expect(icons.SolidLightbulb.icon[4]).toBeTruthy();
+ for(const c of iconColors)expect(parseIcon('icon:SolidHeart:'+c.id)?.color.id).toBe(c.id);
+ expect(parseIcon('icon:Heart:red')?.name).toBe('Heart');
 });

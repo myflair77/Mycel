@@ -19,7 +19,7 @@ export function useViewHistory(onChange:(view:ResourceView)=>void){
  prepareRef.current=async()=>{setTransitioning(true);setNavigationError('');busy.current=true;return saveBeforeNavigation()};
  commitRef.current=(view)=>{if(JSON.stringify(view)===JSON.stringify(entries.current[current.current].view))return;capture();entries.current=appendView(entries.current,current.current,view);const index=entries.current.length-1;history.pushState(state(index),'',viewUrl(view));apply(index)};
  if(!requestRef.current)requestRef.current=createNavigationRequest<ResourceView>(()=>prepareRef.current(),view=>commitRef.current(view),()=>setNavigationError('변경 내용을 저장하지 못했습니다. 입력은 이 기기에 보관됩니다. 연결과 저장 오류를 확인한 뒤 다시 선택해 주세요.'));
- async function navigate(view:ResourceView){if(!busy.current&&JSON.stringify(view)===JSON.stringify(entries.current[current.current].view))return;try{await requestRef.current!(view)}finally{busy.current=false;setTransitioning(false)}}
+ async function navigate(view:ResourceView){if(!busy.current&&JSON.stringify(view)===JSON.stringify(entries.current[current.current].view))return true;try{await requestRef.current!(view);return JSON.stringify(view)===JSON.stringify(entries.current[current.current].view)}finally{busy.current=false;setTransitioning(false)}}
 
  function step(delta:number){if(closeOverlay()||busy.current)return;if(current.current+delta<0||current.current+delta>=entries.current.length)return;capture();history.go(delta)}
  return {transitioning,navigationError,finishRestoration:()=>{restoring.current=false},view:entry.view,index:entry.index,navigate,back:()=>step(-1),forward:()=>step(1),canBack:entry.index>0,canForward:entry.index<entries.current.length-1,snapshot:entries.current[entry.index]};

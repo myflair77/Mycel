@@ -49,3 +49,9 @@ it('exposes each bullet and task item as an independent handle target',async()=>
  const doc=schema.nodes.doc.create(null,[schema.nodes.bulletList.create({id:'list'},[schema.nodes.listItem.create({id:'a'},p('one')),schema.nodes.listItem.create({id:'b'},p('two'))]),schema.nodes.taskList.create({id:'tasks'},[schema.nodes.taskItem.create({id:'c',checked:false},p('task'))])]);
  const blocks=blockPositions({state:{doc}} as any);expect(blocks.map(b=>b.id)).toEqual(['list','b','tasks']);expect(blocks.map(b=>b.node.textContent)).toEqual(['one','two','task']);for(const b of blocks)expect(doc.nodeAt(b.pos)).toBe(b.node);
 });
+
+it('exits a callout only from its empty last line and preserves preceding content',()=>{
+ const doc=schema.nodes.doc.create(null,[schema.nodes.callout.create(null,[p('keep'),p('')]),p('after')]);
+ let state=EditorState.create({schema,doc,selection:TextSelection.create(doc,8)});
+ expect(pageEnter(state,tr=>state=state.apply(tr))).toBe(true);expect(state.doc.child(0).type.name).toBe('callout');expect(state.doc.child(0).textContent).toBe('keep');expect(state.doc.child(1).type.name).toBe('paragraph');expect(state.doc.child(2).textContent).toBe('after');
+});

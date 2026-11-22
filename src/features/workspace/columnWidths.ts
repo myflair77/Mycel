@@ -1,0 +1,2 @@
+import type {EditorState} from '@tiptap/pm/state';
+export function equalizeColumns(state:EditorState,pos:number){const at=state.doc.resolve(pos);let depth=at.depth;while(depth>0&&at.node(depth).type.name!=='columns')depth--;if(!depth)return null;const group=at.node(depth),tr=state.tr;let offset=at.start(depth);group.forEach(column=>{tr.setNodeMarkup(offset,undefined,{...column.attrs,width:100/group.childCount});offset+=column.nodeSize});return tr}

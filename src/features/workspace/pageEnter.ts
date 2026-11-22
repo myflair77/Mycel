@@ -17,6 +17,7 @@ export const pageEnter:Command=(state,dispatch)=>{
    return true;
   }
  }
+ for(let d=$from.depth;d>0;d--){if($from.node(d).type.name==='callout'&&$from.parent.content.size===0&&$from.pos===$from.end(d)-1)return lift(state,dispatch)}
  if($from.parentOffset===$from.parent.content.size){
   for(let d=$from.depth;d>0;d--){if($from.node(d).type.name==='blockquote'&&$from.pos===$from.end(d)-1){
    const pos=$from.after(d),paragraph=state.schema.nodes.paragraph.create();
@@ -31,7 +32,7 @@ export const pageBackspace:Command=(state,dispatch)=>{
  const {$from,empty}=state.selection;if(!empty||$from.parentOffset!==0)return false;
  for(let d=$from.depth;d>0;d--){const name=$from.node(d).type.name;if(['tableCell','tableHeader'].includes(name))return false;
  if(['listItem','taskItem'].includes(name)){if($from.pos!==$from.start(d)+1)return false;return liftListItem($from.node(d).type)(state,dispatch)}
- if(name==='blockquote'&&$from.pos===$from.start(d)+1)return lift(state,dispatch);
+ if(['blockquote','callout'].includes(name)&&$from.pos===$from.start(d)+1)return lift(state,dispatch);
  }
  if(['heading','codeBlock'].includes($from.parent.type.name))return setBlockType(state.schema.nodes.paragraph)(state,dispatch);
  return false;

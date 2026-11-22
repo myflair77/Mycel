@@ -413,7 +413,7 @@ button:disabled{cursor:default}
 .page-editor .tiptap .selectedCell{background:#4388ef20}.page-editor .tiptap.resize-cursor{cursor:col-resize}
 .editor-columns{display:flex;gap:24px;margin:8px 0}.editor-column{position:relative;min-width:0;flex-grow:1;flex-shrink:1}.editor-column-content{min-height:40px}
 .editor-column-resize{position:absolute;right:-16px;top:0;bottom:0;width:8px!important;min-height:40px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;cursor:col-resize;opacity:0;touch-action:none}
-.editor-column:last-child>.editor-column-resize{display:none}.editor-columns:hover .editor-column-resize,.editor-column-resize:focus-visible{opacity:1;background:#4b82da40!important}
+.editor-column:last-child>.editor-column-resize{display:none}.editor-columns:hover .editor-column-resize,.editor-column-resize:focus-visible{opacity:1;background:transparent!important}
 .editor-handles{position:fixed;display:flex;z-index:35;height:28px;align-items:center}
 .editor-handles button{border:0!important;background:transparent!important;padding:0!important;width:23px;height:28px;min-height:0!important;color:#8d97a7;cursor:grab;font-size:22px}
 .editor-handles button:hover{background:#8191ab20!important}
@@ -813,7 +813,12 @@ button:disabled{cursor:default}
 .app .symbol-tabs button{border:0;border-radius:0;background:none;padding:9px 10px;min-height:40px;color:var(--muted)}
 .app .symbol-tabs button[aria-selected=true]{border-bottom:2px solid currentColor;color:var(--text)}
 .app .symbol-remove{padding:8px;border:0;background:none}.symbol-tools{display:flex;gap:6px}.symbol-tools input{min-width:0;flex:1}.symbol-tools button{flex:none;min-width:40px;padding:6px}
-.mycel-emoji-picker .emoji-categories{flex:none;flex-wrap:nowrap;overflow-x:auto;margin:0;padding-bottom:4px}.emoji-categories button{white-space:nowrap}
+.mycel-emoji-picker .emoji-categories{flex:none;display:flex;flex-wrap:wrap;justify-content:space-around;gap:2px;overflow:visible;margin:0;padding:8px 0 0;border-top:1px solid var(--line)}
+.app .mycel-emoji-picker .emoji-categories button{flex:1 0 30px;max-width:44px;min-width:30px;min-height:36px;height:36px;padding:5px;display:flex;align-items:center;justify-content:center;font-size:21px;line-height:1;border:0;border-radius:8px;background:transparent;color:var(--muted)}
+.app .mycel-emoji-picker .emoji-categories button[aria-pressed=true]{background:var(--soft);color:var(--primary)}
+.app .mycel-emoji-picker .emoji-categories button:hover{background:var(--soft)}
+.mycel-emoji-picker .emoji-section-title{grid-column:1/-1;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 4px;padding:0;line-height:1.5}
+.mycel-emoji-picker .emoji-section-title:first-child{margin-top:4px}.mycel-emoji-picker .emoji-section-empty{margin:4px 0 10px;color:var(--muted)}
 .symbol-extras{display:flex;align-items:center;justify-content:space-between;gap:8px}.symbol-extras select{max-width:150px;padding:4px;font-size:12px}
 .mycel-emoji-picker .emoji-grid{flex:1;min-height:100px;overflow:auto;align-content:start;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));margin:0;overscroll-behavior:contain}
 .app .mycel-emoji-picker .emoji-grid button{min-height:36px;height:36px;font-size:24px;padding:4px;display:flex;justify-content:center;align-items:center}
@@ -851,3 +856,50 @@ button:disabled{cursor:default}
 
 .app .auth-panel .signup-email-help{margin:-8px 0 0;font-size:.82rem;line-height:1.6;color:var(--muted)}
 .signup-email-help strong,.signup-email-help span{display:block}.signup-email-help strong{font-weight:500;color:var(--ink)}
+
+/* A synced editor inherits its wrapper color; inline marks still take precedence. */
+.page-editor .note-sync-content .tiptap{color:inherit}
+.page-selection-popover{color:var(--text,#242933);background:var(--surface,#fff);border:1px solid var(--line,#e1e4ec);border-radius:10px;box-shadow:0 8px 28px #17243526;padding:5px;max-width:calc(100vw - 16px);box-sizing:border-box}
+.page-selection-row{display:flex;align-items:center;flex-wrap:wrap;gap:1px}
+.page-selection-popover button{border:0;background:transparent;color:inherit;border-radius:5px;min-height:32px;padding:6px 8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.page-selection-popover button:hover,.page-selection-popover button[aria-pressed=true]{background:var(--soft,#edf0f7)}
+.page-selection-popover button:focus-visible{outline:2px solid #5285c5;outline-offset:-2px}
+.page-selection-row .mycel-icon{font-size:18px}.selection-color-icon{font-size:17px;border-bottom:2px solid #bd9440}
+.selection-color-panel{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line,#e1e4ec);margin-top:5px;max-height:min(410px,55dvh);overflow:auto;min-width:250px}
+.selection-color-panel>div{display:flex;flex-direction:column}.selection-color-panel button{justify-content:flex-start;white-space:nowrap}.selection-color-panel .block-color-sample{width:20px;height:20px;min-width:20px;font-size:14px;border:1px solid #a6b0c540;border-radius:4px}.selection-link-form{display:flex;gap:4px;padding:5px}.selection-link-form input{width:180px;min-width:0;font-size:16px}
+@media(pointer:coarse){.page-selection-popover button{min-height:40px}.page-selection-row button{padding:6px 7px}}
+
+[data-reorder-id]{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+[data-tab-dragging=true] [data-reorder-id]{cursor:grabbing;transition:transform .12s ease-out}
+.tab-drag-ghost{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line,#e1e4ec);border-radius:12px;background:var(--surface,#fff);color:var(--text,#242933);box-shadow:0 5px 20px #17243535;font:inherit}
+.tab-reorder-announcement{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+.note-file-block>[hidden]{display:none!important}.note-image-preview{position:relative}.note-image-frame{position:relative;overflow:hidden;border-radius:5px}.note-image-frame>img{display:block}.note-image-toolbar{position:absolute;right:8px;top:8px;display:flex;gap:1px;padding:3px;border:1px solid var(--line);background:var(--surface,#fff);color:var(--text,#242933);box-shadow:0 3px 14px #17243526;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .12s}
+.note-image-block:hover .note-image-toolbar,.note-image-block:focus-within .note-image-toolbar,.note-image-block[data-image-active=true] .note-image-toolbar{opacity:1;pointer-events:auto}
+.app .note-image-toolbar button{border:0;background:transparent;color:inherit;min-width:30px;min-height:30px;padding:5px;border-radius:4px;display:flex;align-items:center;justify-content:center}.note-image-toolbar button[hidden]{display:none!important}.note-image-toolbar button:hover{background:var(--soft)}.note-image-toolbar .mycel-icon{font-size:18px}
+.note-image-block>input{border:0!important;background:transparent!important}.note-image-block>small:empty{display:none}
+.note-image-dialog{border:1px solid var(--line,#ddd);border-radius:12px;padding:16px;background:var(--surface,#fff);color:var(--text,#242933);max-width:min(920px,94vw);max-height:92dvh;overflow:auto}.note-image-dialog::backdrop{background:#10192799}.note-image-dialog header,.note-image-dialog footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px}.note-image-dialog footer{margin:12px 0 0}.note-image-dialog button{padding:8px 14px;border:1px solid var(--line,#ddd);border-radius:7px;color:inherit;background:var(--surface,#fff);cursor:pointer}.note-image-dialog p{font-size:14px}.note-image-crop-stage{position:relative;width:fit-content;margin:auto;line-height:0;overflow:hidden}.note-image-crop-stage>img{display:block;max-width:100%;max-height:60dvh;width:auto;object-fit:contain;user-select:none}.note-image-crop-selection{position:absolute;border:2px solid #5894ee;box-shadow:0 0 0 2000px #0006;pointer-events:none}.note-image-crop-fields{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.note-image-crop-fields label{display:flex;flex-direction:column;gap:4px;font-size:13px}.note-image-crop-fields input{width:80px;font-size:16px}
+@media(pointer:coarse){.app .note-image-toolbar button{min-height:40px;min-width:36px}}
+
+.app .page-editor .editor-column-resize,.app .page-editor .editor-column-resize:hover,.app .page-editor .editor-column-resize:focus-visible{background:transparent!important;outline:none!important;box-shadow:none!important;min-width:12px;max-width:12px}
+.app .page-editor .editor-column-resize::after{width:1px;background:#8d97a766}
+.app .page-editor .editor-column-resize:hover::after,.app .page-editor .editor-column-resize:focus-visible::after{background:#8d97a7}
+
+.page-selection-popover[hidden]{display:none!important}
+.note-image-resize{position:absolute;top:0;bottom:0;width:10px!important;min-width:10px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;cursor:ew-resize;touch-action:none;opacity:0;z-index:3}
+.note-image-resize.left{left:0}.note-image-resize.right{right:0}
+.note-image-resize::after{content:"";position:absolute;width:3px;height:36px;top:calc(50% - 18px);left:3px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px #0005}
+.note-image-preview:hover .note-image-resize,.note-image-resize:focus-visible,.note-image-block[data-image-active=true] .note-image-resize,.note-image-block[data-resizing=true] .note-image-resize{opacity:1}
+
+.block-edit-info{display:grid;gap:5px;padding:12px 8px 6px;border-top:1px solid var(--line,#e4e6ec);color:var(--muted,#797d87);font-size:12px}.block-edit-info small{font-weight:600}
+.block-move-dialog{width:min(460px,calc(100vw - 24px));border:1px solid var(--line,#ddd);border-radius:14px;padding:18px;color:var(--text,#252936);background:var(--panel,#fff)}.block-move-dialog::backdrop{background:#0004}.block-move-dialog header,.block-move-dialog footer{display:flex;justify-content:space-between;gap:10px}.block-move-dialog p{font-size:14px}.block-move-dialog input{width:100%}.block-move-list{display:grid;gap:6px;max-height:45dvh;overflow:auto;margin:12px 0}.block-move-list button{text-align:left;display:grid;gap:4px}.block-move-list button[aria-pressed=true]{background:#edf1ff;border-color:#8aa7eb}.block-move-list small{font-size:12px;color:#777}.page-linked-block{outline:2px solid #8daee9!important;background:#ebf2ff66}
+
+.block-link-preview{position:fixed;z-index:1600;top:15dvh;left:50%;transform:translateX(-50%);width:min(680px,calc(100vw - 24px));max-height:75dvh;overflow:auto;background:var(--panel,#fff);color:var(--text,#252936);border:1px solid var(--line,#e0e3e9);border-radius:14px;box-shadow:0 12px 40px #0003;padding:16px}.block-link-preview>header,.block-link-preview>footer{display:flex;align-items:center;justify-content:space-between;gap:12px}.block-link-preview>footer{justify-content:flex-end;border-top:1px solid var(--line,#eee);padding-top:12px}.block-link-preview .block-preview-content{padding:14px 4px!important;min-height:0}.block-link-preview .tiptap{min-height:0!important;padding:0!important}.block-link-preview .note-sync-toolbar{display:none}
+
+.note-callout{display:flex;align-items:flex-start;gap:12px;border-radius:10px;padding:16px 18px;background:var(--hover,#f5f5f4);margin:8px 0}.note-callout-content{flex:1;min-width:0}.note-callout-content>p:first-child{margin-top:0}.note-callout-content>p:last-child{margin-bottom:0}.app .note-callout-icon{flex:none;border:0;background:transparent;box-shadow:none;padding:2px;min-width:28px;width:28px;height:28px;font-size:22px;line-height:1}.note-callout-icon svg,.note-callout-icon img{width:22px;height:22px}.note-callout-icon[data-empty=true]{opacity:.25}.note-callout-icon[data-empty=true]:hover{opacity:1}
+
+.app .mycel-emoji-picker .symbol-tools input{border:1px solid var(--line);border-radius:10px;background:var(--hover,#f7f7f7);padding:10px 12px;color:var(--text);outline-offset:2px}
+.app .mycel-emoji-picker .symbol-tools button,.app .mycel-emoji-picker header>button{border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);color:var(--text);min-height:36px;padding:6px 10px}
+.app .mycel-emoji-picker header>.symbol-remove{border:0;color:var(--muted)}
+
+.app .block-link-preview button{border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);color:var(--text);padding:8px 12px;min-height:36px}
