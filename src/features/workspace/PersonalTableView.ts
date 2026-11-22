@@ -1,13 +1,19 @@
 import {Extension} from '@tiptap/core';
-import {Plugin,TextSelection} from '@tiptap/pm/state';
+import {EditorState,Plugin,TextSelection} from '@tiptap/pm/state';
+import {keymap} from '@tiptap/pm/keymap';
+import {baseKeymap} from '@tiptap/pm/commands';
+import {undo,redo} from '@tiptap/pm/history';
+import {editProjectedCell,findProjectedCell} from './tableProjectionEdit';
 import {TableView} from '@tiptap/extension-table';
 import type {Node as PMNode} from '@tiptap/pm/model';
-import type {EditorView,ViewMutationRecord} from '@tiptap/pm/view';
+import {EditorView,type ViewMutationRecord} from '@tiptap/pm/view';
 import {emptyTableView,normalizeTableView,personalTableInfo,personalTableRows,tableCellText,type TableFilter,type TableViewPreferences} from './tablePersonalView';
 
-/** A separate, non-editable projection keeps personal sorting out of shared document transactions. */
+/** Personal row order stays in the projection; cell edits map back to the source. */
 export class PersonalTableView extends TableView{
  private view:EditorView;
+ private cellEditor:EditorView|null=null;
+ private editingId="";
  private controls=document.createElement('div');
  private summary=document.createElement('div');
  private projection=document.createElement('div');
@@ -47,18 +53,31 @@ export class PersonalTableView extends TableView{
  private keydown=(event:KeyboardEvent)=>{if(event.key==='Escape'&&this.menu){event.preventDefault();this.closeMenu();this.controls.querySelector('button')?.focus()}};
  private button(label:string,action:()=>void){const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=event=>{event.stopPropagation();action()};return button}
  private render(){
+  if(this.cellEditor){const source=findProjectedCell(this.view.state.doc,this.editingId);if(source&&this.view.editable){if(!source.node.content.eq(this.cellEditor.state.doc.content)){this.cellEditor.updateState(EditorState.create({doc:source.node,plugins:this.cellEditor.state.plugins}));}return;}this.endCellEdit(false);}
+
   this.load();const info=personalTableInfo(this.node),active=info.supported&&this.active();this.dom.classList.toggle('has-table-view-controls',info.hasHeader);this.dom.classList.toggle('personal-table-active',active);
   this.table.hidden=active;this.summary.replaceChildren();this.summary.hidden=!active;this.projection.replaceChildren();this.projection.hidden=!active;this.controls.replaceChildren();
   if(active){
-   const indices=personalTableRows(this.node,this.preferences),status=document.createElement('span');status.textContent=`내 보기 · ${indices.length}/${Math.max(0,this.node.childCount-1)}행 · 읽기 전용`;this.summary.append(status,this.button('원본 보기 · 편집',this.reset));
+   const indices=personalTableRows(this.node,this.preferences),status=document.createElement('span');status.textContent=`내 보기 · ${indices.length}/${Math.max(0,this.node.childCount-1)}행${this.view.editable?" · 셀을 눌러 편집":" · 읽기 전용"}`;this.summary.append(status,this.button('원본 순서 보기',this.reset));
    const clone=this.table.cloneNode(false) as HTMLTableElement;clone.hidden=false;clone.removeAttribute('data-block-id');clone.removeAttribute('id');clone.classList.remove('personal-table-source');clone.classList.add('personal-table-result');clone.append(this.colgroup.cloneNode(true));const body=document.createElement('tbody');clone.append(body);
-   for(const index of [0,...indices]){const row=this.contentDOM.rows[index];if(row)body.append(row.cloneNode(true))}
-   for(const element of clone.querySelectorAll<HTMLElement>('*')){element.removeAttribute('id');element.removeAttribute('data-block-id');element.removeAttribute('data-mention-id');element.removeAttribute('contenteditable');element.classList.remove('selectedCell','active-table-cell','page-comment-mark','page-block-comment-mark');if(element.matches('input,button,select,textarea')){(element as HTMLInputElement).disabled=true;element.tabIndex=-1}if(element.matches('a,[tabindex],[role=button]'))element.tabIndex=-1}
-   clone.onclick=event=>{if((event.target as HTMLElement).closest('a,button,input,[role=button]'))event.preventDefault()};this.projection.append(clone);
+   for(const index of [0,...indices]){const row=this.contentDOM.rows[index];if(row){const copy=row.cloneNode(true) as HTMLTableRowElement;Array.from(copy.cells).forEach((cell,column)=>{cell.dataset.sourceCell=this.node.child(index).child(column).attrs.id||'';if(this.view.editable){cell.tabIndex=0;cell.setAttribute('aria-label','셀 편집');cell.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();this.startCellEdit(cell)}}}});body.append(copy)}}
+   for(const element of clone.querySelectorAll<HTMLElement>('*')){element.removeAttribute('id');element.removeAttribute('data-block-id');element.removeAttribute('data-mention-id');element.removeAttribute('contenteditable');element.classList.remove('selectedCell','active-table-cell','page-comment-mark','page-block-comment-mark');if(element.matches('input,button,select,textarea')){(element as HTMLInputElement).disabled=true;element.tabIndex=-1}if(element.matches('a,[tabindex],[role=button]'))element.tabIndex=element.hasAttribute('data-source-cell')&&this.view.editable?0:-1}
+   clone.onclick=event=>{const target=event.target as HTMLElement;if(target.closest('a,button,input,[role=button]'))event.preventDefault();const cell=target.closest<HTMLTableCellElement>('td,th');if(cell)this.startCellEdit(cell)};this.projection.append(clone);
    if(!indices.length){const empty=document.createElement('p');empty.className='personal-table-empty';empty.textContent='조건에 맞는 행이 없습니다.';this.projection.append(empty)}
   }
-  if(info.hasHeader)for(const header of info.headers){const sorted=this.preferences.sort?.column===header.id,filtered=!!this.preferences.filters[header.id];const button=this.button((sorted?(this.preferences.sort?.direction==='asc'?'↑':'↓'):'')+(filtered?'≡':'')+'▾',()=>this.open(header.id));button.dataset.column=String(header.index);button.setAttribute('aria-label',header.label+' 정렬·필터');button.title=info.merged?'병합된 셀을 해제하면 정렬·필터를 사용할 수 있습니다.':header.label+' 정렬·필터';button.disabled=!info.supported;button.classList.toggle('active',sorted||filtered);this.controls.append(button)}
+  if(info.hasHeader)for(const header of info.headers){const sorted=this.preferences.sort?.column===header.id,filtered=!!this.preferences.filters[header.id];const button=this.button((sorted?(this.preferences.sort?.direction==='asc'?'↑':'↓'):'')+(filtered?'≡':'')+'▾',()=>this.open(header.id));button.textContent='';const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('width','20');icon.setAttribute('height','20');icon.setAttribute('aria-hidden','true');const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d',sorted?(this.preferences.sort?.direction==='asc'?'M7 19V5m-4 4 4-4 4 4M15 10l4 4 4-4':'M7 5v14m-4-4 4 4 4-4M15 10l4 4 4-4'):filtered?'M3 5h18l-7 8v6l-4 2v-8z':'m5 9 7 7 7-7');path.setAttribute('fill','none');path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width','2.4');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');icon.append(path);button.append(icon);button.dataset.column=String(header.index);button.setAttribute('aria-label',header.label+' 정렬·필터');button.title=info.merged?'병합된 셀을 해제하면 정렬·필터를 사용할 수 있습니다.':header.label+' 정렬·필터';button.disabled=!info.supported;button.classList.toggle('active',sorted||filtered);this.controls.append(button)}
   this.position();
+ }
+ private endCellEdit(render=true){const editor=this.cellEditor;this.cellEditor=null;this.editingId='';editor?.destroy();if(render)this.schedule()}
+ private startCellEdit(cell:HTMLTableCellElement){
+  if(!this.view.editable||this.cellEditor?.dom.parentElement===cell)return;
+  this.endCellEdit(false);const id=cell.dataset.sourceCell||'',source=findProjectedCell(this.view.state.doc,id);if(!source)return;
+  this.editingId=id;cell.replaceChildren();cell.classList.add('personal-table-editing-cell');
+  const outer=this.view;
+  const editor=new EditorView(cell,{state:EditorState.create({doc:source.node,plugins:[keymap({'Mod-z':()=>undo(outer.state,outer.dispatch),'Mod-y':()=>redo(outer.state,outer.dispatch),'Mod-Shift-z':()=>redo(outer.state,outer.dispatch),Escape:()=>{this.endCellEdit();return true}}),keymap(baseKeymap)]}),attributes:{class:'personal-table-cell-editor','aria-label':'표 셀 내용'},editable:()=>outer.editable,
+   dispatchTransaction:tr=>{if(!outer.editable)return;const before=editor.state.doc,next=editor.state.apply(tr);if(tr.docChanged){const change=editProjectedCell(outer.state,id,before,next.doc);if(!change){this.schedule();return;}editor.updateState(next);outer.dispatch(change);}else editor.updateState(next)},
+   handleDOMEvents:{blur:()=>{setTimeout(()=>{if(this.cellEditor===editor&&!editor.hasFocus())this.endCellEdit()},0);return false}}
+  });this.cellEditor=editor;editor.focus();
  }
  private position(){const table=(this.table.hidden?this.projection.querySelector('table'):this.table),row=table?.rows[0];if(!row)return;const wrapper=this.dom.getBoundingClientRect(),scale=wrapper.width/(this.dom.offsetWidth||wrapper.width||1);for(const button of this.controls.querySelectorAll<HTMLButtonElement>('button')){const cell=row.cells[Number(button.dataset.column)];if(!cell)continue;const rect=cell.getBoundingClientRect();button.style.left=((rect.right-wrapper.left)/scale+this.dom.scrollLeft-29)+'px';button.style.top=((rect.top-wrapper.top)/scale+this.dom.scrollTop+4)+'px'}this.positionMenu()}
  private open(id:string){
@@ -83,7 +102,7 @@ export class PersonalTableView extends TableView{
  private positionMenu=()=>{const menu=this.menu,button=this.controls.querySelector<HTMLButtonElement>('button[data-column="'+this.menuColumn+'"]');if(!menu||!button)return;const viewport=window.visualViewport,x=viewport?.offsetLeft??0,y=viewport?.offsetTop??0,width=viewport?.width??innerWidth,height=viewport?.height??innerHeight;menu.style.maxHeight=Math.max(80,height-16)+'px';menu.style.maxWidth=Math.max(120,width-16)+'px';const anchor=button.getBoundingClientRect(),rect=menu.getBoundingClientRect();menu.style.left=Math.max(x+8,Math.min(anchor.right-rect.width,x+width-rect.width-8))+'px';menu.style.top=Math.max(y+8,Math.min(anchor.bottom+6,y+height-rect.height-8))+'px'};
  stopEvent(event:Event){return this.controls.contains(event.target as globalThis.Node)||this.summary.contains(event.target as globalThis.Node)||this.projection.contains(event.target as globalThis.Node)}
  ignoreMutation(mutation:ViewMutationRecord){if(this.controls.contains(mutation.target)||this.summary.contains(mutation.target)||this.projection.contains(mutation.target))return true;return super.ignoreMutation(mutation)}
- destroy(){this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('focusin',this.focusSource)}
+ destroy(){this.endCellEdit(false);this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('focusin',this.focusSource)}
 }
 
 // Keyboard or notification navigation into a projected table returns to its editable source.
