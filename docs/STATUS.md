@@ -560,3 +560,4 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ## 2026-11-22 callout and table controls
 - Callout icon: transparent borderless button, centered against first text line; reset conflicting workspace button styles and first/last paragraph margins. Desktop and phone-layout browser fixture centers differ by less than 0.01px; icon picker still opens.
 - Table sort/filter controls: transparent backgrounds, subtle 1px borders, active icon/border color; 20px controls and 16px icons retained. Browser computed dimensions verified.
+- v103 deployment succeeded: 04959b54790237c259268779da1b1b84127d4f8c; appgdep_6b02f5bc6c648191b358a96b3688bf01. GitHub main pushed. Local package failure handled by successful remote build. https://web-messenger-jbh.myflair.chatgpt.site/
