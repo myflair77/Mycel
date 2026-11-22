@@ -1,9 +1,9 @@
 import {useEffect,useSyncExternalStore} from 'react';
-// The new baseline starts at 100%; do not multiply a saved legacy 120/140% again.
-const KEY='mycel-font-percent-v2';
+// v3 starts at 100% of the reduced baseline (90% of v2); legacy percentages are not reapplied.
+const KEY='mycel-font-percent-v3';
 function read(){try{const n=Number(localStorage.getItem(KEY));return Number.isInteger(n)&&n>=70&&n<=200?n:100}catch{return 100}}
 function subscribe(callback:()=>void){window.addEventListener('weano-font',callback);window.addEventListener('storage',callback);return()=>{window.removeEventListener('weano-font',callback);window.removeEventListener('storage',callback)}}
-export function fontBaseScale(layout:string){return layout==='phone'||layout==='tablet'?1.4:1.2}
-function applyPercent(percent:number){document.documentElement.style.setProperty('--font-user-scale',String(percent/100));document.documentElement.style.setProperty('--font-scale','calc(var(--font-user-scale,1) * var(--font-base-scale,1.2))')}
+export function fontBaseScale(layout:string){return layout==='phone'||layout==='tablet'?1.26:1.08}
+function applyPercent(percent:number){document.documentElement.style.setProperty('--font-user-scale',String(percent/100));document.documentElement.style.setProperty('--font-scale','calc(var(--font-user-scale,1) * var(--font-base-scale,1.08))')}
 export function useFontScale(layout?:string){const percent=useSyncExternalStore(subscribe,read,()=>100);useEffect(()=>{applyPercent(percent);if(layout)document.documentElement.style.setProperty('--font-base-scale',String(fontBaseScale(layout)))},[percent,layout]);return percent}
 export function FontSizeControl(){const percent=useFontScale();function change(value:number){const n=Math.max(70,Math.min(200,value));try{localStorage.setItem(KEY,String(n))}catch{}applyPercent(n);window.dispatchEvent(new Event('weano-font'))}return <div className="font-size-control" role="group" aria-label="글자 크기"><span>글자</span><button type="button" aria-label="글자 크기 1% 줄이기" disabled={percent<=70} onClick={()=>change(percent-1)}>−</button><button type="button" className="font-percent" title="기본 크기 100%로 복원" aria-label={'현재 글자 크기 '+percent+'%. 기본 크기로 복원'} onClick={()=>change(100)}><output aria-live="polite">{percent}%</output></button><button type="button" aria-label="글자 크기 1% 키우기" disabled={percent>=200} onClick={()=>change(percent+1)}>＋</button></div>}

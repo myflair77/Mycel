@@ -525,3 +525,7 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ### 버전 96 배포 완료
 - Sites 공개 v96 성공. source f03d60c8a4b4de80fc6ba58b6de97bf9534b2b1b, deployment appgdep_6b02e9f04f708191ac275f3a22bf49d9. 로컬 패키징 실패 후 동일 소스의 원격 빌드로 배포했다.
 - GitHub main 푸시, TypeScript/276개 테스트/Vite 및 Worker 빌드 완료. URL: https://web-messenger-jbh.myflair.chatgpt.site/
+
+## 2026-11-22 — 글자 크기 90%를 새 100%로 조정
+- 데스크톱 기본 배율 1.2→1.08, 태블릿·휴대폰 1.4→1.26. 노트 본문과 목록은 새 100%에서 각각 17.28px/20.16px다.
+- 저장 키 v3로 새 기준은 100%부터 시작한다. 기존 v2 확대값이 새 기본값에 다시 곱해지지 않는다. 이후 1% 조절, 100% 복원, 기기별 기본 배율 및 사용자 설정 저장은 유지한다.
