@@ -525,7 +525,7 @@ button:disabled{cursor:default}
 .app .page-library .library-card-meta>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app .page-library .library-card-meta>time{flex:none;white-space:nowrap}
 /* Reserve an inner table gutter, separate from the block's outer controls. */
-.page-editor .tiptap .tableWrapper{padding-left:20px;box-sizing:border-box;width:100%}
+.page-editor .tiptap .tableWrapper{padding-left:8px;box-sizing:border-box;width:100%}
 /* Scroll with the editor content; never chase viewport scroll using React state. */
 .app .page-editor .table-axis-handle{position:absolute}
 
@@ -1104,7 +1104,7 @@ button:disabled{cursor:default}
 
 
 
-.page-editor .has-table-view-controls{padding-top:20px}
+.page-editor .has-table-view-controls{padding-top:8px}
 .app .page-editor .personal-table-header-actions button::before{content:"";position:absolute;inset:-6px -1px -1px;background:transparent}
 
 .app .page-editor .personal-table-header-actions button:disabled svg{opacity:.45}
