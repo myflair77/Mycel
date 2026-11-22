@@ -530,3 +530,7 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - 데스크톱 기본 배율 1.2→1.08, 태블릿·휴대폰 1.4→1.26. 노트 본문과 목록은 새 100%에서 각각 17.28px/20.16px다.
 - 저장 키 v3로 새 기준은 100%부터 시작한다. 기존 v2 확대값이 새 기본값에 다시 곱해지지 않는다. 이후 1% 조절, 100% 복원, 기기별 기본 배율 및 사용자 설정 저장은 유지한다.
 - 최종 사용자 지정: 비율 계산값 대신 desktop 17px(1.0625), tablet/phone 20px(1.25)를 새 100%로 확정했다. v97은 저장만 하고 배포하지 않았으며 최종 배율로 다시 빌드한다.
+### 버전 98 배포 완료
+- 최종 기본 글자 크기 desktop 17px/tablet·phone 20px 적용. TypeScript, 관련 7개 테스트, Vite/Worker 빌드 통과.
+- GitHub main 3cc6332c6ce0a2558f1cb694f3037e28a4c58786 푸시 완료. Sites v98 deployment appgdep_6b02ec5fcb088191a2ddc5e853531249 성공. 로컬 패키징 실패 후 같은 커밋의 원격 빌드로 배포했다. v97은 미배포다.
+- https://web-messenger-jbh.myflair.chatgpt.site/
