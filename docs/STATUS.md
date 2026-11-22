@@ -545,3 +545,7 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ### 버전 100 배포 완료
 - 버튼 분리 최종 source c69b62d0615e1bc64b1349626a1474b25163db11 GitHub main 푸시. TypeScript 및 Vite/Worker 빌드 통과. 브라우저에서 메뉴 분리와 복합 정렬/필터 검증 완료.
 - Sites v100 deployment appgdep_6b02efce98c881919382fe3d0e51ea1f 성공. 로컬 패키징 실패 후 동일 소스로 원격 빌드했다. URL https://web-messenger-jbh.myflair.chatgpt.site/
+
+## 2026-11-22 — 표 버튼 최종 크기와 배경
+- 정렬·필터 버튼을 각각 20×20px, 내부 아이콘을 16×16px로 조정했다. 버튼 간격 2px 및 제목 여백도 조정했다.
+- 흰색 배경 대신 옅은 파란색 #eaf2ff를 사용하며 활성 상태는 #d6e6ff로 구분한다. 어두운 테마는 대응하는 짙은 파랑을 사용한다.
