@@ -1,0 +1,4 @@
+import {it,expect} from 'vitest';
+import {normalizeNavigationOrder,moveNavigation} from '../src/components/MainNavigation';
+it('normalizes saved navigation without duplicates, unknown items, or omissions',()=>{expect(normalizeNavigationOrder(['notifications','friends','friends','missing'])).toEqual(['notifications','friends','chats','settings']);expect(normalizeNavigationOrder(null)).toEqual(['chats','friends','settings','notifications'])});
+it('moves only the requested item while retaining every menu',()=>{const before=normalizeNavigationOrder(null);expect(moveNavigation(before,'notifications','chats')).toEqual(['notifications','chats','friends','settings']);expect(before).toEqual(['chats','friends','settings','notifications']);expect(moveNavigation(before,'missing','chats')).toEqual(before)});

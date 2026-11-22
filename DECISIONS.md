@@ -204,3 +204,8 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - 2026-11-22: 표 정렬·필터 버튼 내부 SVG는 14px/선 두께 2를 사용한다. 클릭 영역 크기는 유지한다.
 - 2026-11-22: 표 제목의 정렬과 필터는 별도 버튼/메뉴로 제공한다. 꺾인 표시 대신 세로 화살표/깔때기를 쓰며 버튼은 25×24px, 내부 SVG는 타이트한 viewBox의 20px다. 정렬 중에는 해당 방향 화살표를 표시한다.
 - 2026-11-22: 표 정렬·필터 버튼의 최종 지정값은 20×20px / 내부 SVG 16×16px, 옅은 파란색 배경이다. 버튼을 확대하지 않는다.
+
+## 2026-11-22
+- Main navigation order is stored per user in this browser/device. Notification portal uses a keyed slot to preserve DOM/tab order.
+- Active-block tracking accepts SVG targets so toggle triangles behave like block content.
+- Table cell padding is uniformly 8px, including title rows/columns; remove extra header right padding and paragraph vertical margins.

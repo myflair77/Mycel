@@ -549,3 +549,9 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ## 2026-11-22 — 표 버튼 최종 크기와 배경
 - 정렬·필터 버튼을 각각 20×20px, 내부 아이콘을 16×16px로 조정했다. 버튼 간격 2px 및 제목 여백도 조정했다.
 - 흰색 배경 대신 옅은 파란색 #eaf2ff를 사용하며 활성 상태는 #d6e6ff로 구분한다. 어두운 테마는 대응하는 짙은 파랑을 사용한다.
+
+## 2026-11-22 navigation and editor refinements
+- Main rail/bottom navigation: desktop drag, touch long-press, Alt+arrow reorder; per-user local persistence and reduced-motion-aware transitions.
+- Toggle SVG pointer targets now receive the normal active-block outline. All table cells, including headers, use 8px padding and zero paragraph margins.
+- Verified: desktop drag/reload and no accidental navigation; synthetic touch long-press/drop; browser toggle outline and computed table padding. Native CDP touch emulation did not reliably target the fixture; physical Samsung device testing remains outstanding. TypeScript and 4 focused tests passed.
+- v101 table controls deployment succeeded (20px buttons, 16px icons, pale blue backgrounds).

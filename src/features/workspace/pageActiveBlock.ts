@@ -16,7 +16,7 @@ export const ActiveBlock=Extension.create({name:'editingBlock',addProseMirrorPlu
  state:{init:()=>null,apply:(tr,range,_old,state)=>{const explicit=tr.getMeta(activeBlockKey);if(explicit!==undefined)return explicit;if(!range)return null;if(tr.selectionSet)return editingBlockRange(state);return tr.docChanged?{from:tr.mapping.map(range.from,1),to:tr.mapping.map(range.to,-1)}:range}},
  props:{decorations:state=>{const range=activeBlockKey.getState(state);return range?DecorationSet.create(state.doc,[Decoration.node(range.from,range.to,{class:'page-block-editing'})]):DecorationSet.empty}},
  view(view){const set=(range:BlockRange|null)=>{const old=activeBlockKey.getState(view.state);if(old?.from!==range?.from||old?.to!==range?.to)view.dispatch(view.state.tr.setMeta(activeBlockKey,range).setMeta('addToHistory',false))};
- const track=(event:Event)=>{const target=event.target as HTMLElement;if(!(target instanceof HTMLElement))return;
+ const track=(event:Event)=>{const element=event.target;if(!(element instanceof Element))return;const target=element instanceof HTMLElement?element:element.parentElement;if(!target)return;
   if(view.dom.contains(target)){
    if(target.closest('.note-synced-block')){set(null);return}
    let block:HTMLElement|null=target;while(block&&block.parentElement!==view.dom&&!block.parentElement?.classList.contains('editor-column-content'))block=block.parentElement;
