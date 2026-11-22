@@ -522,3 +522,6 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - 사용자에게 표시되는 댓글 종류, 작성 버튼, 선택 대상 및 접근성 이름을 인라인 댓글로 통일했다. 저장된 phrase 분류와 기존 댓글/개수는 유지한다.
 - 마우스 선택 드래그 억제 조건을 터치와 분리했다. 터치 pointerdown으로 블록을 선택하면 추가/이동 핸들이 표시되고 터치 스크롤 중에는 위치 선택을 반복하지 않는다.
 - 검증: TypeScript 및 71개 파일/276개 자동 테스트 통과. 브라우저 하네스에서 정렬 후 원본 셀 수정/원본 순서 유지, 필터에서 제외되는 값 편집 후 화면에서만 숨김, 읽기 권한 편집 차단, 새 댓글 명칭, 20px 아이콘을 확인했다. 기본 목록/본문 글자는 desktop 19.2px, tablet/phone 22.4px로 각각 일치했다. 터치 이벤트로 두 핸들 표시와 추가 메뉴를 확인했다. 실제 휴대폰 및 삼성 키보드는 이번 검증에 포함하지 않았다.
+### 버전 96 배포 완료
+- Sites 공개 v96 성공. source f03d60c8a4b4de80fc6ba58b6de97bf9534b2b1b, deployment appgdep_6b02e9f04f708191ac275f3a22bf49d9. 로컬 패키징 실패 후 동일 소스의 원격 빌드로 배포했다.
+- GitHub main 푸시, TypeScript/276개 테스트/Vite 및 Worker 빌드 완료. URL: https://web-messenger-jbh.myflair.chatgpt.site/
