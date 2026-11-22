@@ -43,7 +43,8 @@ self.addEventListener('push',event=>event.waitUntil(serialize(async()=>{
  const user=await binding();if(!user||user!==payload.userId)return;
  // Stable per-delivery job tag prevents retry duplicates while preserving separate messages.
  const tag=typeof payload.tag==='string'&&payload.tag.startsWith('push-')?payload.tag:undefined;
- await self.registration.showNotification('Mycel',{body:'새 메시지가 도착했습니다.',icon:'/icons/mycel-m-v2-192.png',badge:'/icons/mycel-m-v2-192.png',tag,data:{roomId:payload.roomId}});
+ const mention=typeof payload.mentionId==='string'&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(payload.mentionId)?payload.mentionId:null;
+ await self.registration.showNotification('Mycel',{body:mention?'노트에서 나를 언급했습니다.':'새 메시지가 도착했습니다.',icon:'/icons/mycel-m-v2-192.png',badge:'/icons/mycel-m-v2-192.png',tag,data:{roomId:payload.roomId,...(mention?{mentionId:mention}:{})}});
  // Notifications can replace a numeric taskbar badge with a generic dot.
  // Apply the newest numeric snapshot after displaying the notification.
  const previous=await setting('badge');
@@ -57,7 +58,9 @@ self.addEventListener('notificationclick',event=>{
   const room=event.notification.data?.roomId;
   const validRoom=typeof room==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(room);
   // Even an old notification without room data should open the messenger.
-  const url=new URL(validRoom?'/?room='+encodeURIComponent(room):'/',self.location.origin).href;
+  const target=new URL(validRoom?'/?room='+encodeURIComponent(room):'/',self.location.origin);
+  const mention=event.notification.data?.mentionId;if(typeof mention==='string'&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(mention))target.searchParams.set('mention',mention);
+  const url=target.href;
   let windows=[];
   try{windows=await self.clients.matchAll({type:'window',includeUncontrolled:true})}catch{}
   const candidates=windows.filter(client=>{

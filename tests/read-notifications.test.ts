@@ -14,3 +14,5 @@ it('retains arrivals after capture and notifications absent from authorized room
 it('cleans restored notifications on reopening and tolerates a failed close',()=>{
  const good=notice('room');closeReadNotifications([{data:{roomId:'room'},close:()=>{throw new Error('closed')}},good],[{room_id:'room',unread_count:0}]);expect(good.close).toHaveBeenCalled();
 });
+
+it('does not dismiss note mentions when chat messages are read',()=>{const mention={data:{roomId:'room',mentionId:'mention'},close:vi.fn()};closeReadNotifications([mention],[{room_id:'room',unread_count:0}]);expect(mention.close).not.toHaveBeenCalled()});

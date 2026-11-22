@@ -51,6 +51,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0038_synced_blocks.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0039_block_actions.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0040_note_mentions.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0041_mention_notifications.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -147,4 +148,46 @@ it('limits mention candidates to the note publication and current members',async
  await asUser(b);expect((await lookup(root,room,'Mention')).notes.map((x:any)=>x.id)).toEqual([root]);
  await asUser(a);await db.query("select public.workspace_share($1,$2,'edit',true)",[root,room]);await asUser(b);await expect(lookup(root,room)).rejects.toThrow(/권한/);
  await db.exec('reset role;set role anon');await expect(db.query('select public.page_mention_targets($1)',[root])).rejects.toThrow(/permission denied/);
+});
+
+const mentionBlock=(block:string,mid:string,target=b,scope=room)=>[{id:block,kind:'text',content:{text:'@bob',_rich:{type:'paragraph',attrs:{id:block},content:[{type:'pageMention',attrs:{kind:'person',target,label:'bob',mentionId:mid,roomId:scope}}]}}}];
+it('notifies once after a saved mention, resolves current position, and isolates inboxes',async()=>{
+ await asUser(a);const note=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID(),mutation=crypto.randomUUID();
+ await db.query("select create_space_item($1,'note','Mention note','{}',null)",[note]);await db.query("select workspace_share($1,$2,'read')",[note,room]);
+ const doc=await get(note,room);const blocks=mentionBlock(block,mid);
+ const save=()=>db.query('select page_document_save($1,$2,$3,$4)',[note,doc.item.version,mutation,blocks]);await save();await save();
+ await asUser(b);let inbox=(await db.query<any>('select note_mentions_inbox() v')).rows[0].v;expect(inbox.filter((x:any)=>x.id===mid)).toHaveLength(1);expect(inbox.find((x:any)=>x.id===mid).read_at).toBeNull();
+ const opened=(await db.query<any>('select note_mention_open($1)v',[mid])).rows[0].v;expect(opened).toMatchObject({note_id:note,room_id:room,block_id:block,mention_id:mid});
+ await asUser(c);expect((await db.query<any>('select note_mentions_inbox() v')).rows[0].v).not.toContainEqual(expect.objectContaining({id:mid}));await expect(db.query('select note_mention_open($1)',[mid])).rejects.toThrow(/권한/);
+ await asUser(a);const now=await get(note,room);await db.query('select page_document_save($1,$2,$3,$4)',[note,now.item.version,crypto.randomUUID(),[]]);await asUser(b);await expect(db.query('select note_mention_open($1)',[mid])).rejects.toThrow(/삭제/);
+});
+it('rejects forged recipients/scopes and stale saves without generating notifications',async()=>{
+ await asUser(a);const note=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID();await db.query("select create_space_item($1,'note','Scope','{}',null)",[note]);await db.query("select workspace_share($1,$2,'read')",[note,room]);const doc=await get(note,room);
+ await expect(db.query('select page_document_save($1,999,$2,$3)',[note,crypto.randomUUID(),mentionBlock(block,mid)])).rejects.toThrow();
+ await db.query('select page_document_save($1,$2,$3,$4)',[note,doc.item.version,crypto.randomUUID(),mentionBlock(block,mid,c)]);
+ await asUser(c);expect((await db.query<any>('select note_mentions_inbox() v')).rows[0].v.some((x:any)=>x.id===mid)).toBe(false);
+ await asUser(a);expect((await db.query<any>('select auth.uid() v')).rows[0].v).toBe(a);
+ await db.exec('reset role');expect((await db.query<any>('select count(*)::int n from note_mention_notifications where id=$1',[mid])).rows[0].n).toBe(0);
+ await db.exec('set role anon');await expect(db.query('select note_mentions_inbox()')).rejects.toThrow();await asUser(a);
+});
+it('queues private mention pushes, cancels after revocation, and restores actor context',async()=>{
+ await db.exec('reset role');const device=crypto.randomUUID();await db.query("insert into push_devices(id,user_id,endpoint,p256dh,auth)values($1,$2,'https://fcm.googleapis.com/mention-test','key','auth')",[device,b]);
+ await asUser(a);const note=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID();await db.query("select create_space_item($1,'note','Push','{}',null)",[note]);await db.query("select workspace_share($1,$2,'read')",[note,room]);const doc=await get(note,room);await db.query('select page_document_save($1,$2,$3,$4)',[note,doc.item.version,crypto.randomUUID(),mentionBlock(block,mid)]);expect((await db.query<any>('select auth.uid() v')).rows[0].v).toBe(a);
+ await db.exec('reset role;set role service_role');const jobs=(await db.query<any>('select claim_push_jobs() v')).rows[0].v;expect(jobs.find((j:any)=>j.mention_id===mid)).toMatchObject({skip:false,user_id:b});
+ await db.exec('reset role');await db.query('delete from workspace_shares where item_id=$1',[note]);await db.query("update push_jobs set next_attempt=now()where mention_id=$1",[mid]);await db.exec('set role service_role');const retry=(await db.query<any>('select claim_push_jobs() v')).rows[0].v;expect(retry.find((j:any)=>j.mention_id===mid).skip).toBe(true);
+ await asUser(b);await expect(db.query('select note_mention_open($1)',[mid])).rejects.toThrow(/권한/);await asUser(a);
+});
+it('notifies synchronized mentions only while the reference and source remain accessible',async()=>{
+ await asUser(a);const note=crypto.randomUUID(),sync=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID();
+ await db.query("select create_space_item($1,'note','Synced mention','{}',null)",[note]);await db.query("select workspace_share($1,$2,'read')",[note,room]);const doc=await get(note,room);
+ const refs=[{id:block,kind:'text',content:{text:'sync',_rich:{type:'syncedBlock',attrs:{id:block,syncId:sync}}}}];
+ await db.query('select note_sync_create($1,$2,$3,$4,$5)',[note,sync,doc.item.version,refs,{type:'doc',content:[{type:'paragraph'}]}]);
+ const content={type:'doc',content:[mentionBlock(block,mid)[0].content._rich]},mutation=crypto.randomUUID();
+ await db.query('select note_sync_save($1,$2,1,$3,$4)',[note,sync,mutation,content]);await db.query('select note_sync_save($1,$2,1,$3,$4)',[note,sync,mutation,content]);
+ await asUser(b);expect((await db.query<any>('select note_mentions_inbox() v')).rows[0].v.filter((n:any)=>n.id===mid)).toHaveLength(1);expect((await db.query<any>('select note_mention_open($1) v',[mid])).rows[0].v.block_id).toBe(block);
+ await asUser(a);const latest=await get(note,room);await db.query('select page_document_save($1,$2,$3,$4)',[note,latest.item.version,crypto.randomUUID(),[]]);await asUser(b);await expect(db.query('select note_mention_open($1)',[mid])).rejects.toThrow(/삭제/);
+});
+it('does not notify self mentions or legacy mentions without a notification identity',async()=>{
+ await asUser(a);const note=crypto.randomUUID(),block=crypto.randomUUID(),mid=crypto.randomUUID();await db.query("select create_space_item($1,'note','No surprise notifications','{}',null)",[note]);await db.query("select workspace_share($1,$2,'read')",[note,room]);let doc=await get(note,room);
+ await db.query('select page_document_save($1,$2,$3,$4)',[note,doc.item.version,crypto.randomUUID(),mentionBlock(block,mid,a)]);doc=await get(note,room);const legacy=mentionBlock(block,'');await db.query('select page_document_save($1,$2,$3,$4)',[note,doc.item.version,crypto.randomUUID(),legacy]);await db.exec('reset role');expect((await db.query<any>('select count(*)::int n from note_mention_notifications where note_id=$1',[note])).rows[0].n).toBe(0);await asUser(a);
 });

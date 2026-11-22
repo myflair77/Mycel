@@ -16,3 +16,5 @@ it.each(['focus','navigate','null'])('falls back to opening a window after %s fa
 it('opens home for missing or unsafe room data',async()=>{for(const data of [undefined,{roomId:'https://evil.example/'},{roomId:'------------------------------------'}]){const r=await click([],data??{});expect(r.openWindow).toHaveBeenCalledWith(origin+'/')}});
 it('opens even when client enumeration fails',async()=>{const r=await click([],{},true);expect(r.openWindow).toHaveBeenCalledWith(origin+'/')});
 it('does not reuse cross-origin or embedded windows',async()=>{const focus=vi.fn();const r=await click([{url:'https://other.example/',focus},{url:origin+'/',frameType:'nested',focus}]);expect(focus).not.toHaveBeenCalled();expect(r.openWindow).toHaveBeenCalled()});
+
+it('opens a mention destination for authenticated app resolution without an arbitrary URL',async()=>{const id='20000000-0000-0000-0000-000000000002';const r=await click([],{roomId:room,mentionId:id});expect(r.openWindow).toHaveBeenCalledWith(origin+'/?room='+room+'&mention='+id)});

@@ -19,3 +19,5 @@ it('prevents late push from overwriting a newer foreground read snapshot',async(
 it('reports mode, closed-window support and notification count',async()=>{const w=worker();await w.push();let status:any;await w.emit('message',{data:{type:'PUSH_STATUS'},ports:[{postMessage:(s:any)=>status=s}]});expect(status).toEqual({mode:'per-message-v1',backgroundBadge:true,count:1})});
 
 it('preserves notifications and numeric badge when rebinding the same account',async()=>{const w=worker();await w.push({unreadCount:3});await w.emit('message',{data:{type:'PUSH_USER',userId:'recipient'},ports:[]});expect(w.notifications).toHaveLength(1);expect(w.badges).toEqual([3])});
+
+it('shows a private mention notice and carries its stable destination',async()=>{const w=worker();const mentionId='20000000-0000-0000-0000-000000000002';await w.push({mentionId});expect(w.notifications[0].body).toBe('노트에서 나를 언급했습니다.');expect(w.notifications[0].data.mentionId).toBe(mentionId)});
