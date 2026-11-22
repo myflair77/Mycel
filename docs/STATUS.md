@@ -564,3 +564,4 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 
 ## 2026-11-22 stable editor save status
 - Reserve 5em for the editor status label so save pending/saving/saved text cannot shift the icon button. Longer failure/action messages wrap without truncation.
+- TypeScript and production build passed. v104 deployed successfully: 03c7959055e1d0fce36e176ffa51460b1f18e036; appgdep_6b02f7e4fc788191965f8ad42d9af57f. GitHub pushed. Local archive packaging failed; remote build succeeded.
