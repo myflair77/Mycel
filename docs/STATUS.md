@@ -534,3 +534,6 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - 최종 기본 글자 크기 desktop 17px/tablet·phone 20px 적용. TypeScript, 관련 7개 테스트, Vite/Worker 빌드 통과.
 - GitHub main 3cc6332c6ce0a2558f1cb694f3037e28a4c58786 푸시 완료. Sites v98 deployment appgdep_6b02ec5fcb088191a2ddc5e853531249 성공. 로컬 패키징 실패 후 같은 커밋의 원격 빌드로 배포했다. v97은 미배포다.
 - https://web-messenger-jbh.myflair.chatgpt.site/
+
+## 2026-11-22 — 표 정렬·필터 아이콘 크기 조정
+- 사용자 피드백에 따라 버튼의 크기/위치는 유지하고 내부 SVG만 20→14px, 선 두께 2.4→2로 축소했다. 노트 글자 크기 설정은 유지한다.
