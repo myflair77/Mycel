@@ -580,3 +580,4 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Sort/filter buttons are 18x12px, matching the column grip height and table-relative top offset (-14px). Keep 15x7px icons and 2px inter-button gap. Invisible hit region no longer intrudes into the header.
 - Browser measured 12px heights for both controls, top positions within 0.02px rounding tolerance, and restored full-width titles.
 - Final requested icon dimensions updated to 16x10px; buttons remain 18x12px with 2px gap.
+- v107 deployment succeeded: 9423dc72bf53bdcf00bf568f7f1148acab4eacc0; appgdep_6b02fe666d8881918ce99b2eb6e3ba1e. GitHub pushed. Local archive packaging failed; remote build succeeded.
