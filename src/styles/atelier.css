@@ -1066,7 +1066,7 @@ button:disabled{cursor:default}
 .personal-table-wrapper{position:relative}
 .personal-table-source[hidden],.personal-table-projection[hidden],.personal-table-summary[hidden]{display:none!important}
 .personal-table-header-actions{position:absolute;inset:0;pointer-events:none}
-.app .page-editor .personal-table-header-actions button{position:absolute;pointer-events:auto;display:flex;align-items:center;justify-content:center;min-height:16px;min-width:16px;height:16px;width:16px;box-sizing:border-box;padding:0;border:1px solid #aab3c380;border-radius:4px;background:transparent;color:var(--muted,#737b8d);font-size:12px;cursor:pointer;z-index:3}
+.app .page-editor .personal-table-header-actions button{position:absolute;pointer-events:auto;display:flex;align-items:center;justify-content:center;min-height:8px;min-width:16px;height:8px;width:16px;box-sizing:border-box;padding:0;border:1px solid #aab3c380;border-radius:4px;background:transparent;color:var(--muted,#737b8d);font-size:12px;cursor:pointer;z-index:3}
 .app .page-editor .personal-table-header-actions button.active{color:var(--link,#5265d9);border-color:currentColor;background:transparent}
 .app .page-editor .personal-table-header-actions button:disabled{opacity:.45;cursor:not-allowed}
 
@@ -1090,7 +1090,7 @@ button:disabled{cursor:default}
 .app .page-editor .tiptap,.app .note-list-table,.app .note-list-table th button,.app .note-list-table .note-title-link,.app .note-list-table .note-permission,.app .note-list-table time,.app .note-list-count{font-size:var(--note-content-font-size)}
 .app .note-list-table .resource-new{white-space:nowrap;flex-shrink:0}
 .personal-table-cell-editor{outline:2px solid var(--link,#5363d8);outline-offset:3px;min-height:1.65em;font:inherit;cursor:text}
-.app .page-editor .personal-table-header-actions button svg{width:15px;height:15px;flex:none}
+.app .page-editor .personal-table-header-actions button svg{width:15px;height:7px;flex:none}
 
 .app.dark .page-editor .personal-table-header-actions button{background:transparent}
 .app .rail [data-rail-id]{touch-action:none;user-select:none;-webkit-touch-callout:none}.app .rail .nav-drop-target{box-shadow:inset 0 0 0 2px var(--link);background:var(--soft)}
@@ -1102,6 +1102,7 @@ button:disabled{cursor:default}
 
 .page-editor .has-table-view-controls>table>tbody>tr:first-child>th,.page-editor .has-table-view-controls .personal-table-result>tbody>tr:first-child>th{overflow-wrap:anywhere}
 
-.page-editor .has-table-view-controls tr:first-child>th>p,.page-editor .has-table-view-controls tr:first-child>th>.personal-table-cell-editor>p{width:fit-content;max-width:calc(100% - 36px);margin-inline:auto;transform:translateX(min(0px,calc((var(--table-header-inner-width,100%) - 100%)/2 - 36px)))}
 
-.page-editor .has-table-view-controls tr:first-child>th>p:is([style*="text-align: left"],[style*="text-align: right"],[style*="text-align: justify"]){width:auto;margin-inline:0;transform:none}
+
+.page-editor .has-table-view-controls{padding-top:20px}
+.app .page-editor .personal-table-header-actions button::before{content:"";position:absolute;inset:-6px -1px;background:transparent}
