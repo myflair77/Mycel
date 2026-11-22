@@ -585,3 +585,4 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ## 2026-11-22 border-centered table controls
 - Column grips and sort/filter button centers now sit on the top table border; row grips center on the left border. Sizes unchanged. Browser measured zero border offset (column grip rounding below 0.02px). TypeScript passed.
 - Final requested dimensions supersede prior sizes: 20x12px buttons, 18x10px icons, 2px gap. Border-centered positioning preserved.
+- v108 border-centering deployment succeeded; superseded by v109 final sizes. v109 succeeded: a9e9c6431cd0525dfa95f2389e08f41c1bc3b2f6; appgdep_6b02ffce0bbc8191beb1305c5c4c2bf2. GitHub pushed; TypeScript/build passed. Local archive packaging failed; remote build succeeded.
