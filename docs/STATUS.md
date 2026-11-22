@@ -565,3 +565,7 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ## 2026-11-22 stable editor save status
 - Reserve 5em for the editor status label so save pending/saving/saved text cannot shift the icon button. Longer failure/action messages wrap without truncation.
 - TypeScript and production build passed. v104 deployed successfully: 03c7959055e1d0fce36e176ffa51460b1f18e036; appgdep_6b02f7e4fc788191965f8ad42d9af57f. GitHub pushed. Local archive packaging failed; remote build succeeded.
+
+## 2026-11-22 compact table header controls
+- Sort/filter buttons 16x16px, SVG 15x15px; transparent background and thin border retained. Reserve 44px at the right of controlled header cells in source and projected tables. Browser verified dimensions and long text wrapping before controls.
+- Refined centered headers: short labels center in the full cell; fit-content labels translate left only as they approach the 36px control reserve, then wrap. Browser checked short, medium, and multi-line text. Header inner width is refreshed on table layout changes; presentation-only custom property mutations are ignored.

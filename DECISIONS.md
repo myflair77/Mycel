@@ -213,3 +213,6 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Callout icon buttons inherit body font size for line-height alignment, while glyphs remain 22px. Table controls use transparent backgrounds with subtle outlines, including dark mode.
 
 - Editor status uses a fixed 5em flex basis tied to its font size; preserve full accessible status text and permit long messages to wrap.
+
+- Header cells with sort/filter controls reserve a 44px right gutter (latest user request supersedes uniform right padding for these cells). Control offsets are 40px/22px from cell right.
+- Refinement: keep 8px cell padding; reserve controls through paragraph max-width, not asymmetric cell padding. Center against full cell until the right boundary is reached, then shift left up to half the reserved width. This supersedes the initial 44px-padding approach above.
