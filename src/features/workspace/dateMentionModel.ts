@@ -13,3 +13,17 @@ export function dateMentionLabel(input:Record<string,any>,now=new Date()){
  return fmt(a.target)+tm(a.time)+(a.endDate?' – '+fmt(a.endDate)+tm(a.endTime):'');
 }
 export function dateMentionError(a:DateMentionAttrs){if(!validMentionDate(a.target))return '올바른 날짜를 입력해 주세요.';if(a.time&&!validMentionTime(a.time)||a.endTime&&!validMentionTime(a.endTime))return '올바른 시각을 입력해 주세요.';if(!validTimeZone(a.timeZone))return '올바른 시간대를 선택해 주세요.';if(a.endDate&&(!validMentionDate(a.endDate)||(a.endDate+'T'+(a.endTime||a.time||'00:00'))<(a.target+'T'+(a.time||'00:00'))))return '종료 일시는 시작 일시 이후로 선택해 주세요.';return ''}
+// Add one wall-clock hour without depending on the device timezone.
+export function dateMentionEndAfterHour(day:string,time:string){
+ if(!validMentionDate(day)||!validMentionTime(time))return {endDate:day,endTime:''};
+ const end=new Date(day+'T'+time+':00Z');end.setUTCHours(end.getUTCHours()+1);
+ return {endDate:end.toISOString().slice(0,10),endTime:end.toISOString().slice(11,16)};
+}
+
+export function parseMentionTimeInput(value:string,format='24',period='am'):string|null{
+ const text=value.trim(),parts=/^(\d{1,2}):(\d{2})$/.exec(text)??/^(\d{2})(\d{2})$/.exec(text);
+ if(!parts)return null;let hour=Number(parts[1]);const minute=Number(parts[2]);
+ if(minute>59)return null;
+ if(format==='12'){if(hour<1||hour>12)return null;hour=hour%12+(period==='pm'?12:0)}else if(hour>23)return null;
+ return String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
+}
