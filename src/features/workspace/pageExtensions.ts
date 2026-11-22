@@ -13,7 +13,7 @@ import {NoteFile} from './pageNoteFile';
 import {ChildNote} from './pageChildNote';
 import {NoteTabs,NoteTab} from './pageTabs';
 import {ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,toggleEnter,toggleBeforeInput,toggleBackspace,toggleIndent,toggleOutdent} from './pageToggle';
-import {selectedCells} from './tableCells';
+import {selectedCells,projectedCellSelectionPlugin} from './tableCells';
 import {pageEnter,pageBackspace} from './pageEnter';
 import {Extension,Node as TipNode,mergeAttributes,type JSONContent,type Editor} from '@tiptap/core';
 import {Plugin,PluginKey,TextSelection} from '@tiptap/pm/state';
@@ -59,7 +59,7 @@ export const Column=TipNode.create({
 });
 export const PageEnter=Extension.create({name:'pageEnter',priority:1100,addProseMirrorPlugins(){return [new Plugin({props:{handleDOMEvents:{beforeinput:(view,event)=>toggleBeforeInput(view,event as InputEvent)}}})]},addKeyboardShortcuts(){return {Tab:()=>toggleIndent(this.editor.state,tr=>this.editor.view.dispatch(tr)),'Shift-Tab':()=>toggleOutdent(this.editor.state,tr=>this.editor.view.dispatch(tr)),Backspace:()=>toggleBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageBackspace(this.editor.state,tr=>this.editor.view.dispatch(tr)),Enter:()=>toggleEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))||pageEnter(this.editor.state,tr=>this.editor.view.dispatch(tr))}}});
 export const CellStyle=Extension.create({name:'cellStyle',addGlobalAttributes(){return [{types:['tableCell','tableHeader'],attributes:{color:{default:null,parseHTML:e=>e.style.color,renderHTML:a=>a.color?{style:'color:'+a.color}:{}},background:{default:null,parseHTML:e=>e.style.backgroundColor,renderHTML:a=>a.background?{style:'background-color:'+a.background}:{}},align:{default:null,parseHTML:e=>e.style.textAlign,renderHTML:a=>a.align?{style:'text-align:'+a.align}:{}}}}]}});
-export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
+export const ActiveCell=Extension.create({name:'activeCell',addProseMirrorPlugins(){return [projectedCellSelectionPlugin(),new Plugin({props:{decorations:state=>DecorationSet.create(state.doc,selectedCells(state).map(pos=>Decoration.node(pos,pos+state.doc.nodeAt(pos)!.nodeSize,{class:'active-table-cell'})))}})]}});
 export function extensions(withSync=true){return [PersonalTableSelection,BlockReference,PageMention,MentionSuggestions,Callout,InlineColor,EmojiSuggestions,BlockAppearance,InlineIcon,...(withSync?[SyncedBlock,ActiveBlock]:[]),NoteFile,ChildNote,NoteTabs,NoteTab,ToggleInput,ToggleBlock,ToggleTitle,ToggleBody,ActiveCell,CellStyle,PageEnter,StarterKit.configure({trailingNode:{node:'paragraph'},heading:{levels:[1,2,3]},link:{openOnClick:false,protocols:['https','http','mailto']}}),TableKit.configure({table:{resizable:true,View:PersonalTableView}}),TaskList,TaskItem.configure({nested:true,HTMLAttributes:{'data-type':'taskItem'}}),Placeholder.configure({placeholder:({node})=>node.type.name==='toggleTitle'?'토글':node.type.name==='paragraph'?'내용을 입력하거나 / 로 블록 추가':''}),Identity,Columns,Column,Comments,BlockMenuSelection,BlockLinkSelection]}
 export function blockPositions(editor:Editor){
  const entries:{id:string;pos:number;node:any}[]=[];
