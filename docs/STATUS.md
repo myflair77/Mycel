@@ -569,3 +569,4 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 ## 2026-11-22 compact table header controls
 - Sort/filter buttons 16x16px, SVG 15x15px; transparent background and thin border retained. Reserve 44px at the right of controlled header cells in source and projected tables. Browser verified dimensions and long text wrapping before controls.
 - Refined centered headers: short labels center in the full cell; fit-content labels translate left only as they approach the 36px control reserve, then wrap. Browser checked short, medium, and multi-line text. Header inner width is refreshed on table layout changes; presentation-only custom property mutations are ignored.
+- TypeScript/build passed; v105 production deployment succeeded: bc376e9149d396098461530c88391559fdfdd134; appgdep_6b02fa6297e081918669a59f878615aa. GitHub pushed. Local packaging failed; remote build succeeded.
