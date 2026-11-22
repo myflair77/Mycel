@@ -1097,3 +1097,5 @@ button:disabled{cursor:default}
 .main-nav-drag-ghost{pointer-events:none;z-index:4000;border:1px solid #90b5ee;border-radius:8px;box-shadow:0 6px 20px #18284933;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:4px}.main-nav-drag-ghost>span{display:flex;justify-content:center}.main-nav-drag-ghost .mycel-icon{font-size:22px}.main-nav-drag-ghost .nav-count{display:none}
 
 .page-editor .tiptap td>p,.page-editor .tiptap th>p{margin:0}
+
+.app .page-editor .editor-status>span[role=status]{flex:0 0 5em;width:5em;text-align:center;overflow-wrap:anywhere}
