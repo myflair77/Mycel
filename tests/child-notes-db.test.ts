@@ -50,6 +50,7 @@ beforeAll(async()=>{
  await db.exec(readFileSync(new URL('../migrations/0037_note_files.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0038_synced_blocks.sql',import.meta.url),'utf8'));
  await db.exec(readFileSync(new URL('../migrations/0039_block_actions.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migrations/0040_note_mentions.sql',import.meta.url),'utf8'));
  await db.query("insert into public.friendships(low_id,high_id,requested_by,status) values($1,$2,$1,'accepted'),($1,$3,$1,'accepted'),($2,$3,$2,'accepted')",[a,b,c]);
 },30000);
 afterAll(async()=>{await db?.close()});
@@ -131,4 +132,19 @@ it('does not broaden comment audiences during a block move',async()=>{
  await db.query('select public.page_document_save($1,1,$2,$3)',[source,crypto.randomUUID(),[{id:block,kind:'text',content:{text:'Commented'}}]]);
  await db.query('select public.workspace_comment($1,null,$2,$3,0,null,$4,false,false)',[source,crypto.randomUUID(),'Private comment',block]);
  const src=await get(source,null);await expect(db.query('select public.page_block_move($1,$2,$3,$4,1,$5)',[source,target,block,src.item.version,crypto.randomUUID()])).rejects.toThrow(/공개 범위/);expect((await get(source,null)).blocks).toHaveLength(1);expect((await get(target,null)).blocks).toHaveLength(0);
+});
+
+it('limits mention candidates to the note publication and current members',async()=>{
+ await asUser(a);const root=crypto.randomUUID(),other=crypto.randomUUID(),child=crypto.randomUUID();
+ await db.query("select public.create_space_item($1,'note','Mention root','{}',null)",[root]);
+ await db.query("select public.create_space_item($1,'note','Secret other','{}',null)",[other]);
+ await db.query("select public.workspace_share($1,$2,'edit')",[root,room]);
+ const before=await get(root,room);await db.query('select public.workspace_child_create($1,$2,$3,$4)',[root,child,before.item.version,childBlocks(child)]);
+ const lookup=async(note:string,r:string|null,q='')=>(await db.query<any>('select public.page_mention_targets($1,$2,$3) as d',[note,r,q])).rows[0].d;
+ const results=await lookup(child,room);expect(results.people.map((x:any)=>x.id).sort()).toEqual([a,b]);expect(results.notes.map((x:any)=>x.id)).toEqual(expect.arrayContaining([root,child]));expect(results.notes.map((x:any)=>x.id)).not.toContain(other);
+ await expect(lookup(other,room)).rejects.toThrow(/공간/);
+ await asUser(c);await expect(lookup(root,room)).rejects.toThrow(/권한/);
+ await asUser(b);expect((await lookup(root,room,'Mention')).notes.map((x:any)=>x.id)).toEqual([root]);
+ await asUser(a);await db.query("select public.workspace_share($1,$2,'edit',true)",[root,room]);await asUser(b);await expect(lookup(root,room)).rejects.toThrow(/권한/);
+ await db.exec('reset role;set role anon');await expect(db.query('select public.page_mention_targets($1)',[root])).rejects.toThrow(/permission denied/);
 });

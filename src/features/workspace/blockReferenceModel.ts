@@ -1,0 +1,2 @@
+export function blockLinkId(href:string,origin:string){try{const url=new URL(href,origin);const id=url.searchParams.get('block');return (url.origin===origin||url.origin==='https://web-messenger-jbh.myflair.chatgpt.site')&&id&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(id)?id:null}catch{return null}}
+export function compactBlockLabel(value:string){const chars=Array.from(value.replace(/\s+/g,' ').trim());return chars.length?chars.slice(0,30).join('')+(chars.length>30?'…':''):'빈 블록'}

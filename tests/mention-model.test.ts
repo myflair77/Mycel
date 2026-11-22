@@ -1,0 +1,6 @@
+import {it,expect} from 'vitest';
+import {mentionTrigger,dateMentions,validMentionDate} from '../src/features/workspace/mentionModel';
+import {compactBlockLabel,blockLinkId} from '../src/features/workspace/blockReferenceModel';
+it('recognizes inline mentions but not email addresses or across atoms',()=>{expect(mentionTrigger('확인 부탁 @홍 길동')).toEqual({offset:6,query:'홍 길동'});expect(mentionTrigger('a@example.com')).toBeNull();expect(mentionTrigger('@첫째\n둘째')).toBeNull();expect(mentionTrigger('@a\ufffc')).toBeNull()});
+it('resolves local calendar days across year boundaries and validates dates',()=>{expect(dateMentions('내일',new Date(2026,11,31))[0].id).toBe('2027-01-01');expect(dateMentions('2028.2.29')[0].id).toBe('2028-02-29');expect(dateMentions('2026-02-29')).toEqual([]);expect(validMentionDate('2026-13-01')).toBe(false)});
+it('keeps block labels at 30 unicode characters, collapses whitespace and validates links',()=>{expect(compactBlockLabel('가'.repeat(31))).toBe('가'.repeat(30)+'…');expect(compactBlockLabel('a\n b  c')).toBe('a b c');expect(compactBlockLabel('😀'.repeat(31))).toBe('😀'.repeat(30)+'…');const id='10000000-0000-0000-0000-000000000004';expect(blockLinkId('https://evil.example/?block='+id,'https://mycel.test')).toBeNull();expect(blockLinkId('/?block='+id,'https://mycel.test')).toBe(id)});
