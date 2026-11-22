@@ -440,3 +440,8 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - 언급 표시 이름은 CSS/접근성 이름으로 표시하여 Android IME 주변 텍스트에서 분리한다. 비어 있는 atom 옆 첫 조합이 중복되는 Chromium 동작을 막기 위해 화면 전용 zero-width guard를 둔다. 저장/클립보드는 기존 schema의 실제 이름과 ID를 보존한다.
 - 로컬 Chromium 터치/IME 시뮬레이션: 긴 후보 목록 스와이프 시 삽입 없이 스크롤, 탭 완료 후 1회 삽입, @민 조합 중 선택 후 잔여 민 없음, 공백 제거 후 ㅇ→으→은 입력 시 @민간인은, 일반 텍스트/HTML 복사에 언급 이름과 ID 유지 확인.
 - TypeScript 및 66개 파일 / 241개 테스트 통과. Vite 빌드 통과. 실제 Android 삼성 키보드 기기는 연결되지 않아 실기 검증은 남아 있다. DB/알림/권한 변경 없음.
+### 버전 90 배포 완료
+- 공개 Sites v90 배포 성공: 소스 835a84c52457ecb09abc61c3424579e67eb60c6e, deployment appgdep_6b028d2436508191a0def8d135c4e064. Windows archive helper 실패 후 동일 원격 소스의 서버 빌드로 성공했다.
+- GitHub main 소스 푸시 및 원격 SHA 일치 확인. TypeScript, 241개 테스트, Vite/Worker 빌드 통과.
+- 공개 URL: https://web-messenger-jbh.myflair.chatgpt.site/
+- 삼성 키보드 실기 검증은 수행하지 않았으며 로컬 Chromium 터치/IME 시뮬레이션 결과와 구분한다.
