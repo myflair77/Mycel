@@ -581,3 +581,6 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Browser measured 12px heights for both controls, top positions within 0.02px rounding tolerance, and restored full-width titles.
 - Final requested icon dimensions updated to 16x10px; buttons remain 18x12px with 2px gap.
 - v107 deployment succeeded: 9423dc72bf53bdcf00bf568f7f1148acab4eacc0; appgdep_6b02fe666d8881918ce99b2eb6e3ba1e. GitHub pushed. Local archive packaging failed; remote build succeeded.
+
+## 2026-11-22 border-centered table controls
+- Column grips and sort/filter button centers now sit on the top table border; row grips center on the left border. Sizes unchanged. Browser measured zero border offset (column grip rounding below 0.02px). TypeScript passed.

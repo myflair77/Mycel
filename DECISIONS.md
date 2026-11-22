@@ -221,3 +221,5 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 
 - Match sort/filter top positioning to the table border (not collapsed cell border), as used by column grips. Visible buttons 18x12px, 2px above table border like grips.
 - Final icon size: 16x10px inside the 18x12px controls.
+
+- Table tools use half-size offsets: -6px on top/left borders. Preserve 18x12px controls, 16x10px icons, 2px gap and existing grip dimensions.
