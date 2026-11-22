@@ -224,3 +224,7 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 
 - Table tools use half-size offsets: -6px on top/left borders. Preserve 18x12px controls, 16x10px icons, 2px gap and existing grip dimensions.
 - Final table controls dimensions 20x12px, icons 18x10px, gap 2px; horizontal offsets 48px/26px.
+
+- Border-centered sort/filter buttons use opaque --paper backgrounds; preserve transparency only in extended hit area, and dim disabled icons without dimming their background.
+
+- 표 정렬·필터 안내 줄을 제거하여 보기 전환 시 표 시작 위치를 유지한다. 내 보기/행 수/셀 편집 안내는 메뉴에서도 제거한다. 원본 순서 보기는 정렬·필터 모두 해제로 통일하고 각 열 해제 기능은 유지한다.

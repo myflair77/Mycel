@@ -586,3 +586,10 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Column grips and sort/filter button centers now sit on the top table border; row grips center on the left border. Sizes unchanged. Browser measured zero border offset (column grip rounding below 0.02px). TypeScript passed.
 - Final requested dimensions supersede prior sizes: 20x12px buttons, 18x10px icons, 2px gap. Border-centered positioning preserved.
 - v108 border-centering deployment succeeded; superseded by v109 final sizes. v109 succeeded: a9e9c6431cd0525dfa95f2389e08f41c1bc3b2f6; appgdep_6b02ffce0bbc8191beb1305c5c4c2bf2. GitHub pushed; TypeScript/build passed. Local archive packaging failed; remote build succeeded.
+
+## 2026-11-22 opaque table control backgrounds
+- Sort/filter buttons use theme paper color in normal/active/dark states, masking the border underneath. Disabled controls retain opaque background and dim only SVG. Sizes and positions unchanged.
+- Browser confirmed light rgb(255,255,255) and dark rgb(23,26,33), matching page backgrounds after theme transition, and 20x12px dimensions.
+
+- 표 정렬·필터 안내 줄을 제거하여 보기 전환 시 표 시작 위치를 유지한다. 내 보기/행 수/셀 편집 안내는 메뉴에서도 제거한다. 원본 순서 보기는 정렬·필터 모두 해제로 통일하고 각 열 해제 기능은 유지한다.
+- 로컬 브라우저 fixture 검증: 정렬 전/내림차순 정렬 후/모두 해제 후 표 상단이 모두 447.58px로 동일. 안내 줄 숨김과 메뉴의 모두 해제 동작 확인. 타입 검사 및 배포 빌드 통과.

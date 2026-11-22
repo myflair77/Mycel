@@ -57,9 +57,9 @@ export class PersonalTableView extends TableView{
   if(this.cellEditor){const source=findProjectedCell(this.view.state.doc,this.editingId);if(source&&this.view.editable){if(!source.node.content.eq(this.cellEditor.state.doc.content)){this.cellEditor.updateState(EditorState.create({doc:source.node,plugins:this.cellEditor.state.plugins}));}return;}this.endCellEdit(false);}
 
   this.load();const info=personalTableInfo(this.node),active=info.supported&&this.active();this.dom.classList.toggle('has-table-view-controls',info.hasHeader);this.dom.classList.toggle('personal-table-active',active);
-  this.table.hidden=active;this.summary.replaceChildren();this.summary.hidden=!active;this.projection.replaceChildren();this.projection.hidden=!active;this.controls.replaceChildren();
+  this.table.hidden=active;this.summary.replaceChildren();this.summary.hidden=true;this.projection.replaceChildren();this.projection.hidden=!active;this.controls.replaceChildren();
   if(active){
-   const indices=personalTableRows(this.node,this.preferences),status=document.createElement('span');status.textContent=`내 보기 · ${indices.length}/${Math.max(0,this.node.childCount-1)}행${this.view.editable?" · 셀을 눌러 편집":" · 읽기 전용"}`;this.summary.append(status,this.button('원본 순서 보기',this.reset));
+   const indices=personalTableRows(this.node,this.preferences);
    const clone=this.table.cloneNode(false) as HTMLTableElement;clone.hidden=false;clone.removeAttribute('data-block-id');clone.removeAttribute('id');clone.classList.remove('personal-table-source');clone.classList.add('personal-table-result');clone.append(this.colgroup.cloneNode(true));const body=document.createElement('tbody');clone.append(body);
    for(const index of [0,...indices]){const row=this.contentDOM.rows[index];if(row){const copy=row.cloneNode(true) as HTMLTableRowElement;Array.from(copy.cells).forEach((cell,column)=>{cell.dataset.sourceCell=this.node.child(index).child(column).attrs.id||'';if(this.view.editable){cell.tabIndex=0;cell.setAttribute('aria-label','셀 편집');cell.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();this.startCellEdit(cell)}}}});body.append(copy)}}
    for(const element of clone.querySelectorAll<HTMLElement>('*')){element.removeAttribute('id');element.removeAttribute('data-block-id');element.removeAttribute('data-mention-id');element.removeAttribute('contenteditable');element.classList.remove('selectedCell','active-table-cell','page-comment-mark','page-block-comment-mark');if(element.matches('input,button,select,textarea')){(element as HTMLInputElement).disabled=true;element.tabIndex=-1}if(element.matches('a,[tabindex],[role=button]'))element.tabIndex=element.hasAttribute('data-source-cell')&&this.view.editable?0:-1}
@@ -92,6 +92,7 @@ export class PersonalTableView extends TableView{
   const theme=getComputedStyle(this.view.dom);for(const variable of ['--paper','--ink','--muted','--line','--soft','--link'])menu.style.setProperty(variable,theme.getPropertyValue(variable));
   const title=document.createElement('strong');title.textContent=header.label;menu.append(title);
   const hint=document.createElement('small');hint.textContent='본인 기기에만 적용됩니다.';menu.append(hint);
+  if(this.active())menu.append(this.button('정렬·필터 모두 해제',this.reset),document.createElement('hr'));
   if(kind==='sort'){for(const [direction,label] of [['asc','오름차순 정렬'],['desc','내림차순 정렬']] as const){const button=this.button(label,()=>{this.preferences.sort={column:id,direction};this.save();this.closeMenu()});button.setAttribute('aria-pressed',String(this.preferences.sort?.column===id&&this.preferences.sort.direction===direction));menu.append(button)}
   menu.append(this.button('정렬 해제',()=>{delete this.preferences.sort;this.save();this.closeMenu()}));this.mountMenu(menu,header.index,kind);return;}
   const update=(change:Partial<TableFilter>)=>{this.preferences.filters[id]={...this.preferences.filters[id],...change};this.save()};
@@ -102,7 +103,7 @@ export class PersonalTableView extends TableView{
   const refreshChecks=()=>{for(const input of valuesRoot.querySelectorAll<HTMLInputElement>('input'))input.checked=!this.preferences.filters[id]?.values||this.preferences.filters[id].values!.includes(input.value)};
   const bulk=document.createElement('div');bulk.className='personal-table-values-actions';bulk.append(this.button('전체 선택',()=>{update({values:undefined});refreshChecks()}),this.button('전체 해제',()=>{update({values:[]});refreshChecks()}));menu.append(bulk);
   for(const value of values){const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.value=value;input.checked=!this.preferences.filters[id]?.values||this.preferences.filters[id].values!.includes(value);input.onchange=()=>{const selected=new Set(this.preferences.filters[id]?.values??values);if(input.checked)selected.add(value);else selected.delete(value);update({values:[...selected]})};label.append(input,document.createTextNode(value||'(빈 값)'));valuesRoot.append(label)}
-  menu.append(valuesRoot,document.createElement('hr'),this.button('이 열 필터 해제',()=>{delete this.preferences.filters[id];this.save();this.closeMenu()}),this.button('정렬·필터 모두 해제',this.reset));
+  menu.append(valuesRoot,document.createElement('hr'),this.button('이 열 필터 해제',()=>{delete this.preferences.filters[id];this.save();this.closeMenu()}));
   this.mountMenu(menu,header.index,kind);
  }
  private mountMenu(menu:HTMLDivElement,column:number,kind:'sort'|'filter'){document.body.append(menu);this.menuColumn=column;this.menuKind=kind;this.positionMenu();menu.querySelector('button')?.focus({preventScroll:true})}
