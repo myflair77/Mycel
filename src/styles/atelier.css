@@ -743,7 +743,7 @@ button:disabled{cursor:default}
 .note-permissions{display:inline-flex;gap:4px;flex-wrap:wrap}
 .document-heading{display:flex;align-items:center;gap:12px;min-width:0}
 .app .page-document .document-heading .document-title{flex:1;min-width:0;max-width:none;margin:6px 0 4px}
-.document-dates{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;padding-right:12px;font-size:.7rem;color:var(--muted);line-height:1.5;white-space:nowrap;font-variant-numeric:tabular-nums}
+.document-dates{display:grid;grid-template-columns:max-content max-content;align-items:center;column-gap:8px;row-gap:3px;flex-shrink:0;padding-right:12px;font-size:.7rem;color:var(--muted);line-height:1.5;white-space:nowrap;font-variant-numeric:tabular-nums}
 .app .page-comments h2{font-size:1.15rem}
 .app .page-comments .comment-entry{font-size:1rem;padding:9px 8px;border-radius:6px;outline-offset:2px}
 .comment-author-line strong{font-size:.92rem}
@@ -903,3 +903,6 @@ button:disabled{cursor:default}
 .app .mycel-emoji-picker header>.symbol-remove{border:0;color:var(--muted)}
 
 .app .block-link-preview button{border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);color:var(--text);padding:8px 12px;min-height:36px}
+
+.document-date-label{text-align:left}
+.document-date-updated{color:#2563eb}
