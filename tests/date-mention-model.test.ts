@@ -22,3 +22,12 @@ it('accepts four-digit time entry and validates both clock formats',()=>{
  for(const invalid of ['2400','1660','163','abcd'])expect(parseMentionTimeInput(invalid)).toBeNull();
  expect(parseMentionTimeInput('1635','12','pm')).toBeNull();
 });
+
+it('adjusts an end that falls behind a changed start and preserves later ends',async()=>{
+ const {adjustMentionEndAfterStart}=await import('../src/features/workspace/dateMentionModel');
+ const a=dateAttrs({target:'2026-12-31',time:'23:40',endDate:'2026-12-31',endTime:'16:40'});
+ expect(adjustMentionEndAfterStart(a)).toBe(true);expect(a).toMatchObject({endDate:'2027-01-01',endTime:'00:40'});
+ a.time='22:00';expect(adjustMentionEndAfterStart(a)).toBe(false);expect(a.endTime).toBe('00:40');
+ a.endDate=a.target;a.endTime='22:00';expect(adjustMentionEndAfterStart(a)).toBe(false);
+ a.endDate='';expect(adjustMentionEndAfterStart(a)).toBe(false);
+});

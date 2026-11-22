@@ -27,3 +27,9 @@ export function parseMentionTimeInput(value:string,format='24',period='am'):stri
  if(format==='12'){if(hour<1||hour>12)return null;hour=hour%12+(period==='pm'?12:0)}else if(hour>23)return null;
  return String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
 }
+
+export function adjustMentionEndAfterStart(a:DateMentionAttrs){
+ if(!a.endDate||!validMentionDate(a.target)||!validMentionDate(a.endDate)||!validMentionTime(a.time)||!validMentionTime(a.endTime))return false;
+ if(a.endDate+'T'+a.endTime>=a.target+'T'+a.time)return false;
+ Object.assign(a,dateMentionEndAfterHour(a.target,a.time));return true;
+}
