@@ -1069,7 +1069,7 @@ button:disabled{cursor:default}
 .app .page-editor .personal-table-header-actions button{position:absolute;pointer-events:auto;display:flex;align-items:center;justify-content:center;min-height:24px;min-width:24px;height:24px;width:25px;padding:0;border:0;border-radius:4px;background:var(--paper,#fff);color:var(--muted,#737b8d);font-size:12px;cursor:pointer;z-index:3}
 .app .page-editor .personal-table-header-actions button.active{color:var(--link,#5265d9);background:var(--soft,#edf1fd)}
 .app .page-editor .personal-table-header-actions button:disabled{opacity:.45;cursor:not-allowed}
-.page-editor .has-table-view-controls>table>tbody>tr:first-child>th,.page-editor .has-table-view-controls .personal-table-result>tbody>tr:first-child>th{padding-right:32px}
+.page-editor .has-table-view-controls>table>tbody>tr:first-child>th,.page-editor .has-table-view-controls .personal-table-result>tbody>tr:first-child>th{padding-right:60px}
 .personal-table-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;font-size:.75em;color:var(--muted,#737b8d);flex-wrap:wrap}
 .app .page-editor .personal-table-summary button{font:inherit;border:0;background:var(--soft,#edf1fd);color:var(--link,#5265d9);padding:5px 8px;min-height:32px}
 .personal-table-result{user-select:text;cursor:text}
@@ -1090,4 +1090,4 @@ button:disabled{cursor:default}
 .app .page-editor .tiptap,.app .note-list-table,.app .note-list-table th button,.app .note-list-table .note-title-link,.app .note-list-table .note-permission,.app .note-list-table time,.app .note-list-count{font-size:var(--note-content-font-size)}
 .app .note-list-table .resource-new{white-space:nowrap;flex-shrink:0}
 .personal-table-cell-editor{outline:2px solid var(--link,#5363d8);outline-offset:3px;min-height:1.65em;font:inherit;cursor:text}
-.app .page-editor .personal-table-header-actions button svg{width:14px;height:14px;flex:none}
+.app .page-editor .personal-table-header-actions button svg{width:20px;height:20px;flex:none}
