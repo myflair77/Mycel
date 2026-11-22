@@ -925,3 +925,8 @@ button:disabled{cursor:default}
 .mention-focus{outline:2px solid #74a1ef!important;background:#dbeaff!important;scroll-margin-block:120px}
 
 .mention-inbox-button{position:relative}.mention-inbox-button .mycel-icon{font-size:22px}.mention-inbox-panel{position:fixed;z-index:1800;left:84px;top:72px;width:min(380px,calc(100vw - 32px));max-height:65dvh;padding:14px;border:1px solid var(--line,#dde1e8);border-radius:12px;background:var(--panel,#fff);color:var(--ink,#252936);box-shadow:0 12px 36px #0003;display:flex;flex-direction:column;font-size:14px}.mention-inbox-panel header{display:flex;justify-content:space-between;align-items:center}.mention-inbox-panel button{cursor:pointer;color:inherit;border:0;background:transparent;padding:8px;font-size:14px;border-radius:7px}.mention-inbox-list{overflow:auto;min-height:0}.mention-inbox-list>button{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;margin-top:6px}.mention-inbox-list>button.unread{background:#eaf1ff}.mention-inbox-list>button:hover{background:#dce8ff}.mention-inbox-list time{font-size:12px;color:#697589}@media(max-width:600px){.mention-inbox-panel{left:16px;top:68px;max-height:65dvh}}
+
+/* Keep atom labels out of Android IME surrounding text; clipboard HTML/text
+   still comes from the mention schema, and the accessible name stays explicit. */
+.page-mention[data-mention-label]::before{content:attr(data-mention-label);user-select:none;-webkit-user-select:none}
+.mention-menu{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
