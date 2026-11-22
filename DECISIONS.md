@@ -209,3 +209,5 @@ Google Calendar 동기화는 ChatGPT의 사용자별 연결을 사용한다. Myc
 - Main navigation order is stored per user in this browser/device. Notification portal uses a keyed slot to preserve DOM/tab order.
 - Active-block tracking accepts SVG targets so toggle triangles behave like block content.
 - Table cell padding is uniformly 8px, including title rows/columns; remove extra header right padding and paragraph vertical margins.
+
+- Callout icon buttons inherit body font size for line-height alignment, while glyphs remain 22px. Table controls use transparent backgrounds with subtle outlines, including dark mode.

@@ -556,3 +556,7 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - Verified: desktop drag/reload and no accidental navigation; synthetic touch long-press/drop; browser toggle outline and computed table padding. Native CDP touch emulation did not reliably target the fixture; physical Samsung device testing remains outstanding. TypeScript and 4 focused tests passed.
 - v101 table controls deployment succeeded (20px buttons, 16px icons, pale blue backgrounds).
 - v102 production deployment succeeded: e31673c7c26a8a96aced956686ab9f20009d408b; appgdep_6b02f4553a508191a32699fcbd929005. GitHub main pushed. Local archive packaging failed; supported remote build fallback succeeded. https://web-messenger-jbh.myflair.chatgpt.site/
+
+## 2026-11-22 callout and table controls
+- Callout icon: transparent borderless button, centered against first text line; reset conflicting workspace button styles and first/last paragraph margins. Desktop and phone-layout browser fixture centers differ by less than 0.01px; icon picker still opens.
+- Table sort/filter controls: transparent backgrounds, subtle 1px borders, active icon/border color; 20px controls and 16px icons retained. Browser computed dimensions verified.
