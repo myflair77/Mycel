@@ -2,7 +2,7 @@ import {useEffect,useLayoutEffect,useState,useRef} from 'react';
 import type {Editor} from '@tiptap/core';
 import {CellSelection,TableMap} from '@tiptap/pm/tables';
 import {changeTableAxis,tableBand,tableAxisCells,tableAxisIsHeader,setTableAxisHeader} from './tableAxis';
-import {TextSelection} from '@tiptap/pm/state';
+import {TextSelection,NodeSelection} from '@tiptap/pm/state';
 import {blockColors} from './pageBlockAppearance';
 import {IconValue} from '../../components/SymbolView';
 type Axis='row'|'column';
@@ -21,7 +21,7 @@ function tableGeometry(editor:Editor){
  return {origin,projected,rowIndices:Array.from(table.rows).map((r,i)=>Number(r.dataset.sourceRow??i)),rows:Array.from(table.rows).map(r=>r.getBoundingClientRect()),cols:Array.from({length:map.width},(_,i)=>new DOMRect(edges.get(i)!,rect.top,edges.get(i+1)!-edges.get(i)!,rect.height)),rect};
 }
 
-export function tableContext(editor:Editor){const {$from}=editor.state.selection;for(let d=$from.depth;d>0;d--)if($from.node(d).type.name==='table')return {node:$from.node(d),pos:$from.before(d),start:$from.start(d)};return null}
+export function tableContext(editor:Editor){const selection=editor.state.selection;if(selection instanceof NodeSelection&&selection.node.type.name==='table')return {node:selection.node,pos:selection.from,start:selection.from+1};const {$from}=selection;for(let d=$from.depth;d>0;d--)if($from.node(d).type.name==='table')return {node:$from.node(d),pos:$from.before(d),start:$from.start(d)};return null}
 export function PageTableTools({editor}:{editor:Editor}){
  const [geometry,setGeometry]=useState<ReturnType<typeof tableGeometry>>(null),[menu,setMenu]=useState<{axis:Axis;index:number;x:number;y:number}|null>(null);
  const [colorOpen,setColorOpen]=useState(false);

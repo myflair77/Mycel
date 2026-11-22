@@ -3,7 +3,8 @@ export function pageHandlePosition(block:HTMLElement, editor:HTMLElement, wrappe
  const column=block.closest<HTMLElement>('.editor-column-content')??editor;
  const columnRect=column.getBoundingClientRect(),columnStyle=getComputedStyle(column);
  const origin=wrapper.getBoundingClientRect();
- const first=block.matches('[data-note-tabs]')?block.querySelector<HTMLElement>('[role=tab]')??block:block.matches('[data-toggle-block]')?block.querySelector<HTMLElement>('[data-toggle-title]')??block:block.matches('p,h1,h2,h3,pre,hr')?block:block.querySelector<HTMLElement>('p,h1,h2,h3,pre,hr')??block;
+ const projected=block.querySelector<HTMLElement>('.personal-table-result');
+ const first=projected?(projected.querySelector<HTMLElement>('p,h1,h2,h3,pre,hr')??projected):block.matches('[data-note-tabs]')?block.querySelector<HTMLElement>('[role=tab]')??block:block.matches('[data-toggle-block]')?block.querySelector<HTMLElement>('[data-toggle-title]')??block:block.matches('p,h1,h2,h3,pre,hr')?block:block.querySelector<HTMLElement>('p,h1,h2,h3,pre,hr')??block;
  const rect=first.getBoundingClientRect(),style=getComputedStyle(first);
  const px=(value:string)=>parseFloat(value)||0;
  const line=px(style.lineHeight)||px(style.fontSize)*1.65;

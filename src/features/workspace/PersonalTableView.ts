@@ -1,6 +1,6 @@
 import {projectedCellSelectionKey,selectedCells} from './tableCells';
 import {Extension} from '@tiptap/core';
-import {EditorState,Plugin,TextSelection} from '@tiptap/pm/state';
+import {EditorState,Plugin,TextSelection,NodeSelection} from '@tiptap/pm/state';
 import {keymap} from '@tiptap/pm/keymap';
 import {baseKeymap} from '@tiptap/pm/commands';
 import {undo,redo} from '@tiptap/pm/history';
@@ -15,6 +15,7 @@ export class PersonalTableView extends TableView{
  private view:EditorView;
  private cellEditor:EditorView|null=null;
  private editingId="";
+ private selectingRange=false;
  private controls=document.createElement('div');
  private summary=document.createElement('div');
  private projection=document.createElement('div');
@@ -35,9 +36,10 @@ export class PersonalTableView extends TableView{
   this.observer=new ResizeObserver(()=>this.position());this.observer.observe(this.dom);
   document.addEventListener('pointerdown',this.outside);document.addEventListener('keydown',this.keydown);window.addEventListener('resize',this.positionMenu);window.visualViewport?.addEventListener('resize',this.positionMenu);window.visualViewport?.addEventListener('scroll',this.positionMenu);document.addEventListener('scroll',this.positionMenu,true);window.addEventListener('storage',this.storage);
   this.dom.addEventListener('mycel-reveal-mention',this.reveal);this.dom.addEventListener('mycel-reveal-block',this.reveal);
-  this.dom.addEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.addEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.addEventListener('focusin',this.focusSource);this.schedule();
+  this.dom.addEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.addEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.addEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.addEventListener('focusin',this.focusSource);this.schedule();
  }
  update(node:PMNode){if(!super.update(node))return false;this.closeMenu();this.schedule();return true}
+ private rangeDrag=(event:Event)=>{this.selectingRange=!!(event as CustomEvent).detail;if(!this.selectingRange)this.schedule()};
  private finishCellForSelection=()=>this.endCellEdit(false);
  private refreshSelection=()=>{const ids=new Set(selectedCells(this.view.state).map(pos=>this.view.state.doc.nodeAt(pos)?.attrs.id));this.projection.querySelectorAll<HTMLElement>('[data-source-cell]').forEach(cell=>{cell.classList.toggle('selectedCell',ids.has(cell.dataset.sourceCell));cell.classList.toggle('active-table-cell',ids.has(cell.dataset.sourceCell))});this.dom.dispatchEvent(new CustomEvent('mycel-table-view-render',{bubbles:true}))};
  private schedule(){cancelAnimationFrame(this.frame);this.frame=requestAnimationFrame(()=>{if(!this.dead)this.render()})}
@@ -48,7 +50,7 @@ export class PersonalTableView extends TableView{
   this.preferences=normalizeTableView(this.preferences,this.node);
  }
  private active(){return !!this.preferences.sort||Object.keys(this.preferences.filters).length>0}
- private save(){this.preferences=normalizeTableView(this.preferences,this.node);try{if(this.storageKey)localStorage.setItem(this.storageKey,JSON.stringify(this.preferences))}catch{}this.render();const tr=this.view.state.tr.setMeta('personalTableView',true).setMeta('addToHistory',false);if(this.table.hidden){let position=-1;tr.doc.descendants((node,pos)=>{if(node===this.node){position=pos;return false}});if(position>=0)tr.setSelection(TextSelection.near(tr.doc.resolve(position+2),1))}this.view.dispatch(tr)}
+ private save(){this.preferences=normalizeTableView(this.preferences,this.node);try{if(this.storageKey)localStorage.setItem(this.storageKey,JSON.stringify(this.preferences))}catch{}this.render();const tr=this.view.state.tr.setMeta('personalTableView',true).setMeta('addToHistory',false);if(this.table.hidden){let position=-1;tr.doc.descendants((node,pos)=>{if(node===this.node){position=pos;return false}});if(position>=0)tr.setSelection(NodeSelection.create(tr.doc,position))}this.view.dispatch(tr)}
  private reset=()=>{this.closeMenu();this.preferences=emptyTableView();this.save()};
  private reveal=()=>{if(this.table.hidden)this.reset()};
  private focusSource=(event:FocusEvent)=>{if(this.table.contains(event.target as globalThis.Node))this.reveal()};
@@ -57,6 +59,7 @@ export class PersonalTableView extends TableView{
  private keydown=(event:KeyboardEvent)=>{if(event.key==='Escape'&&this.menu){event.preventDefault();this.closeMenu();this.controls.querySelector('button')?.focus()}};
  private button(label:string,action:()=>void){const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=event=>{event.stopPropagation();action()};return button}
  private render(){
+  if(this.selectingRange)return;
   if(this.cellEditor){const source=findProjectedCell(this.view.state.doc,this.editingId);if(source&&this.view.editable){if(!source.node.content.eq(this.cellEditor.state.doc.content)){this.cellEditor.updateState(EditorState.create({doc:source.node,plugins:this.cellEditor.state.plugins}));}return;}this.endCellEdit(false);}
 
   this.load();const info=personalTableInfo(this.node),active=info.supported&&this.active();this.dom.classList.toggle('has-table-view-controls',info.hasHeader);this.dom.classList.toggle('personal-table-active',active);
@@ -114,7 +117,7 @@ export class PersonalTableView extends TableView{
  private positionMenu=()=>{const menu=this.menu,button=this.controls.querySelector<HTMLButtonElement>('button[data-column="'+this.menuColumn+'"][data-kind="'+this.menuKind+'"]');if(!menu||!button)return;const viewport=window.visualViewport,x=viewport?.offsetLeft??0,y=viewport?.offsetTop??0,width=viewport?.width??innerWidth,height=viewport?.height??innerHeight;menu.style.maxHeight=Math.max(80,height-16)+'px';menu.style.maxWidth=Math.max(120,width-16)+'px';const anchor=button.getBoundingClientRect(),rect=menu.getBoundingClientRect();menu.style.left=Math.max(x+8,Math.min(anchor.right-rect.width,x+width-rect.width-8))+'px';menu.style.top=Math.max(y+8,Math.min(anchor.bottom+6,y+height-rect.height-8))+'px'};
  stopEvent(event:Event){return this.controls.contains(event.target as globalThis.Node)||this.summary.contains(event.target as globalThis.Node)||this.projection.contains(event.target as globalThis.Node)}
  ignoreMutation(mutation:ViewMutationRecord){if(this.controls.contains(mutation.target)||this.summary.contains(mutation.target)||this.projection.contains(mutation.target))return true;return super.ignoreMutation(mutation)}
- destroy(){this.endCellEdit(false);this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.removeEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.removeEventListener('focusin',this.focusSource)}
+ destroy(){this.endCellEdit(false);this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.removeEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.removeEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.removeEventListener('focusin',this.focusSource)}
 }
 
 // Keyboard or notification navigation into a projected table returns to its editable source.
