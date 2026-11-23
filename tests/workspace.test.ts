@@ -204,3 +204,13 @@ it('pairs once, requires UI approval, preserves history, deduplicates and revoke
  await db.exec('reset role;set role anon');
  await expect(call('calendar_list',{})).rejects.toThrow();
 });
+it('accepts table text anchors while rejecting wrong quotes, versions and unauthorized users',async()=>{
+ await db.exec('reset role');await db.exec(readFileSync(new URL('../migrations/0044_table_inline_comments.sql',import.meta.url),'utf8'));
+ await asUser(a);const n=await create(),x=crypto.randomUUID(),cm=crypto.randomUUID();
+ await db.query("select public.page_block_insert($1,$2,null,'table',$3)",[n,x,{text:'A😀B\n한국어',rows:[['A😀B','한국어']]}]);
+ await db.query('select public.page_quote_comment($1,null,$2,$3,$4,1,4,7,$5)',[n,cm,'표 문구 의견',x,'한국어']);expect((await doc(n)).comments[0].anchor.quote).toBe('한국어');
+ await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,1,4,7,$4)',[n,'bad',x,'잘못됨'])).rejects.toThrow(/선택 문구/);
+ await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,0,4,7,$4)',[n,'bad',x,'한국어'])).rejects.toThrow(/변경/);
+ await asUser(b);await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,1,4,7,$4)',[n,'bad',x,'한국어'])).rejects.toThrow(/권한/);
+ await db.exec('reset role;set role anon');await expect(db.query('select public.page_quote_comment($1,null,gen_random_uuid(),$2,$3,1,4,7,$4)',[n,'bad',x,'한국어'])).rejects.toThrow(/permission/);
+});

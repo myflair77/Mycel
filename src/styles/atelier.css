@@ -1117,3 +1117,13 @@ button:disabled{cursor:default}
 .app .table-axis-handle{background:var(--paper,#fff)!important;opacity:1!important}.app .table-axis-handle:hover,.app .table-axis-handle:focus-visible{background:var(--paper,#fff)!important;color:var(--link,#5265d9)!important}.app .table-axis-handle:focus,.app .table-axis-handle:active{background:var(--paper,#fff)!important;opacity:1!important}
 
 .toggle-arrow svg{pointer-events:none}
+
+.app .page-editor .personal-table-header-actions .personal-table-column-resize{position:absolute;z-index:5;width:8px;min-width:8px;min-height:0;padding:0;margin:0;border:0;border-radius:0;background:transparent!important;cursor:col-resize;touch-action:none;pointer-events:auto}.app .page-editor .personal-table-column-resize:before{display:none}.app .page-editor .personal-table-column-resize:hover:after,.app .page-editor .personal-table-column-resize:active:after{content:"";position:absolute;inset:0 3px;background:var(--link,#5265d9)}
+
+.app .document-heading .note-reading-toggle{flex:none;width:36px;height:36px;padding:7px;min-height:36px;margin:0;color:var(--muted);background:transparent}.app .note-reading-toggle[aria-pressed=true]{color:var(--link)}
+
+.projected-cell-toolbar{position:fixed;z-index:200;display:flex;flex-wrap:wrap;gap:2px;max-width:calc(100vw - 16px);padding:5px;background:var(--paper,#fff);color:var(--ink,#242933)}.projected-cell-toolbar>button{min-width:30px;padding:5px;border:0;background:transparent;color:inherit}.projected-cell-colors{flex-basis:100%;max-width:300px}.projected-cell-colors>div{display:flex;flex-wrap:wrap;gap:2px}.projected-cell-colors small{flex-basis:100%}.projected-cell-colors button{padding:5px;min-width:25px}
+
+.editor-menu.projected-cell-toolbar{width:max-content;max-height:calc(100vh - 16px);overflow:auto}.editor-menu.projected-cell-toolbar>button{width:auto;flex:none;display:inline-flex;align-items:center;justify-content:center}.editor-menu.projected-cell-toolbar .projected-cell-colors{width:250px}.editor-menu.projected-cell-toolbar .projected-cell-colors button{width:28px;flex:none;display:inline-flex;align-items:center;justify-content:center}
+
+.editor-menu.projected-cell-toolbar{width:280px}.projected-cell-toolbar .projected-cell-colors{min-width:0;max-width:100%}

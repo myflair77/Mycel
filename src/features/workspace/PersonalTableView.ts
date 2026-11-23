@@ -1,3 +1,5 @@
+import {TableMap} from '@tiptap/pm/tables';
+import {fitTableColumns,tableColumnWidths,TABLE_COLUMN_MIN} from './tableColumnLayout';
 import {projectedCellSelectionKey,selectedCells} from './tableCells';
 import {Extension} from '@tiptap/core';
 import {EditorState,Plugin,TextSelection,NodeSelection} from '@tiptap/pm/state';
@@ -16,6 +18,7 @@ export class PersonalTableView extends TableView{
  private cellEditor:EditorView|null=null;
  private editingId="";
  private selectingRange=false;
+ private cancelResize:(()=>void)|null=null;
  private controls=document.createElement('div');
  private summary=document.createElement('div');
  private projection=document.createElement('div');
@@ -36,12 +39,13 @@ export class PersonalTableView extends TableView{
   this.observer=new ResizeObserver(()=>this.position());this.observer.observe(this.dom);
   document.addEventListener('pointerdown',this.outside);document.addEventListener('keydown',this.keydown);window.addEventListener('resize',this.positionMenu);window.visualViewport?.addEventListener('resize',this.positionMenu);window.visualViewport?.addEventListener('scroll',this.positionMenu);document.addEventListener('scroll',this.positionMenu,true);window.addEventListener('storage',this.storage);
   this.dom.addEventListener('mycel-reveal-mention',this.reveal);this.dom.addEventListener('mycel-reveal-block',this.reveal);
-  this.dom.addEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.addEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.addEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.addEventListener('focusin',this.focusSource);this.schedule();
+  this.dom.addEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.addEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.addEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.addEventListener('mycel-editability-changed',this.editabilityChanged);this.dom.addEventListener('focusin',this.focusSource);this.schedule();
  }
  update(node:PMNode){if(!super.update(node))return false;this.closeMenu();this.schedule();return true}
  private rangeDrag=(event:Event)=>{this.selectingRange=!!(event as CustomEvent).detail;if(!this.selectingRange)this.schedule()};
  private finishCellForSelection=()=>this.endCellEdit(false);
  private refreshSelection=()=>{const ids=new Set(selectedCells(this.view.state).map(pos=>this.view.state.doc.nodeAt(pos)?.attrs.id));this.projection.querySelectorAll<HTMLElement>('[data-source-cell]').forEach(cell=>{cell.classList.toggle('selectedCell',ids.has(cell.dataset.sourceCell));cell.classList.toggle('active-table-cell',ids.has(cell.dataset.sourceCell))});this.dom.dispatchEvent(new CustomEvent('mycel-table-view-render',{bubbles:true}))};
+ private editabilityChanged=()=>{this.endCellEdit(false);this.schedule()};
  private schedule(){cancelAnimationFrame(this.frame);this.frame=requestAnimationFrame(()=>{if(!this.dead)this.render()})}
  private storage=(event:StorageEvent)=>{if(event.key===this.storageKey){this.storageKey='';this.schedule()}};
  private load(){const note=this.view.dom.closest<HTMLElement>('[data-note-document]'),user=note?.dataset.noteUser,id=note?.dataset.noteDocument;
@@ -60,8 +64,10 @@ export class PersonalTableView extends TableView{
  private button(label:string,action:()=>void){const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=event=>{event.stopPropagation();action()};return button}
  private render(){
   if(this.selectingRange)return;
+  if(this.cellEditor&&!this.view.editable)this.endCellEdit(false);
   if(this.cellEditor){const source=findProjectedCell(this.view.state.doc,this.editingId);if(source&&this.view.editable){if(!source.node.content.eq(this.cellEditor.state.doc.content)){this.cellEditor.updateState(EditorState.create({doc:source.node,plugins:this.cellEditor.state.plugins}));}return;}this.endCellEdit(false);}
 
+  fitTableColumns(this.table,tableColumnWidths(this.node));
   this.load();const info=personalTableInfo(this.node),active=info.supported&&this.active();this.dom.classList.toggle('has-table-view-controls',info.hasHeader);this.dom.classList.toggle('personal-table-active',active);
   this.table.hidden=active;this.summary.replaceChildren();this.summary.hidden=true;this.projection.replaceChildren();this.projection.hidden=!active;this.controls.replaceChildren();
   if(active){
@@ -79,20 +85,30 @@ export class PersonalTableView extends TableView{
    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','2 2 20 20');icon.setAttribute('width','16');icon.setAttribute('height','10');icon.setAttribute('width','18');icon.setAttribute('preserveAspectRatio','none');icon.setAttribute('aria-hidden','true');const path=document.createElementNS(icon.namespaceURI,'path');
    path.setAttribute('d',kind==='filter'?'M3 4h18l-7 8v7l-4 2v-9z':selected?(this.preferences.sort?.direction==='asc'?'M12 20V4m-5 5 5-5 5 5':'M12 4v16m-5-5 5 5 5-5'):'M7 20V4M3 8l4-4 4 4M17 4v16m-4-4 4 4 4-4');path.setAttribute('fill','none');path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width','2');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');icon.append(path);button.append(icon);this.controls.append(button);
   }
+  if(this.view.editable){const count=TableMap.get(this.node).width;for(let i=0;i<count-1;i++){const handle=document.createElement('button');handle.type='button';handle.className='personal-table-column-resize';handle.dataset.resizeColumn=String(i);handle.setAttribute('aria-label',(i+1)+'열 너비 조절');handle.title='끌어서 열 너비 조절';handle.onpointerdown=event=>this.startResize(event,i);this.controls.append(handle)}}
   this.position();this.dom.dispatchEvent(new CustomEvent('mycel-table-view-render',{bubbles:true}));
  }
- private endCellEdit(render=true){const editor=this.cellEditor;this.cellEditor=null;this.editingId='';editor?.destroy();if(render)this.schedule()}
+ private emitCellSelection(){this.dom.dispatchEvent(new CustomEvent('mycel-projected-cell-selection',{bubbles:true,detail:this.cellEditor?{view:this.cellEditor,id:this.editingId}:null}))}
+ private endCellEdit(render=true){const editor=this.cellEditor;this.cellEditor=null;this.emitCellSelection();this.editingId='';editor?.destroy();if(render)this.schedule()}
  private startCellEdit(cell:HTMLTableCellElement){
-  if(!this.view.editable||this.cellEditor?.dom.parentElement===cell)return;
+  if(this.cellEditor?.dom.parentElement===cell)return;
   this.endCellEdit(false);const id=cell.dataset.sourceCell||'',source=findProjectedCell(this.view.state.doc,id);if(!source)return;
   this.editingId=id;cell.replaceChildren();cell.classList.add('personal-table-editing-cell');
   const outer=this.view;
   const editor=new EditorView(cell,{state:EditorState.create({doc:source.node,plugins:[keymap({'Mod-z':()=>undo(outer.state,outer.dispatch),'Mod-y':()=>redo(outer.state,outer.dispatch),'Mod-Shift-z':()=>redo(outer.state,outer.dispatch),Escape:()=>{this.endCellEdit();return true}}),keymap(baseKeymap)]}),attributes:{class:'personal-table-cell-editor','aria-label':'표 셀 내용'},editable:()=>outer.editable,
-   dispatchTransaction:tr=>{if(!outer.editable)return;const before=editor.state.doc,next=editor.state.apply(tr);if(tr.docChanged){const change=editProjectedCell(outer.state,id,before,next.doc);if(!change){this.schedule();return;}editor.updateState(next);outer.dispatch(change);}else editor.updateState(next)},
+   dispatchTransaction:tr=>{if(tr.docChanged&&!outer.editable)return;const before=editor.state.doc,next=editor.state.apply(tr);if(tr.docChanged){const change=editProjectedCell(outer.state,id,before,next.doc);if(!change){this.schedule();return;}editor.updateState(next);outer.dispatch(change);}else editor.updateState(next);this.emitCellSelection()},
    handleDOMEvents:{blur:()=>{setTimeout(()=>{if(this.cellEditor===editor&&!editor.hasFocus())this.endCellEdit()},0);return false}}
-  });this.cellEditor=editor;editor.focus();
+  });this.cellEditor=editor;editor.focus();this.emitCellSelection();
  }
- private position(){const table=(this.table.hidden?this.projection.querySelector('table'):this.table),row=table?.rows[0];if(!row)return;const wrapper=this.dom.getBoundingClientRect(),scale=wrapper.width/(this.dom.offsetWidth||wrapper.width||1);for(const button of this.controls.querySelectorAll<HTMLButtonElement>('button')){const cell=row.cells[Number(button.dataset.column)];if(!cell)continue;const rect=cell.getBoundingClientRect();button.style.left=((rect.right-wrapper.left)/scale+this.dom.scrollLeft-(button.dataset.kind==='sort'?48:26))+'px';button.style.top=((table!.getBoundingClientRect().top-wrapper.top)/scale+this.dom.scrollTop-6)+'px'}this.positionMenu()}
+ private startResize(event:PointerEvent,column:number){
+  if(!this.view.editable)return;event.preventDefault();event.stopPropagation();this.cancelResize?.();this.endCellEdit(false);this.selectingRange=true;
+  const handle=event.currentTarget as HTMLElement,table=(this.table.hidden?this.projection.querySelector('table'):this.table)!;const scale=table.getBoundingClientRect().width/table.offsetWidth;const cols=Array.from(table.querySelectorAll('col')),initial=cols.map(col=>col.getBoundingClientRect().width/scale),widths=[...initial],start=event.clientX;handle.setPointerCapture(event.pointerId);
+  const move=(e:PointerEvent)=>{const pair=initial[column]+initial[column+1];widths[column]=Math.max(TABLE_COLUMN_MIN,Math.min(pair-TABLE_COLUMN_MIN,initial[column]+(e.clientX-start)/scale));widths[column+1]=pair-widths[column];fitTableColumns(table,widths);this.position();this.dom.dispatchEvent(new CustomEvent('mycel-table-view-render',{bubbles:true}))};
+  const cleanup=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);handle.removeEventListener('pointercancel',cancel);if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);this.cancelResize=null;this.selectingRange=false};
+  const cancel=()=>{cleanup();this.schedule()};const end=(e:PointerEvent)=>{move(e);cleanup();let position=-1;this.view.state.doc.descendants((n,pos)=>{if(n.attrs.id===this.node.attrs.id&&n.type.name==='table'){position=pos;return false}});if(position<0)return;const node=this.view.state.doc.nodeAt(position)!,map=TableMap.get(node),tr=this.view.state.tr;for(const offset of new Set(map.map)){const cell=node.nodeAt(offset)!,rect=map.findCell(offset);tr.setNodeMarkup(position+1+offset,undefined,{...cell.attrs,colwidth:widths.slice(rect.left,rect.right).map(w=>Math.round(w*100)/100)})}this.view.dispatch(tr);this.schedule()};
+  handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',cancel);this.cancelResize=cancel;
+ }
+ private position(){const table=(this.table.hidden?this.projection.querySelector('table'):this.table),row=table?.rows[0];if(!row)return;const wrapper=this.dom.getBoundingClientRect(),scale=wrapper.width/(this.dom.offsetWidth||wrapper.width||1);for(const button of this.controls.querySelectorAll<HTMLButtonElement>('button[data-kind]')){const cell=row.cells[Number(button.dataset.column)];if(!cell)continue;const rect=cell.getBoundingClientRect();button.style.left=((rect.right-wrapper.left)/scale+this.dom.scrollLeft-(button.dataset.kind==='sort'?48:26))+'px';button.style.top=((table!.getBoundingClientRect().top-wrapper.top)/scale+this.dom.scrollTop-6)+'px'}const cols=Array.from(table!.querySelectorAll('col'));for(const handle of this.controls.querySelectorAll<HTMLElement>('[data-resize-column]')){const col=cols[Number(handle.dataset.resizeColumn)];if(!col)continue;const r=col.getBoundingClientRect(),t=table!.getBoundingClientRect();Object.assign(handle.style,{left:((r.right-wrapper.left)/scale+this.dom.scrollLeft-4)+'px',top:((t.top-wrapper.top)/scale+this.dom.scrollTop+6)+'px',height:Math.max(0,(t.height/scale)-6)+'px'})}this.positionMenu()}
  private open(id:string,kind:"sort"|"filter"){
   this.closeMenu();const info=personalTableInfo(this.node),header=info.headers.find(h=>h.id===id);if(!header||!info.supported)return;
   const menu=document.createElement('div');this.menu=menu;menu.className='editor-menu personal-table-menu';menu.setAttribute('role','dialog');menu.setAttribute('aria-label',header.label+' '+(kind==='sort'?'정렬':'필터'));menu.contentEditable='false';
@@ -117,7 +133,7 @@ export class PersonalTableView extends TableView{
  private positionMenu=()=>{const menu=this.menu,button=this.controls.querySelector<HTMLButtonElement>('button[data-column="'+this.menuColumn+'"][data-kind="'+this.menuKind+'"]');if(!menu||!button)return;const viewport=window.visualViewport,x=viewport?.offsetLeft??0,y=viewport?.offsetTop??0,width=viewport?.width??innerWidth,height=viewport?.height??innerHeight;menu.style.maxHeight=Math.max(80,height-16)+'px';menu.style.maxWidth=Math.max(120,width-16)+'px';const anchor=button.getBoundingClientRect(),rect=menu.getBoundingClientRect();menu.style.left=Math.max(x+8,Math.min(anchor.right-rect.width,x+width-rect.width-8))+'px';menu.style.top=Math.max(y+8,Math.min(anchor.bottom+6,y+height-rect.height-8))+'px'};
  stopEvent(event:Event){return this.controls.contains(event.target as globalThis.Node)||this.summary.contains(event.target as globalThis.Node)||this.projection.contains(event.target as globalThis.Node)}
  ignoreMutation(mutation:ViewMutationRecord){if(this.controls.contains(mutation.target)||this.summary.contains(mutation.target)||this.projection.contains(mutation.target))return true;return super.ignoreMutation(mutation)}
- destroy(){this.endCellEdit(false);this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.removeEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.removeEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.removeEventListener('focusin',this.focusSource)}
+ destroy(){this.cancelResize?.();this.endCellEdit(false);this.dead=true;cancelAnimationFrame(this.frame);this.observer.disconnect();this.closeMenu();document.removeEventListener('pointerdown',this.outside);document.removeEventListener('keydown',this.keydown);window.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('resize',this.positionMenu);window.visualViewport?.removeEventListener('scroll',this.positionMenu);document.removeEventListener('scroll',this.positionMenu,true);window.removeEventListener('storage',this.storage);this.dom.removeEventListener('mycel-reveal-mention',this.reveal);this.dom.removeEventListener('mycel-reveal-block',this.reveal);this.dom.removeEventListener('mycel-cell-range-drag',this.rangeDrag);this.dom.removeEventListener('mycel-end-cell-edit',this.finishCellForSelection);this.dom.removeEventListener('mycel-table-selection-update',this.refreshSelection);this.dom.removeEventListener('mycel-editability-changed',this.editabilityChanged);this.dom.removeEventListener('focusin',this.focusSource)}
 }
 
 // Keyboard or notification navigation into a projected table returns to its editable source.
