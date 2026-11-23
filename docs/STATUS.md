@@ -625,3 +625,5 @@ Google Calendar 연동 1단계: 개인 일정 단건 조회 RPC 0031 추가. 운
 - 일반 표의 문구 댓글을 중첩 문서 위치로 매핑. 투영 셀에도 글자색/배경색·굵게·기울임·밑줄·취소선·코드 및 인라인 댓글 도구 연결, 원본 행 순서 유지.
 - 0044_table_inline_comments.sql 운영 Supabase SQL Editor 실행 Success 확인. 표 댓글만 허용하고 권한·버전·문구 일치 검증 유지. PGlite에서 정상 등록/잘못된 문구/오래된 버전/타 사용자/익명 거절 검증.
 - 로컬 fixture 브라우저에서 일반 및 투영 표 마우스 리사이즈, CDP 터치 리사이즈, 좁은 컨테이너 2px 간격·가로 스크롤, 읽기 전환, 셀 서식·댓글 대상 확인. 실제 모바일 기기 및 운영 사용자 댓글 작성 테스트는 하지 않음.
+
+- 배포 완료: Sites v114, 소스 f39b32e044b379c501671cd85c16c8cf8b18cd02. GitHub main 푸시 및 서버 빌드 배포 succeeded 확인. 타입 검사·관련 테스트 29개 통과. 운영 SQL 읽기 검증에서 table_quotes_enabled=true, authenticated_allowed=true, anon_allowed=false 확인.
